@@ -1,0 +1,240 @@
+.payment-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.payment-page.container {
+  max-width: 1200px; /* Giới hạn chiều rộng tối đa để căn giữa */
+  margin: 0 auto; /* Căn giữa nội dung */
+  display: flex; /* Đảm bảo flex container cho toàn bộ nội dung */
+  flex-wrap: wrap; /* Cho phép wrap trên màn hình nhỏ */
+}
+
+.form-container {
+  flex: 1;
+  margin-right: 20px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 0; /* Đảm bảo không bị co lại quá mức */
+}
+
+.summary-container {
+  width: 350px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky; /* Cố định phần tóm tắt khi cuộn */
+  top: 0; /* Sát mép trên cùng */
+  align-self: flex-start; /* Đảm bảo bắt đầu từ đầu */
+  height: fit-content; /* Chiều cao tự động dựa trên nội dung */
+  margin-top: 0; /* Loại bỏ margin-top để sát đầu */
+}
+
+.tour-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.total-price {
+  font-size: 24px;
+  color: #ff4d4f;
+}
+
+.book-button {
+  width: 100%;
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+  height: 40px;
+  font-size: 16px;
+}
+
+/* Hiệu ứng hover tùy chỉnh cho nút */
+.book-button:hover,
+.book-button:focus {
+  background-color: #ff6200 !important; /* Màu cam đậm khi hover */
+  border-color: #ff6200 !important; /* Giữ màu viền khớp với nền */
+  color: #fff !important; /* Đảm bảo chữ vẫn trắng */
+}
+
+.traveler-card {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.address-details {
+  margin-left: 24px;
+  color: #595959;
+  display: none;
+}
+
+.address-details.active {
+  display: block;
+}
+
+.address-details .ant-typography {
+  line-height: 1.5;
+}
+
+.traveler-section {
+  border: 1px solid #d9d9d9;
+  padding: 16px;
+  border-radius: 4px;
+  background-color: #fff;
+  margin-bottom: 24px;
+}
+
+.traveler-count {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px; /* Thêm khoảng cách dưới mỗi hàng đếm hành khách */
+}
+
+.traveler-count .ant-form-item {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.section-spacing {
+  margin-top: 24px; /* Thêm khoảng cách trên các phần */
+}
+
+.center {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Breadcrumb styles */
+.breadCrumbs {
+  background-color: #f5f5f5;
+  width: 100%;
+}
+
+.breadcrumb {
+  list-style: none;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: '>';
+  margin: 0 8px;
+  color: #888;
+}
+
+.breadcrumb-item a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.breadcrumb-item.active span {
+  color: #888;
+}
+
+/* Success Modal styles */
+.success-modal .ant-modal-content {
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.success-modal .ant-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #52c41a; /* Màu xanh lá cây cho icon */
+  margin-bottom: 16px;
+}
+
+.success-title {
+  color: #003087; /* Màu xanh đậm cho tiêu đề */
+  margin-bottom: 12px;
+}
+
+.success-message {
+  color: #595959; /* Màu xám cho thông điệp */
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.success-button {
+  margin-top: 24px;
+  width: 120px;
+  height: 40px;
+  background-color: #ff4d4f; /* Màu đỏ */
+  border-color: #ff4d4f;
+  border-radius: 20px; /* Bo góc nút */
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.success-button:hover,
+.success-button:focus {
+  background-color: #ff6200 !important; /* Màu cam đậm khi hover */
+  border-color: #ff6200 !important;
+  color: #fff !important;
+}
+
+.success-modal .ant-modal-close-x {
+  color: #888;
+  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .payment-page.container {
+    flex-direction: column; /* Xếp dọc trên màn hình nhỏ */
+  }
+
+  .form-container {
+    margin-right: 0; /* Xóa margin bên phải */
+    margin-bottom: 20px; /* Thêm margin dưới để cách ly với summary */
+  }
+
+  .summary-container {
+    position: static; /* Tắt sticky trên màn hình nhỏ */
+    width: 100%; /* Mở rộng chiều rộng */
+    margin-top: 0; /* Đảm bảo không có khoảng cách không cần thiết */
+  }
+
+  .success-modal .ant-modal-content {
+    width: 90%; /* Giảm chiều rộng modal trên màn hình nhỏ */
+    margin: 0 auto;
+  }
+}

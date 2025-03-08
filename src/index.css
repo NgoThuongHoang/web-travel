@@ -1,0 +1,742 @@
+/* ==================================================================================
+ * Reset and Base Styles
+ * ================================================================================== */
+body {
+  margin: 0;
+  font-family: 'Josefin Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* ==================================================================================
+ * Heading Styles
+ * ================================================================================== */
+h2 {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: bold;
+  font-size: 36px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  color: #333;
+}
+
+/* ==================================================================================
+ * Navbar Styles
+ * ================================================================================== */
+ .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  padding: 10px 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  
+}
+
+.navbar:hover {
+  background-color: #f8f8f8;
+}
+
+.navbar-nav .nav-link {
+  color: #000 !important;
+  font-weight: 500;
+  padding: 10px 15px;
+  transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: orange !important;
+  text-decoration: underline;
+}
+
+.nav-item {
+  margin-right: 20px;
+}
+
+.nav-item:last-child {
+  margin-right: 0;
+}
+
+/* ==================================================================================
+ * Dropdown Styles
+ * ================================================================================== */
+.navbar-nav .dropdown:hover .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  text-decoration: none;
+  color: #000;
+  display: block;
+  margin-bottom: 5px;
+  padding: 8px 12px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.dropdown-item:hover {
+  color: orange !important;
+}
+
+/* Dropdown Styles */
+.navbar-nav .dropdown-menu a {
+  color: black;
+  background-color: transparent;
+}
+
+.navbar-nav .dropdown-menu a:hover {
+  background-color: white;
+}
+
+/* ==================================================================================
+ * Logo Styles
+ * ================================================================================== */
+.logo img {
+  max-width: 200px;
+  height: auto;
+  margin-right: 20px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+/* ==================================================================================
+ * Tour Container Styles
+ * ================================================================================== */
+.tour-container {
+  padding: 15px;
+  max-width: 1000px;
+  margin: 20px auto;
+  border-radius: 8px;
+}
+
+.tour-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tour-column {
+  flex: 1;
+  padding: 10px 25px 0 20px;
+  box-sizing: border-box;
+  min-width: 150px;
+}
+
+.tour-title {
+  padding-bottom: 15px;
+}
+
+.tour-image {
+  max-width: 100%;
+  height: auto;
+}
+
+.tour-ngoai-nuoc{
+  margin-bottom: 50px;
+}
+
+/* ==================================================================================
+ * Tour Region Styles
+ * ================================================================================== */
+.tour-region {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 20px 0;
+}
+
+.tour-region h3 {
+  flex: 1;
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+/* ==================================================================================
+ * Footer Styles
+ * ================================================================================== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#footer {
+  color: white;
+  width: 100%;
+  margin-top: auto;
+}
+
+#footer a {
+  color: white;
+  text-decoration: none;
+}
+
+#footer a:hover {
+  color: #dddddd;
+}
+
+.footer-top {
+  padding: 20px 0;
+}
+
+.footer-tit2, .footer-tit {
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.footer-list li {
+  margin-bottom: 10px;
+}
+
+.footer-content p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.footer-bottom {
+  background-color: rgb(112 64 64 / 70%);
+  padding: 10px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-bottom a {
+  color: #ffcc00;
+}
+
+/* ==================================================================================
+ * Slides Styles
+ * ================================================================================== */
+.slideshow {
+  width: 100%;
+  max-width: 100%;
+  margin: auto;
+}
+
+.swiper-slide img {
+  width: 100%;
+}
+
+/* ==================================================================================
+ * Intro Styles
+ * ================================================================================== */
+
+#intro {
+  background-color: #ffffff;
+  border-radius: 8px;
+}
+
+.center {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intro-title {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.intro-title p {
+  font-size: 18px;
+  color: #666;
+}
+
+.intro-title h2 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 40px;
+  margin-top: 10px;
+  color: #ff780d;
+}
+
+.intro-name {
+  color: #ff780d;
+}
+
+.intro-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.intro-left {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.intro-right {
+  flex: 2;
+  margin-top: 50px;
+}
+
+.intro-info {
+  margin-top: 10px;
+  line-height: 1.6;
+  color: #555;
+  text-align: justify; /* Căn đều nội dung */
+}
+
+/* ==================================================================================
+ * Country Styles
+ * ================================================================================== */
+
+ #country {
+  background-color: #f9f9f9;
+  padding-top: 10px;
+  padding-bottom: 30px;
+}
+
+.country-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.country-items {
+  width: calc(33.33% - 20px);
+  margin: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.country-items img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.5s ease;
+}
+
+.country-items:hover img {
+  transform: scale(1.1);
+}
+
+.country-items span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease;
+}
+
+.country-items:hover span {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.image-container {
+  position: relative;
+}
+
+.title-main {
+  margin: 20px 0;
+  text-align: center;
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.title-main h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ff780d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .country-items {
+    width: calc(50% - 20px);
+  }
+
+  .newsletter-left, .newsletter-right {
+    flex: 100%;
+    padding: 0;
+  }
+
+  .row-newsletter2, .row-newsletter3 {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .country-items {
+    width: calc(100% - 20px);
+  }
+}
+
+/* ==================================================================================
+ * Tour Styles
+ * ================================================================================== */
+
+ .product-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Chỉnh sửa viền cho các ô */
+.product-item {
+  width: calc(25% - 20px);
+  margin: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc; /* Thêm viền ô */
+  border-radius: 5px; /* Bo tròn các góc */
+  transition: transform 0.3s, box-shadow 0.3s; /* Hiệu ứng chuyển động mượt mà */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Bóng đổ cho hiệu ứng chiều sâu */
+}
+
+.product-item:hover {
+  transform: translateY(-5px); /* Nâng lên một chút khi hover */
+}
+
+/* Chỉnh màu và kích thước tiêu đề */
+.title-main h2 {
+  color: #000; /* Chuyển sang màu đen */
+  font-size: 1.5rem; /* Giảm kích thước chữ */
+}
+
+.title-main p {
+  color: #000; /* Chuyển sang màu đen */
+  margin-bottom: 10px;
+}
+
+.product-desc{
+  padding-left: 10px;
+}
+/* Chỉnh màu chữ của product-item */
+.product-desc h3 a,
+.product-desc p {
+  color: #000 !important; /* Đảm bảo chữ bên trong là màu đen */
+}
+
+.product-item-name p{
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff780d;
+}
+/* Đảm bảo hình ảnh không bị thay đổi */
+.product-image img {
+  width: 100%;
+  height: auto;
+}
+
+.product-info {
+  display: flex; /* Đặt flexbox để căn giữa các phần tử con */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  gap: 8px; /* Tạo khoảng cách giữa icon và chữ */
+  margin-bottom: 10px; /* Thêm khoảng cách bên dưới để đỡ dính */
+}
+
+.product-info2 {
+  display: flex; /* Đặt flexbox để căn các phần tử trên cùng một hàng */
+  justify-content: space-between; /* Tạo khoảng cách giữa thời gian và "Liên hệ" */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  padding-right: 10px;
+  padding-bottom: 10px;
+}
+
+/* Đảm bảo các phần tử bên trong không bị thay đổi kích thước */
+.product-info2 p.product-info {
+  margin: 0; /* Loại bỏ khoảng cách mặc định nếu có */
+  display: flex; /* Để căn chỉnh icon và text cùng hàng */
+  align-items: center; /* Căn giữa icon và text theo chiều dọc */
+  gap: 8px; /* Khoảng cách giữa icon và text */
+}
+
+.product-info2 .price-new {
+  color: #000; /* Đổi màu nếu cần */
+}
+
+.product-item-name {
+  padding-top: 10px; /* Thêm khoảng cách phía trên */
+}
+
+.product-name{
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff780d;
+}
+
+/* Thêm hiệu ứng zoom cho hình ảnh */
+.product-image {
+  overflow: hidden; /* Đảm bảo ảnh không tràn ra ngoài khi zoom */
+}
+
+.zoom-image {
+  transition: transform 0.3s ease-in-out; /* Hiệu ứng zoom mượt */
+}
+
+.zoom-image:hover {
+  transform: scale(1.1); /* Phóng to ảnh lên 10% khi hover */
+}
+
+/* ==================================================================================
+ * About Styles
+ * ================================================================================== */
+
+/* ================ Intro ================ */
+
+.breadCrumbs{
+  background-color: #f1f0f0;
+}
+
+.center {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intro-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.intro-title p {
+  font-size: 18px;
+  color: #666;
+}
+
+.intro-title h2 {
+  font-size: 24px;
+  color: #ff780d;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 40px;
+  margin-top: 10px;
+}
+
+.intro-name{
+  color: #ff780d;
+}
+
+.intro-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.intro-left {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.intro-right {
+  flex: 2;
+}
+
+.intro-info {
+  margin-top: 10px;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* ================ Couter ================ */
+.counter-container {
+  text-align: center;
+  margin: 50px 0;
+  padding: 10px; /* Khoảng cách giữa nội dung và viền */
+  border: 2px solid #ffffff; /* Viền màu cam */
+  border-radius: 5px; /* Bo góc cho viền */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Hiệu ứng bóng đổ */
+  background-color: white; /* Nền trắng để nổi bật */
+}
+
+.counter-title {
+  font-size: 24px;
+  color: #ff7f00; /* Màu cam */
+  margin-top: 30px;
+  margin-bottom: 50px;
+}
+
+.counter-wrapper {
+  display: flex; /* Sử dụng flex để căn chỉnh các phần tử */
+  justify-content: center; /* Căn giữa */
+  gap: 100px; /* Khoảng cách giữa các phần tử */
+}
+
+.counter {
+  font-size: 80px;
+  font-weight: bold;
+  transition: all 0.5s ease; /* Hiệu ứng chuyển tiếp */
+}
+
+.customers {
+  color: #007bff; /* Màu xanh cho khách hàng */
+}
+
+.trips {
+  color: #28a745; /* Màu xanh lá cho chuyến đi */
+}
+
+.locations {
+  color: #dc3545; /* Màu đỏ cho địa điểm */
+}
+
+.counter-text {
+  font-size: 40px; /* Kích thước chữ cho tiêu đề */
+  margin-bottom: 5px; /* Khoảng cách giữa tiêu đề và số */
+}
+
+.count-wrapper {
+  display: flex; /* Sử dụng flex để căn chỉnh số và biểu tượng */
+  align-items: center; /* Căn giữa dọc */
+}
+
+.count {
+  display: inline-block; /* Để có thể tăng dần */
+  margin-right: 10px; /* Khoảng cách giữa số và biểu tượng */
+}
+
+.counter i {
+  font-size: 0.8em; /* Kích thước biểu tượng */
+  color: inherit; /* Đảm bảo màu biểu tượng theo màu của phần tử cha */
+}
+
+/* ==================================================================================
+ * News Styles
+ * ================================================================================== */
+
+ .news-time{
+  margin: 5px 0;
+ }
+ .news-time img{
+  margin-right: 5px;
+ }
+
+ .news-name a{
+  text-decoration: none;
+  color: black;
+  font-weight: bold;
+ }
+
+ .news-info{
+  text-align: justify;
+}
+
+/* ==================================================================================
+ * Contact Styles
+ * ================================================================================== */
+
+.contact-title {
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 25px;
+}
+
+.form-contact .input-contact {
+  padding: 10px 5px;
+}
+
+.form-contact .row {
+  margin: -10px -5px;
+}
+
+.input-contact input,
+.input-contact textarea {
+  background-color: #fafafa;
+}
+
+.input-contact input {
+  background-repeat: no-repeat;
+  background-position: 95% 50%;
+}
+
+.input-contact textarea {
+  min-height: 133px;
+}
+
+.btn-contact {
+  background-color: var(--color-main);
+  border: 1px solid var(--color-main);
+  color: #fff;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  margin-top: 14px;
+}
+
+.btn-contact:hover {
+  color: var(--color-main);
+  background-color: #fff;
+}
+
+.input-contact textarea::-webkit-input-placeholder,
+.input-contact input::-webkit-input-placeholder {
+  color: #929292;
+  font-size: 14.02px;
+}
+
+.input-contact textarea:-moz-placeholder,
+.input-contact input:-moz-placeholder {
+  color: #929292;
+  font-size: 14.02px;
+}
+
+.input-contact textarea::-moz-placeholder,
+.input-contact input::-moz-placeholder {
+  color: #929292;
+  font-size: 14.02px;
+}
+
+.input-contact textarea:-ms-input-placeholder,
+.input-contact input:-ms-input-placeholder {
+  color: #929292;
+  font-size: 14.02px;
+}
+
+#submit {
+  background-color: #ff7f50; /* Màu cam */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px; /* Kích thước chữ */
+  transition: background-color 0.3s; /* Hiệu ứng chuyển màu */
+}
+
+#submit:hover {
+  background-color: #ff6347; /* Màu khi hover */
+}
+
+.form-contact .row{
+  margin: -5px -5px;
+}
+
+.w-clear{
+  margin-top: 50px;
+}
+
+.contact-title{
+  font-size: 25px;
+  color: orange;
+}
+
+/* ==================================================================================
+ * Tour Details Styles
+ * ================================================================================== */
+ 
