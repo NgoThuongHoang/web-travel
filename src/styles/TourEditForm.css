@@ -1,0 +1,187 @@
+.custom-modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.custom-modal .ant-modal {
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0 auto;
+    width: 90% !important; /* Giữ độ rộng modal hợp lý */
+    max-width: 800px !important; /* Giảm max-width để phù hợp với ảnh nhỏ hơn */
+}
+
+.custom-modal .ant-modal-content {
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.custom-modal .ant-modal-body {
+    padding: 24px;
+}
+
+.highlight-item {
+    margin-bottom: 8px !important;
+}
+
+.highlight-item .ant-form-item {
+    margin-bottom: 0 !important;
+}
+
+.highlight-item .ant-input-group-addon {
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.highlight-item .ant-btn {
+    padding: 0 !important;
+    height: auto !important;
+    line-height: 1 !important;
+}
+
+.highlight-item .ant-btn > .anticon {
+    margin: 0 !important;
+}
+
+.ant-space-item {
+    margin-right: 2px !important;
+}
+
+.ant-collapse-header .ant-btn {
+    margin-left: 4px !important;
+    padding: 0 4px !important;
+    height: auto !important;
+    line-height: 1 !important;
+}
+
+.ant-collapse-header .ant-btn > .anticon {
+    margin: 0 !important;
+}
+
+.highlight-add-button {
+    margin-top: 16px !important;
+    border-radius: 5px !important;
+    padding: 6px 12px !important;
+    font-weight: 500 !important;
+}
+
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.image-actions {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.image-actions .ant-btn {
+    color: white !important;
+    border: none !important;
+}
+
+.image-actions .ant-btn:hover {
+    color: #1890ff !important;
+}
+
+/* CSS cho carousel */
+.carousel-container {
+    position: relative;
+    width: 100%; /* Sử dụng 100% để lấp đầy modal */
+    max-width: 600px; /* Giảm max-width để ảnh nhỏ hơn */
+    margin: 0 auto;
+}
+
+.carousel-container .ant-carousel {
+    width: 100%;
+}
+
+.carousel-container img {
+    width: 600px !important; /* Giảm kích thước ảnh xuống 400x400 */
+    height: 600px !important;
+    object-fit: cover;
+}
+
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 100%; /* Đặt chiều cao bằng chiều cao ảnh */
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.carousel-arrow:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.prev-arrow {
+    left: 0;
+}
+
+.next-arrow {
+    right: 0;
+}
+
+.success-modal .ant-modal-content {
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Thêm bóng nhẹ để giống trong hình */
+}
+
+.success-modal .ant-modal-header {
+    background: white; /* Nền header màu trắng */
+    border-bottom: none; /* Bỏ viền dưới */
+    padding: 16px; /* Điều chỉnh padding */
+}
+
+.success-modal .ant-modal-title {
+    color: #52c41a; /* Màu chữ xanh lá cây */
+    font-weight: normal; /* Không in đậm để giống hình */
+    font-size: 16px; /* Kích thước chữ giống trong hình */
+    background-color: white;
+}
+
+.success-modal .ant-modal-body {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* Khoảng cách giữa icon và text */
+    padding: 24px;
+}
+
+.success-modal .anticon-check-circle {
+    font-size: 24px; /* Kích thước icon giống trong hình */
+    color: #52c41a; /* Icon màu xanh lá cây */
+}
+
+.success-modal p {
+    margin: 0;
+    font-size: 14px; /* Kích thước chữ giống trong hình */
+    color: #333; /* Màu chữ tối để dễ đọc */
+}
+
+.success-modal .ant-btn-primary {
+    background: #52c41a; /* Nút màu xanh lá cây */
+    border-color: #52c41a;
+}
+
+.success-modal .ant-btn-primary:hover,
+.success-modal .ant-btn-primary:focus {
+    background: #389e0d !important;
+    border-color: #389e0d !important;
+}

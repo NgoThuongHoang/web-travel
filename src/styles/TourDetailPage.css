@@ -1,326 +1,372 @@
-/* Add or replace these styles in TourDetailPage.css */
-
 /* Container cho Carousel */
 .carousel-container {
-    position: relative;
-    width: 100%;
-  }
-  
-  /* Kiểu dáng cho mũi tên dạng chữ nhật */
-  .carousel-arrow {
-    position: absolute;
-    top: 0;
-    height: 100%; /* Chiều cao bằng ảnh */
-    width: 60px; /* Chiều rộng của mũi tên */
-    background: rgba(0, 0, 0, 0.15); /* Nền đen mờ hơn (opacity thấp hơn) */
-    color: #fff;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: background 0.3s ease, opacity 0.3s ease; /* Hiệu ứng chuyển đổi */
-    opacity: 0; /* Mờ hơn nữa ban đầu */
-    z-index: 10; /* Đảm bảo mũi tên nằm trên ảnh */
-  }
-  
-  /* Khi hover, mũi tên đậm lên một chút (không dùng màu cam) */
-  .carousel-arrow:hover {
-    background: rgba(0, 0, 0, 0.2); /* Đậm lên nhưng vẫn giữ màu đen */
-    opacity: 0.8; /* Đậm hơn nhưng không quá sáng */
-  }
-  
-  /* Vị trí mũi tên trái */
-  .prev-arrow {
-    left: 0;
-  }
-  
-  /* Vị trí mũi tên phải */
-  .next-arrow {
-    right: 0;
-  }
-  
-  /* Đảm bảo ảnh trong Carousel không bị che khuất */
-  .ant-carousel .slick-slide img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-  
-  /* Các kiểu dáng khác giữ nguyên */
-  .tour-detail-page {
-    background-color: #ffffff;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-  }
-  
-  .tour-header {
-    background-color: #fff;
-    padding: 24px 0;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
+  position: relative;
+  width: 100%;
+}
+
+/* Kiểu dáng cho mũi tên dạng chữ nhật */
+.carousel-arrow {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 40px; /* Giảm chiều rộng trên mobile */
+  background: rgba(0, 0, 0, 0.15);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem; /* Giảm kích thước font cho mobile */
+  cursor: pointer;
+  transition: background 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+/* Tiêu đề phía trên carousel */
+.carousel-title {
+  color: #ff8c00; /* Màu cam */
+  font-weight: bold;
+  text-transform: uppercase; /* Chữ in hoa */
+  font-family: Arial, Helvetica, sans-serif; /* Font chữ giống trong hình */
+  background: none; /* Không có nền mờ */
+  margin-top: 16px; /* Khoảng cách giữa tiêu đề và carousel */
+  margin-bottom: 16px; /* Khoảng cách giữa tiêu đề và carousel */
+  text-align: left; /* Căn trái */
+}
+
+.carousel-arrow:hover {
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0.8;
+}
+
+.prev-arrow {
+  left: 0;
+}
+
+.next-arrow {
+  right: 0;
+}
+
+.ant-carousel .slick-slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 500px; /* Giới hạn chiều cao tối đa */
+  object-fit: cover; /* Đảm bảo ảnh không bị méo */
+}
+
+/* Tổng thể trang */
+.tour-detail-page {
+  background-color: #ffffff;
+  padding: 10px; /* Giảm padding trên mobile */
+  font-family: Arial, sans-serif;
+}
+
+.tour-header {
+  background-color: #fff;
+  padding: 16px 0;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.tour-header h2 {
+  color: #ff8c00;
+  font-size: 1.8rem; /* Giảm kích thước chữ trên mobile */
+  margin: 0;
+  font-weight: bold;
+}
+
+.tour-content {
+  max-width: 1400px; /* Tăng giới hạn chiều rộng để tận dụng màn hình lớn */
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.tour-info-card {
+  margin-top: 16px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.tour-info-card .ant-typography {
+  font-size: 0.9rem; /* Giảm kích thước chữ trên mobile */
+  color: #333;
+  line-height: 1.5;
+}
+
+.tour-tabs {
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tour-tabs .ant-tabs-tab {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 15px;
+  color: #666;
+}
+
+.tour-tabs .ant-tabs-tab:hover {
+  color: #ff8c00;
+}
+
+.tour-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #ff8c00;
+  font-weight: bold;
+}
+
+.tour-tabs .ant-tabs-ink-bar {
+  background: #ff8c00;
+}
+
+.tour-tabs .ant-tabs-content {
+  padding: 12px;
+}
+
+.ant-timeline {
+  padding: 12px 0;
+}
+
+.ant-timeline-item-content {
+  margin-left: 12px;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+.ant-timeline-item-head {
+  background: #ff8c00;
+  border-color: #ff8c00;
+}
+
+.booking-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+}
+
+.booking-card .ant-typography {
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.booking-card .ant-btn-default {
+  background: #ff8c00;
+  border-color: #ff8c00;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 10px 0;
+  margin: 12px 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.booking-card .ant-btn-default:hover {
+  background: #e07b00;
+  border-color: #e07b00;
+}
+
+.viewed-tour-link,
+.related-tour-link {
+  color: #333;
+  text-decoration: none !important;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.viewed-tour-link:hover,
+.related-tour-link:hover {
+  color: #ff8c00 !important;
+}
+
+.related-tour-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.related-tour-card .ant-card-cover img {
+  border-radius: 8px 8px 0 0;
+  width: 100%;
+  height: 120px; /* Giảm chiều cao ảnh trên mobile */
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.related-tour-card:hover .ant-card-cover img {
+  transform: scale(1.1);
+}
+
+/* Responsive Adjustments */
+
+/* Desktop lớn (trên 1200px) */
+@media (min-width: 1200px) {
   .tour-header h2 {
-    color: #ff8c00;
     font-size: 2.5rem;
-    margin: 0;
-    font-weight: bold;
   }
-  
+
   .tour-content {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 24px;
   }
-  
-  .tour-info-card {
-    margin-top: 24px;
-    background: #fff;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #f0f0f0;
+
+  .carousel-arrow {
+    width: 60px;
+    font-size: 1.5rem;
   }
-  
+
   .tour-info-card .ant-typography {
     font-size: 1rem;
-    color: #333;
-    line-height: 1.6;
   }
-  
-  .tour-info-card .ant-typography:hover {
-    color: #ff8c00;
-  }
-  
-  .tour-info-card .ant-typography:hover i {
-    color: #ff8c00;
-  }
-  
-  .tour-tabs {
-    margin-top: 24px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .tour-tabs .ant-tabs-tab {
-    font-size: 1.1rem;
-    font-weight: 500;
-    padding: 12px 20px;
-    color: #666;
-  }
-  
-  .tour-tabs .ant-tabs-tab:hover {
-    color: #ff8c00;
-  }
-  
-  .tour-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-    color: #ff8c00;
-    font-weight: bold;
-  }
-  
-  .tour-tabs .ant-tabs-ink-bar {
-    background: #ff8c00;
-  }
-  
-  .tour-tabs .ant-tabs-content {
-    padding: 16px;
-  }
-  
-  .ant-timeline {
-    padding: 16px 0;
-  }
-  
-  .ant-timeline-item-content {
-    margin-left: 16px;
-    font-size: 1rem;
-    color: #333;
-    line-height: 1.6;
-  }
-  
-  .ant-timeline-item-head {
-    background: #ff8c00;
-    border-color: #ff8c00;
-  }
-  
-  .booking-card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    padding: 16px;
-  }
-  
+
   .booking-card .ant-typography {
-    color: #333;
     font-size: 1.5rem;
-    font-weight: bold;
   }
-  
+
   .booking-card .ant-btn-default {
-    background: #ff8c00;
-    border-color: #ff8c00;
-    color: #fff;
     font-size: 1rem;
     padding: 12px 0;
-    margin: 16px 0;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
-  
-  .booking-card .ant-btn-default:hover {
-    background: #e07b00 !important;
-    border-color: #e07b00 !important;
-  }
-  
-  .viewed-tour-link {
-    color: #333;
-    text-decoration: none !important;
-    font-weight: 500;
-    transition: color 0.3s ease;
-  }
-  
-  .viewed-tour-link:hover {
-    color: #ff8c00 !important;
-  }
-  
-  .related-tour-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
+
   .related-tour-card .ant-card-cover img {
-    border-radius: 8px 8px 0 0;
-    width: 100%;
     height: 150px;
-    object-fit: cover;
-    transition: transform 0.3s ease;
   }
-  
-  .related-tour-card:hover .ant-card-cover img {
-    transform: scale(1.1);
+
+  .carousel-title {
+    font-size: 1.5rem; /* Tăng kích thước chữ trên desktop lớn */
   }
-  
-  .related-tour-link {
-    color: #333;
-    text-decoration: none !important;
-    font-weight: 500;
-    transition: color 0.3s ease;
+}
+
+/* Tablet (768px - 1200px) */
+@media (max-width: 1200px) and (min-width: 768px) {
+  .tour-header h2 {
+    font-size: 2rem;
   }
-  
-  .related-tour-card:hover .related-tour-link {
-    color: #ff8c00 !important;
+
+  .tour-content {
+    padding: 20px;
   }
-  
-  .related-tour-card .ant-card-meta-description,
-  .related-tour-card .ant-card-meta-description .ant-typography {
-    color: inherit;
+
+  .carousel-arrow {
+    width: 50px;
+    font-size: 1.3rem;
   }
-  
-  .booking-card .ant-list-item {
-    padding: 8px 0;
-    color: #666;
+
+  .tour-info-card,
+  .booking-card {
+    padding: 14px;
   }
-  
-  .booking-card .ant-list-item-meta {
-    align-items: flex-start;
+
+  .ant-col-lg-16,
+  .ant-col-lg-8 {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
-  
-  .ant-card {
-    margin-bottom: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .carousel-title {
+    font-size: 1.3rem;
   }
-  
-  .ant-card-head {
-    background: #f8f8f8;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  
-  .ant-card-head-title {
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #333;
-  }
-  
-  .ant-list-item {
+}
+
+/* Mobile (dưới 768px) */
+@media (max-width: 768px) {
+  .tour-header {
     padding: 12px 0;
   }
-  
-  .ant-list-item-meta-title a {
-    color: #333;
-    font-weight: 500;
+
+  .tour-header h2 {
+    font-size: 1.5rem;
   }
-  
-  .ant-list-item-meta-description {
-    color: #666;
+
+  .tour-content {
+    padding: 12px;
+  }
+
+  .carousel-arrow {
+    width: 30px;
+    font-size: 1rem;
+  }
+
+  .tour-info-card,
+  .booking-card {
+    padding: 10px;
+    margin-top: 12px;
+  }
+
+  .tour-info-card .ant-typography {
+    font-size: 0.85rem;
+  }
+
+  .tour-tabs .ant-tabs-tab {
+    padding: 8px 12px;
     font-size: 0.9rem;
   }
-  
-  .ant-avatar {
-    background: #ff8c00;
+
+  .ant-timeline-item-content {
+    margin-left: 8px;
+    font-size: 0.85rem;
   }
-  
-  @media (max-width: 1024px) {
-    .tour-content {
-      padding: 20px;
-    }
-  
-    .tour-header h2 {
-      font-size: 2rem;
-    }
-  
-    .tour-info-card,
-    .booking-card,
-    .ant-card {
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
+
+  .booking-card .ant-typography {
+    font-size: 1.2rem;
   }
-  
-  @media (max-width: 768px) {
-    .tour-content {
-      padding: 16px;
-    }
-  
-    .tour-header {
-      padding: 16px 0;
-    }
-  
-    .tour-header h2 {
-      font-size: 1.8rem;
-    }
-  
-    .tour-info-card,
-    .booking-card {
-      padding: 12px;
-      margin-top: 16px;
-    }
-  
-    .ant-tabs-tab {
-      padding: 10px 15px;
-      font-size: 1rem;
-    }
-  
-    .ant-timeline-item-content {
-      margin-left: 8px;
-    }
-  
-    .ant-col-lg-8,
-    .ant-col-lg-16 {
-      width: 100%;
-    }
-  
-    .booking-card .ant-btn-default {
-      font-size: 0.9rem;
-      padding: 10px 0;
-    }
-  
-    .ant-card {
-      margin-bottom: 12px;
-    }
-  
-    .related-tour-card .ant-card-cover img {
-      height: 120px;
-    }
+
+  .booking-card .ant-btn-default {
+    font-size: 0.85rem;
+    padding: 8px 0;
   }
+
+  .related-tour-card .ant-card-cover img {
+    height: 100px;
+  }
+
+  .ant-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .carousel-title {
+    font-size: 1.2rem; /* Giảm kích thước chữ trên mobile */
+  }
+}
+
+/* Mobile rất nhỏ (dưới 480px) */
+@media (max-width: 480px) {
+  .tour-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .tour-content {
+    padding: 8px;
+  }
+
+  .carousel-arrow {
+    width: 25px;
+    font-size: 0.9rem;
+  }
+
+  .tour-info-card,
+  .booking-card {
+    padding: 8px;
+  }
+
+  .tour-tabs .ant-tabs-tab {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .booking-card .ant-btn-default {
+    font-size: 0.8rem;
+    padding: 6px 0;
+  }
+
+  .carousel-title {
+    font-size: 1rem; /* Giảm thêm trên mobile nhỏ */
+  }
+}

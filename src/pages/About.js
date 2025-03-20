@@ -124,7 +124,7 @@ const About = () => {
                 CÔNG TY DU LỊCH SKY TRAVEL
             </Title>
             <Paragraph>
-                Biên Hòa Star Travel là một doanh nghiệp du lịch uy tín với các dịch vụ chủ lực như:
+                Sky Travel là một doanh nghiệp du lịch uy tín với các dịch vụ chủ lực như:
             </Paragraph>
             <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
                 <li>✅ Voucher nghỉ dưỡng tại FLC, Vinpearl, Flamingo</li>

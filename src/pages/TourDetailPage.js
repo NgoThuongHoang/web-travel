@@ -142,6 +142,54 @@ const TourDetailPage = () => {
     },
   ];
 
+  const cancellationPolicy = (
+    <div style={{ lineHeight: "1.8" }}>
+      <Title level={4}>Quy định thanh toán, hủy vé</Title>
+      <List
+        dataSource={[
+          "Sau khi đăng ký, thanh toán ít nhất 50% tiền cọc và đóng hết 100% trước khởi hành 10 ngày.",
+          "Khi đến ngày thanh toán đủ 100% tổng giá trị tiền tour, nếu Quý khách không thanh toán đúng hạn và đúng số tiền được xem như Quý khách tự ý huỷ tour và mất hết số tiền đã đặt cọc giữ chỗ.",
+          "Vé Máy Bay / vé xe lửa / vé tàu cao tốc được xuất ngay sau khi quý khách đăng ký, thanh toán, xác nhận thông tin cá nhân (họ tên, ngày tháng năm sinh…) và có những điều kiện vé như sau: Không được đổi tên, hoàn vé, hủy vé, thay đổi ngày, thay đổi hành trình."
+        ]}
+        renderItem={(item) => <List.Item>- {item}</List.Item>}
+      />
+      <Title level={5}>Phí hủy tour:</Title>
+      <List
+        dataSource={[
+          "Ngay sau khi đặt cọc hoặc thanh toán hoặc trước 15 ngày: mất 30% giá tour + 100% tiền vé máy bay.",
+          "Hủy từ 10 đến trước 8 ngày trước ngày khởi hành: chịu phí 50% giá tour + 100% tiền vé máy bay.",
+          "Hủy từ 8 đến 6 ngày trước ngày khởi hành: chịu phí 70% giá tour + 100% tiền vé máy bay.",
+          "Hủy từ 5 ngày trước ngày khởi hành: chịu phí 100% giá tour + 100% tiền vé máy bay.",
+          "Trường hợp quý khách đến trễ giờ khởi hành được tính là hủy 5 ngày trước ngày khởi hành."
+        ]}
+        renderItem={(item) => <List.Item>- {item}</List.Item>}
+      />
+      <Title level={5}>Thông báo hủy tour:</Title>
+      <List
+        dataSource={[
+          "Việc huỷ bỏ chuyến đi phải được thông báo trực tiếp với Công ty hoặc qua fax, email, tin nhắn và phải được Công ty xác nhận. Việc huỷ bỏ bằng điện thoại không được chấp nhận."
+        ]}
+        renderItem={(item) => <List.Item>- {item}</List.Item>}
+      />
+      <Title level={5}>Điều kiện khởi hành:</Title>
+      <List
+        dataSource={[
+          "Do tính chất là đoàn ghép khách lẻ, Du Lịch Việt sẽ có trách nhiệm nhận khách đăng ký cho đủ đoàn (10 khách người lớn trở lên) thì đoàn sẽ khởi hành đúng lịch trình. Nếu số lượng đoàn dưới 10 khách, công ty có trách nhiệm thông báo cho khách trước ngày khởi hành 3 ngày và sẽ thỏa thuận lại ngày khởi hành mới hoặc hoàn trả toàn bộ số tiền đã đặt cọc tour."
+        ]}
+        renderItem={(item) => <List.Item>- {item}</List.Item>}
+      />
+      <Title level={5}>Lưu ý khác:</Title>
+      <List
+        dataSource={[
+          "Các ngày đặt cọc, thanh toán, huỷ và dời tour: không tính thứ 7, Chủ Nhật.",
+          "Trong những trường hợp bất khả kháng như: khủng bố, bạo động, thiên tai, lũ lụt… Tuỳ theo tình hình thực tế và sự thuận tiện, an toàn của khách hàng, công ty Du Lịch sẽ chủ động thông báo cho khách hàng sự thay đổi như sau: huỷ hoặc thay thế bằng một chương trình mới với chi phí tương đương chương trình tham quan trước đó. Trong trường hợp chương trình mới có phát sinh thì Khách hàng sẽ thanh toán khoản phát sinh này. Tuy nhiên, mỗi bên có trách nhiệm cố gắng tối đa, giúp đỡ bên bị thiệt hại nhằm giảm thiểu các tổn thất gây ra vì lý do bất khả kháng.",
+          "Đối với sự thay đổi lịch trình, giờ bay do lỗi của hãng hàng không, tàu hoả, tàu thuỷ, Du Lịch Việt sẽ không chịu trách nhiệm bất kỳ phát sinh nào do lỗi trên như: phát sinh bữa ăn, nhà hàng, khách sạn, phương tiện di chuyển, hướng dẫn viên, …."
+        ]}
+        renderItem={(item) => <List.Item>- {item}</List.Item>}
+      />
+    </div>
+  );
+
   const next = () => {
     carouselRef.current.next();
   };
@@ -159,6 +207,9 @@ const TourDetailPage = () => {
         <Row gutter={[32, 32]}>
           <Col xs={24} lg={16}>
             <div className="carousel-container">
+              <div className="carousel-title">
+                KHÁM PHÁ MIỀN BẮC: HCM – NINH BÌNH – SAPA
+              </div>
               <Carousel autoplay ref={carouselRef}>
                 {tourImages.map((image, index) => (
                   <div key={index}>
@@ -228,7 +279,7 @@ const TourDetailPage = () => {
                 <p>Ngày khởi hành: {tourInfo.departureDate}</p>
               </TabPane>
               <TabPane tab="Quy định" key="4">
-                <p>Các quy định về đặt tour và hủy tour sẽ được hiển thị ở đây.</p>
+                {cancellationPolicy}
               </TabPane>
               <TabPane tab="Bình luận" key="5">
                 <p>Phần bình luận Facebook sẽ được tích hợp ở đây.</p>
@@ -258,7 +309,8 @@ const TourDetailPage = () => {
                 type="default"
                 size="large"
                 block
-                style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}
+                style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00", textDecoration: "none" }}
+                href="/thanh-toan"
               >
                 Đặt tour
               </Button>

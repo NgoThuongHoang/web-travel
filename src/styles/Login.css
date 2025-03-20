@@ -1,0 +1,71 @@
+/* Login.css */
+.login-card {
+    background-color: rgba(255, 255, 255, 0.1); /* Translucent background */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px); /* Glassmorphism effect */
+    border-radius: 10px;
+  }
+  
+  .form-control {
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: none;
+    padding-right: 2.5rem; /* Ensure space for the icon */
+    transition: border-color 0.3s ease;
+  }
+  
+  .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7); /* Placeholder text color */
+  }
+  
+  .form-control:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+    outline: none;
+    color: white;
+  }
+  
+  .btn-light {
+    border-radius: 5px;
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-light:hover {
+    background-color: rgba(220, 220, 220, 0.9);
+    color: black;
+  }
+  
+  .form-check-input {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  
+  .form-check-input:checked {
+    background-color: #fff;
+    border-color: #fff;
+  }
+  
+  .alert-dismissible .btn-close {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  /* Customize alert to match theme */
+  .alert-info {
+    background-color: rgba(0, 128, 128, 0.3); /* Teal tint to match overlay */
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Responsive design */
+  @media (max-width: 576px) {
+    .login-card {
+      width: 90%;
+      padding: 2rem;
+    }
+  }

@@ -24,90 +24,7 @@ h2 {
   color: #333;
 }
 
-/* ==================================================================================
- * Navbar Styles
- * ================================================================================== */
- .navbar {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background-color: #ffffff;
-  padding: 10px 15px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease;
-  
-}
 
-.navbar:hover {
-  background-color: #f8f8f8;
-}
-
-.navbar-nav .nav-link {
-  color: #000 !important;
-  font-weight: 500;
-  padding: 10px 15px;
-  transition: color 0.3s ease;
-}
-
-.navbar-nav .nav-link:hover {
-  color: orange !important;
-  text-decoration: underline;
-}
-
-.nav-item {
-  margin-right: 20px;
-}
-
-.nav-item:last-child {
-  margin-right: 0;
-}
-
-/* ==================================================================================
- * Dropdown Styles
- * ================================================================================== */
-.navbar-nav .dropdown:hover .dropdown-menu {
-  display: block;
-  opacity: 1;
-  visibility: visible;
-}
-
-.dropdown-item {
-  text-decoration: none;
-  color: #000;
-  display: block;
-  margin-bottom: 5px;
-  padding: 8px 12px;
-  border-radius: 3px;
-  text-align: center;
-}
-
-.dropdown-item:hover {
-  color: orange !important;
-}
-
-/* Dropdown Styles */
-.navbar-nav .dropdown-menu a {
-  color: black;
-  background-color: transparent;
-}
-
-.navbar-nav .dropdown-menu a:hover {
-  background-color: white;
-}
-
-/* ==================================================================================
- * Logo Styles
- * ================================================================================== */
-.logo img {
-  max-width: 200px;
-  height: auto;
-  margin-right: 20px;
-}
-
-.navbar-brand {
-  display: flex;
-  align-items: center;
-}
 
 /* ==================================================================================
  * Tour Container Styles
@@ -223,14 +140,16 @@ html, body {
 /* ==================================================================================
  * Slides Styles
  * ================================================================================== */
-.slideshow {
-  width: 100%;
-  max-width: 100%;
+ .slideshow {
+  width: 100%; /* Giữ chiều rộng full */
   margin: auto;
 }
 
 .swiper-slide img {
-  width: 100%;
+  width: 100%; /* Ảnh rộng full theo container */
+  height: auto; /* Tự động điều chỉnh chiều cao theo tỷ lệ */
+  max-height: 700px; /* Giới hạn chiều cao tối đa, bạn có thể điều chỉnh giá trị này */
+  object-fit: cover; /* Đảm bảo ảnh không bị méo, crop nếu cần */
 }
 
 /* ==================================================================================
@@ -504,6 +423,7 @@ html, body {
 
 .breadCrumbs{
   background-color: #f1f0f0;
+  padding-top: 70px;
 }
 
 .center {

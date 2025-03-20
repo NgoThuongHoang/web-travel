@@ -19,13 +19,13 @@ function Home() {
                     modules={[Autoplay, Navigation, Pagination]}
                 >
                     <SwiperSlide>
-                        <img src="./images/slide-1.jpg" alt="Slide 1" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo2.jpeg" alt="Slide 1" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./images/slide-2.jpg" alt="Slide 2" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo3.jpeg" alt="Slide 2" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./images/slide-3.jpg" alt="Slide 3" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo4.jpeg" alt="Slide 3" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
                     </SwiperSlide>
                 </Swiper>
             </div>

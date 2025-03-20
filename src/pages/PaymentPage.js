@@ -419,7 +419,7 @@ const PaymentPage = () => {
             Đơn đặt tour của bạn đã được gửi thành công!
           </Text>
           <Text className="success-message">
-            Vui lòng đợi nhân viên xác nhận và liên hệ với bạn trong thời gian sớm nhất.
+            Vui lòng đợi nhân viên liên hệ với bạn trong thời gian sớm nhất.
           </Text>
           <Button
             type="primary"

@@ -6,12 +6,12 @@ function Footer() {
             <div className="footer-top py-4">
                 <div className="container d-flex flex-wrap align-items-start justify-content-between">
                     <div className="footer-1 col-md-3">
-                        <h5 className="footer-tit2">Biên Hoà Star Travel</h5>
+                        <h5 className="footer-tit2">Công ty TNHH Du lịch Sky Travel</h5>
                         <div className="footer-content">
-                            <p>Địa chỉ: Số 112, KDC Võ Thị Sáu, KP7, Phường Thống Nhất, Tp.Biên Hoà, T.Đồng Nai</p>
-                            <p>Hotline: 0939.390.707</p>
-                            <p>Email: bienhoastar.travel@gmail.com</p>
-                            <p>Website: <a href="http://bienhoastartravel.com" className="text-decoration-none">bienhoastartravel.com</a></p>
+                            <p>Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai</p>
+                            <p>Hotline: 0984.046.668</p>
+                            <p>Email: skytravel@gmail.com</p>
+                            <p>Website: <a href="http://Skytravel.com" className="text-decoration-none">skytravel.com</a></p>
                         </div>
                     </div>
 

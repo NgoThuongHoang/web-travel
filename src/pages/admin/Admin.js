@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Button, Modal, Form, Input, Tabs, message, Layout, Typography, Card, Row, Col, Statistic, Space, Divider } from 'antd';
-import { TeamOutlined, ProjectOutlined, ScheduleOutlined, FileSearchOutlined, BarsOutlined, SolutionOutlined } from '@ant-design/icons';
+import { TeamOutlined, ProjectOutlined, ScheduleOutlined, FileSearchOutlined, BarsOutlined, SolutionOutlined, EditOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import AdminHeader from '../../components/AdminHeader';
 import CountUpStatistic from '../../components/CountUpStatistic';
@@ -14,49 +14,63 @@ const features = [
         icon: <ProjectOutlined style={{ fontSize: '24px' }} />,
         description: 'Quản lý thông tin các tour du lịch',
         path: '/admin/quan-ly-tour',
-        color: '#1890ff'
+        color: '#1890ff' // Xanh dương
     },
     {
         title: 'Quản lý người dùng',
         icon: <TeamOutlined style={{ fontSize: '24px' }} />,
         description: 'Quản lý thông tin người dùng',
         path: '/admin/quan-ly-nguoi-dung',
-        color: '#52c41a'
+        color: '#52c41a' // Xanh lá
     },
     {
         title: 'Thống kê doanh thu',
         icon: <FileSearchOutlined style={{ fontSize: '24px' }} />,
         description: 'Xem thống kê doanh thu từ các tour',
         path: '/admin/thong-ke-doanh-thu',
-        color: '#fa8c16'
+        color: '#fa8c16' // Cam
     },
     {
         title: 'Quản lý đặt tour',
         icon: <BarsOutlined style={{ fontSize: '24px' }} />,
         description: 'Quản lý các đơn đặt tour',
         path: '/admin/quan-ly-dat-tour',
-        color: '#722ed1'
+        color: '#722ed1' // Tím
     },
     {
         title: 'Chăm sóc khách hàng',
         icon: <SolutionOutlined style={{ fontSize: '24px' }} />,
         description: 'Quản lý thông tin chăm sóc khách hàng',
         path: '/admin/cham-soc-khach-hang',
-        color: '#ff4d4f'
+        color: '#ff4d4f' // Đỏ
     },
     {
         title: 'Tra cứu',
         icon: <FileSearchOutlined style={{ fontSize: '24px' }} />,
         description: 'Tra cứu thông tin liên quan',
         path: '/admin/tra-cuu',
-        color: '#1890ff'
+        color: '#2f54eb' // Xanh dương đậm (thay vì trùng #1890ff)
     },
     {
         title: 'Báo cáo',
         icon: <SolutionOutlined style={{ fontSize: '24px' }} />,
         description: 'Tạo báo cáo',
         path: '/admin/bao-cao',
-        color: '#13c2c2'
+        color: '#13c2c2' // Xanh ngọc
+    },
+    {
+        title: 'Sửa nội dung',
+        icon: <EditOutlined style={{ fontSize: '24px' }} />,
+        description: 'Sửa nội dung các trang',
+        path: '/admin/sua-noi-dung',
+        color: '#eb2f96' // Hồng đậm (thay vì #23A1BA để đa dạng hơn)
+    },
+    {
+        title: 'Quản lý tài khoản',
+        icon: <TeamOutlined style={{ fontSize: '24px' }} />,
+        description: 'Quản lý tài khoản',
+        path: '/admin/quan-ly-tai-khoan',
+        color: '#4d178b' // Hồng đậm (thay vì#4d178b để đa dạng hơn)
     }
 ];
 
