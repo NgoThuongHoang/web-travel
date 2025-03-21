@@ -6,12 +6,15 @@ import reportWebVitals from './reportWebVitals';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "font-awesome/css/font-awesome.min.css";
 import 'antd/dist/reset.css';
-
+import { Provider } from 'react-redux';
+import { store } from './app/store';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}> {/* Bọc App trong Provider để cung cấp Redux store */}
+      <App />
+    </Provider>
   </React.StrictMode>
 );
 

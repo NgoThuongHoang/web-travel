@@ -207,9 +207,6 @@ const TourDetailPage = () => {
         <Row gutter={[32, 32]}>
           <Col xs={24} lg={16}>
             <div className="carousel-container">
-              <div className="carousel-title">
-                KHÁM PHÁ MIỀN BẮC: HCM – NINH BÌNH – SAPA
-              </div>
               <Carousel autoplay ref={carouselRef}>
                 {tourImages.map((image, index) => (
                   <div key={index}>

@@ -1,99 +1,137 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { Card, Table, Button, Input, Modal, Form, Space, Typography, List } from "antd"
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons"
-import moment from "moment"
+import { Card, Table, Button, Input, Modal, Form, Space, Typography, message, Select } from "antd"
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, KeyOutlined } from "@ant-design/icons"
+import '../../styles/AccountManagement.css'
 
 const { Title } = Typography
+const { Option } = Select
 
-// Dữ liệu mẫu
-const INITIAL_CUSTOMERS = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn An",
-    email: "nguyenvanan@gmail.com",
-    phone: "0901234567",
-    address: "Hà Nội",
-    createdAt: "2024-01-15",
-    participatedTours: [
-      { name: "Tour Đà Nẵng", code: "DN001" },
-      { name: "Tour Hạ Long", code: "HL002" },
-    ],
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị Bình",
-    email: "tranthib@gmail.com",
-    phone: "0912345678",
-    address: "Hồ Chí Minh",
-    createdAt: "2024-01-16",
-    participatedTours: [{ name: "Tour Phú Quốc", code: "PQ003" }],
-  },
-  {
-    id: 3,
-    fullName: "Lê Văn Cường",
-    email: "levanc@gmail.com",
-    phone: "0923456789",
-    address: "Đà Nẵng",
-    createdAt: "2024-01-17",
-    participatedTours: [],
-  },
-]
+const API_BASE_URL = "http://localhost:5001/api/accounts"
 
-const CustomerManagement = () => {
+const AccountManagement = () => {
   const [form] = Form.useForm()
-  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS)
-  const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [resetForm] = Form.useForm()
+  const [accounts, setAccounts] = useState([])
+  const [selectedAccount, setSelectedAccount] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
   const [searchText, setSearchText] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
+  const [pageSize] = useState(5) // Sửa pageSize thành 5
+  const [loading, setLoading] = useState(false)
+  const [totalAccounts, setTotalAccounts] = useState(0) // Thêm state để lưu tổng số tài khoản
+
+  const fetchAccounts = async (page = 1) => {
+    setLoading(true)
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}?search=${searchText}&status=${statusFilter}&page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Dữ liệu từ API:", data);
+
+      // Giả sử API trả về dữ liệu dạng { accounts: [], total: number }
+      // Nếu API của bạn không trả về total, bạn có thể dùng data.length
+      setAccounts(data.accounts || data || []);
+      setTotalAccounts(data.total || data.length || 0); // Cập nhật tổng số tài khoản
+    } catch (error) {
+      message.error("Lỗi khi tải danh sách tài khoản!");
+      console.error("Lỗi fetchAccounts:", error);
+      setAccounts([]);
+      setTotalAccounts(0);
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (selectedCustomer && showEditModal) {
+    fetchAccounts(currentPage); // Gọi API với trang hiện tại
+  }, [searchText, statusFilter, currentPage]) // Thêm currentPage vào dependencies
+
+  useEffect(() => {
+    if (selectedAccount && showEditModal) {
       form.setFieldsValue({
-        fullName: selectedCustomer.fullName,
-        email: selectedCustomer.email,
-        phone: selectedCustomer.phone,
-        address: selectedCustomer.address,
+        username: selectedAccount.username,
+        email: selectedAccount.email,
+        fullName: selectedAccount.fullName,
+        role: selectedAccount.role,
+        status: selectedAccount.status,
       })
     } else {
       form.resetFields()
     }
-  }, [selectedCustomer, showEditModal, form])
+  }, [selectedAccount, showEditModal, form])
 
-  const handleFormSubmit = (values) => {
-    if (selectedCustomer) {
-      setCustomers((prevCustomers) =>
-        prevCustomers.map((customer) =>
-          customer.id === selectedCustomer.id
-            ? { ...customer, ...values, participatedTours: customer.participatedTours || [] }
-            : customer,
-        ),
-      )
-    } else {
-      const newCustomer = {
-        id: Date.now(),
-        ...values,
-        createdAt: moment().format("YYYY-MM-DD"),
-        participatedTours: [],
-      }
-      setCustomers((prevCustomers) => [...prevCustomers, newCustomer])
+  const handleFormSubmit = async (values) => {
+    try {
+      const url = selectedAccount ? `${API_BASE_URL}/${selectedAccount.id}` : API_BASE_URL
+      const method = selectedAccount ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      })
+
+      if (!response.ok) throw new Error("Lỗi khi lưu tài khoản")
+      await fetchAccounts(currentPage) // Gọi lại API với trang hiện tại
+      setShowEditModal(false)
+      setSelectedAccount(null)
+      message.success(selectedAccount ? "Cập nhật tài khoản thành công!" : "Thêm tài khoản thành công!")
+    } catch (error) {
+      message.error("Lỗi khi lưu tài khoản!")
+      console.error(error)
     }
-    setShowEditModal(false)
-    setSelectedCustomer(null)
   }
 
-  const getFilteredCustomers = () => {
-    return customers.filter(
-      (customer) =>
-        customer.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchText.toLowerCase()) ||
-        customer.phone.includes(searchText),
-    )
+  const handleResetPassword = async (values) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${selectedAccount.id}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: values.newPassword }),
+      })
+
+      if (!response.ok) throw new Error("Lỗi khi đặt lại mật khẩu")
+      setShowResetPasswordModal(false)
+      setSelectedAccount(null)
+      resetForm.resetFields()
+      message.success("Mật khẩu đã được đặt lại thành công!")
+    } catch (error) {
+      message.error("Lỗi khi đặt lại mật khẩu!")
+      console.error(error)
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${selectedAccount.id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Lỗi khi xóa tài khoản")
+      await fetchAccounts(currentPage) // Gọi lại API với trang hiện tại
+      setShowDeleteModal(false)
+      setSelectedAccount(null)
+      message.success("Xóa tài khoản thành công!")
+    } catch (error) {
+      message.error("Lỗi khi xóa tài khoản!")
+      console.error(error)
+    }
   }
 
   const columns = [
@@ -104,42 +142,50 @@ const CustomerManagement = () => {
       render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
     },
     {
-      title: "Họ và tên",
-      dataIndex: "fullName",
-      key: "fullName",
+      title: "Tên đăng nhập",
+      dataIndex: "username",
+      key: "username",
+      responsive: ["sm"], // Chỉ hiển thị từ small breakpoint trở lên
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      responsive: ["md"], // Chỉ hiển thị từ medium breakpoint trở lên
     },
     {
-      title: "Số điện thoại",
-      dataIndex: "phone",
-      key: "phone",
+      title: "Họ và tên",
+      dataIndex: "fullName",
+      key: "fullName",
     },
     {
-      title: "Địa chỉ",
-      dataIndex: "address",
-      key: "address",
+      title: "Vai trò",
+      dataIndex: "role",
+      key: "role",
+      responsive: ["md"],
     },
     {
-      title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (createdAt) => moment(createdAt).format("DD/MM/YYYY"),
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <span style={{ color: status === "Hoạt động" ? "green" : "red" }}>
+          {status}
+        </span>
+      ),
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Space>
+        <Space direction={window.innerWidth < 768 ? "vertical" : "horizontal"}>
           <Button
             type="primary"
             icon={<EyeOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowDetailModal(true)
+              setSelectedAccount(record);
+              setShowDetailModal(true);
             }}
           >
             Chi tiết
@@ -147,19 +193,32 @@ const CustomerManagement = () => {
           <Button
             type="default"
             icon={<EditOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowEditModal(true)
+              setSelectedAccount(record);
+              setShowEditModal(true);
             }}
           >
             Sửa
           </Button>
           <Button
+            icon={<KeyOutlined />}
+            style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16", color: "#fff" }}
+            size={window.innerWidth < 768 ? "small" : "middle"}
+            onClick={() => {
+              setSelectedAccount(record);
+              setShowResetPasswordModal(true);
+            }}
+          >
+            Đặt lại MK
+          </Button>
+          <Button
             danger
             icon={<DeleteOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowDeleteModal(true)
+              setSelectedAccount(record);
+              setShowDeleteModal(true);
             }}
           >
             Xóa
@@ -167,26 +226,42 @@ const CustomerManagement = () => {
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
-    <div className="customer-management">
-      <Card>
-        <Title level={2}>Quản lý khách hàng</Title>
+    <div className="account-management" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Card style={{ flex: 1 }}>
+        <Title level={2}>QUẢN LÝ TÀI KHOẢN</Title>
 
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Input
-              placeholder="Tìm kiếm theo tên, email hoặc số điện thoại"
+              placeholder="Tìm kiếm theo tên đăng nhập, email hoặc họ tên"
               prefix={<SearchOutlined />}
-              style={{ width: 330 }}
-              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 350 }}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
+              }}
             />
+            <Select
+              placeholder="Lọc theo trạng thái"
+              style={{ width: 200 }}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setCurrentPage(1); // Reset về trang 1 khi lọc
+              }}
+              allowClear
+            >
+              <Option value="">Tất cả</Option>
+              <Option value="Hoạt động">Hoạt động</Option>
+              <Option value="Không hoạt động">Không hoạt động</Option>
+            </Select>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => {
-                setSelectedCustomer(null)
+                setSelectedAccount(null)
                 setShowEditModal(true)
               }}
             >
@@ -195,78 +270,65 @@ const CustomerManagement = () => {
           </Space>
         </div>
 
+        {/* Thêm console.log ngay trước <Table> */}
+        {console.log("State accounts:", accounts)}
         <Table
           columns={columns}
-          dataSource={getFilteredCustomers()}
+          dataSource={accounts}
           rowKey="id"
+          loading={loading}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
-            total: getFilteredCustomers().length,
+            total: totalAccounts, // Sử dụng totalAccounts từ API
             onChange: (page) => setCurrentPage(page),
-            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} khách hàng`,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} tài khoản`,
             showSizeChanger: false,
             showQuickJumper: true,
+            className: "fixed-pagination", // Thêm class để cố định pagination
           }}
+          style={{ marginBottom: 60 }} // Đảm bảo có khoảng trống cho pagination cố định
         />
       </Card>
 
-      {/* Modal Chi tiết */}
       <Modal
-        title="Chi tiết khách hàng"
-        visible={showDetailModal}
+        title="Chi tiết tài khoản"
+        open={showDetailModal}
         onCancel={() => setShowDetailModal(false)}
         footer={null}
         width={600}
       >
-        {selectedCustomer && (
+        {selectedAccount && (
           <div>
+            <p><strong>Tên đăng nhập:</strong> {selectedAccount.username}</p>
+            <p><strong>Email:</strong> {selectedAccount.email}</p>
+            <p><strong>Họ và tên:</strong> {selectedAccount.fullName}</p>
+            <p><strong>Vai trò:</strong> {selectedAccount.role}</p>
             <p>
-              <strong>Họ và tên:</strong> {selectedCustomer.fullName}
+              <strong>Trạng thái:</strong>{" "}
+              <span style={{ color: selectedAccount.status === "Hoạt động" ? "green" : "red" }}>
+                {selectedAccount.status}
+              </span>
             </p>
-            <p>
-              <strong>Email:</strong> {selectedCustomer.email}
-            </p>
-            <p>
-              <strong>Số điện thoại:</strong> {selectedCustomer.phone}
-            </p>
-            <p>
-              <strong>Địa chỉ:</strong> {selectedCustomer.address}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong> {moment(selectedCustomer.createdAt).format("DD/MM/YYYY")}
-            </p>
-            <div>
-              <strong>Tour đã tham gia:</strong>
-              {selectedCustomer.participatedTours && selectedCustomer.participatedTours.length > 0 ? (
-                <List
-                  dataSource={selectedCustomer.participatedTours}
-                  renderItem={(item) => (
-                    <List.Item>
-                      <List.Item.Meta title={item.name} description={`Mã tour: ${item.code}`} />
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <p>Chưa tham gia tour nào</p>
-              )}
-            </div>
           </div>
         )}
       </Modal>
 
-      {/* Modal Chỉnh sửa/Thêm mới */}
       <Modal
-        title={selectedCustomer ? "Sửa thông tin khách hàng" : "Thêm khách hàng mới"}
-        visible={showEditModal}
+        title={selectedAccount ? "Sửa thông tin tài khoản" : "Thêm tài khoản mới"}
+        open={showEditModal}
         onOk={() => form.submit()}
         onCancel={() => {
           setShowEditModal(false)
-          setSelectedCustomer(null)
+          setSelectedAccount(null)
         }}
       >
         <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          <Form.Item name="fullName" label="Họ và tên" rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}>
+          <Form.Item
+            name="username"
+            label="Tên đăng nhập"
+            rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập" }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item
@@ -280,37 +342,96 @@ const CustomerManagement = () => {
             <Input />
           </Form.Item>
           <Form.Item
-            name="phone"
-            label="Số điện thoại"
-            rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
+            name="fullName"
+            label="Họ và tên"
+            rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
           >
             <Input />
           </Form.Item>
-          <Form.Item name="address" label="Địa chỉ" rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}>
-            <Input />
+          {!selectedAccount && (
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+              rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }]}
+            >
+              <Input.Password />
+            </Form.Item>
+          )}
+          <Form.Item
+            name="role"
+            label="Vai trò"
+            rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
+          >
+            <Select placeholder="Chọn vai trò">
+              <Option value="Admin">Admin</Option>
+              <Option value="User">User</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="status"
+            label="Trạng thái"
+            rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+          >
+            <Select placeholder="Chọn trạng thái">
+              <Option value="Hoạt động">Hoạt động</Option>
+              <Option value="Không hoạt động">Không hoạt động</Option>
+            </Select>
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Modal Xóa */}
       <Modal
-        title="Xác nhận xóa"
-        visible={showDeleteModal}
-        onOk={() => {
-          setCustomers(customers.filter((customer) => customer.id !== selectedCustomer.id))
-          setShowDeleteModal(false)
-          setSelectedCustomer(null)
-        }}
+        title="Đặt lại mật khẩu"
+        open={showResetPasswordModal}
+        onOk={() => resetForm.submit()}
         onCancel={() => {
-          setShowDeleteModal(false)
-          setSelectedCustomer(null)
+          setShowResetPasswordModal(false)
+          setSelectedAccount(null)
+          resetForm.resetFields()
         }}
       >
-        <p>Bạn có chắc chắn muốn xóa khách hàng này?</p>
+        <Form form={resetForm} layout="vertical" onFinish={handleResetPassword}>
+          <Form.Item
+            name="newPassword"
+            label="Mật khẩu mới"
+            rules={[{ required: true, message: "Vui lòng nhập mật khẩu mới" }]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="Xác nhận mật khẩu"
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "Vui lòng xác nhận mật khẩu" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve()
+                  }
+                  return Promise.reject(new Error("Mật khẩu xác nhận không khớp!"))
+                },
+              }),
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Xác nhận xóa"
+        open={showDeleteModal}
+        onOk={handleDelete}
+        onCancel={() => {
+          setShowDeleteModal(false)
+          setSelectedAccount(null)
+        }}
+      >
+        <p>Bạn có chắc chắn muốn xóa tài khoản này?</p>
       </Modal>
     </div>
   )
 }
 
-export default CustomerManagement
-
+export default AccountManagement

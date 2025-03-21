@@ -25,6 +25,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'antd/dist/reset.css';
 import BackToTop from './components/BackToTop';
 
+import TourDetailPage1 from './pages/TourDetailPage1';
+
+
 function Layout() {
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith('/admin') || 
@@ -53,6 +56,7 @@ function Layout() {
                     <Route path="/tours" element={<Tours />} />
                     <Route path="/tours/:id" element={<TourDetails />} />
                     <Route path="/toursDetail/" element={<TourDetailPage />} />
+                    <Route path="/toursDetail1/" element={<TourDetailPage1 />} />
                     <Route path="/thanh-toan" element={<PaymentPage />} />
                     <Route path="/ve-chung-toi" element={<About />} />
                     <Route path="/tin-tuc" element={<News />} />

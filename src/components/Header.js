@@ -19,7 +19,7 @@ const Header = () => {
   return (
     <nav
       className="navbar navbar-expand-lg navbar-light bg-light"
-      style={{ top: 0, width: "100%", zIndex: 1000, position: "fixed" }}
+      style={{ top: 0, width: "100%", zIndex: 1000, position: "sticky" }}
     >
       <div className="container">
         <a className="navbar-brand logo" href="/">

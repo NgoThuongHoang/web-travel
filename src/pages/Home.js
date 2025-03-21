@@ -186,7 +186,7 @@ function Home() {
                                         <p className="product-item-name">TOUR BÌNH THUẬN</p>
                                         <h3 className="product-name">
                                             <a className="text-decoration-none text-split text-split-2" 
-                                            href="mui-ne-nghi-duong" 
+                                            href="/toursDetail1" 
                                             title="MŨI NÉ - NGHĨ DƯỎNG">MŨI NÉ - THIÊN ĐƯỜNG NGHỈ DƯỎNG</a>
                                         </h3>
                                         <p className="product-info">

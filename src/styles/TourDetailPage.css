@@ -67,19 +67,19 @@
   background-color: #fff;
   padding: 16px 0;
   text-align: center;
-  margin-bottom: 10px;
+  margin-top: 20px;
 }
 
 .tour-header h2 {
   color: #ff8c00;
-  font-size: 1.8rem; /* Giảm kích thước chữ trên mobile */
+  font-size: 2rem; /* Giảm kích thước chữ trên mobile */
   margin: 0;
   font-weight: bold;
 }
 
 .tour-content {
   max-width: 1400px; /* Tăng giới hạn chiều rộng để tận dụng màn hình lớn */
-  margin: 0 auto;
+  margin: 10px 0;
   padding: 16px;
 }
 
@@ -209,7 +209,7 @@
 /* Desktop lớn (trên 1200px) */
 @media (min-width: 1200px) {
   .tour-header h2 {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 
   .tour-content {
@@ -339,7 +339,7 @@
 /* Mobile rất nhỏ (dưới 480px) */
 @media (max-width: 480px) {
   .tour-header h2 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
 
   .tour-content {

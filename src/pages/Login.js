@@ -1,39 +1,84 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { login } from "../features/auth/authSlice";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/Login.css";
-
-// Import Font Awesome (add this CDN in your index.html or project setup)
-// <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-  const [showForgotPasswordAlert, setShowForgotPasswordAlert] = useState(false); // State for forgot password alert
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPasswordAlert, setShowForgotPasswordAlert] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (email === "admin@gmail.com" && password === "123456") {
-      navigate("/admin");
-    } else {
-      setError("Email hoặc mật khẩu không đúng!");
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5001/api/accounts/login", { // Sửa URL API
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      // Kiểm tra nếu response không phải JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Response không phải JSON:", text);
+        throw new Error("Server trả về dữ liệu không phải JSON. Kiểm tra API!");
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Đăng nhập thất bại!");
+      }
+
+      // Kiểm tra trạng thái tài khoản
+      if (data.status !== "Hoạt động") {
+        throw new Error("Tài khoản không hoạt động!");
+      }
+
+      // Lưu thông tin user và role vào Redux
+      dispatch(login({
+        user: {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          fullName: data.fullName,
+        },
+        role: data.role,
+      }));
+
+      // Chuyển hướng dựa trên vai trò
+      if (data.role === "Admin" || data.role === "User") {
+        navigate("/admin");
+      } else {
+        throw new Error("Vai trò không hợp lệ!");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Lỗi đăng nhập:", err);
     }
   };
 
   const handleForgotPasswordClick = () => {
     setShowForgotPasswordAlert(true);
-    // Optionally auto-hide the alert after a few seconds
-    setTimeout(() => setShowForgotPasswordAlert(false), 5000); // Hide after 5 seconds
+    setTimeout(() => setShowForgotPasswordAlert(false), 5000);
   };
 
   return (
     <div
       className="d-flex justify-content-center align-items-center vh-100 position-relative"
       style={{
-        backgroundImage: "url('/images/demo2.jpeg')", // Replace with your background image path
+        backgroundImage: "url('/images/demo2.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
@@ -41,7 +86,7 @@ const Login = () => {
     >
       <div
         className="position-absolute top-0 start-0 w-100 h-100"
-        style={{ backgroundColor: "rgba(0, 128, 128, 0.5)" }} // Teal overlay to match the new image
+        style={{ backgroundColor: "rgba(0, 128, 128, 0.5)" }}
       ></div>
       <div
         className="card login-card p-4 position-relative"
@@ -93,7 +138,7 @@ const Login = () => {
               className="position-absolute top-50 end-0 translate-middle-y me-3"
               style={{ color: "rgba(255, 255, 255, 0.7)" }}
             >
-              <i className="fas fa-envelope"></i> {/* Envelope icon for email */}
+              <i className="fas fa-envelope"></i>
             </span>
           </div>
           <div className="mb-3 position-relative">
@@ -122,11 +167,11 @@ const Login = () => {
               <input
                 type="checkbox"
                 className="form-check-input"
-                id="rememberMe"
+                id="ensurePool"
               />
               <label
                 className="form-check-label text-white"
-                htmlFor="rememberMe"
+                htmlFor="ensurePool"
               >
                 Remember me
               </label>
