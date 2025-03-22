@@ -5,21 +5,21 @@ import { Table, Card, Input, Button, Space, Modal, Typography, message, Image } 
 import { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import TourEditForm from "../../components/TourEditForm";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const API_BASE_URL = "http://localhost:5001/api/tours";
 
 const formatDate = (dateString) => {
-  if (!dateString) return "Chưa có thông tin"; // Xử lý trường hợp dateString không tồn tại
+  if (!dateString) return "Chưa có thông tin";
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return dateString; // Nếu không parse được, trả về chuỗi gốc
+      return dateString;
     }
     return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
   } catch (error) {
     console.error("Lỗi khi định dạng ngày:", error);
-    return dateString; // Trả về chuỗi gốc nếu có lỗi
+    return dateString;
   }
 };
 
@@ -170,6 +170,61 @@ const TourManagement = () => {
     }
   };
 
+  const handleSubmit = async (tourData) => {
+    try {
+      // Chuẩn bị dữ liệu tour
+      const tourPayload = {
+        name: tourData.title || "Tour không có tiêu đề",
+        days: parseInt(tourData.days) || 1,
+        nights: parseInt(tourData.nights) || 0,
+        start_date: tourData.departureDate || new Date().toISOString().split('T')[0],
+        status: tourData.status || "active",
+        star_rating: parseInt(tourData.star_rating) || 3,
+        transportation: tourData.transportation || "Không xác định",
+        departure_point: tourData.departurePoint || "Không xác định",
+        prices: tourData.prices || [],
+        images: tourData.images || [],
+      };
+
+      console.log("tourPayload:", tourPayload);
+
+      let tourResponse;
+      if (selectedTour) {
+        // Nếu là chỉnh sửa, gửi yêu cầu PUT
+        tourResponse = await fetch(`${API_BASE_URL}/${selectedTour.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(tourPayload),
+        });
+      } else {
+        // Nếu là tạo mới, gửi yêu cầu POST
+        tourResponse = await fetch(`${API_BASE_URL}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(tourPayload),
+        });
+      }
+
+      if (!tourResponse.ok) {
+        const errorData = await tourResponse.json();
+        throw new Error(errorData.error || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour: ${tourResponse.status} - Không có thông tin lỗi chi tiết`);
+      }
+
+      message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
+      await fetchTours();
+    } catch (error) {
+      message.error(error.message || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour!`);
+      console.error("Lỗi handleSubmit:", error);
+    } finally {
+      setShowEditModal(false);
+      setSelectedTour(null);
+    }
+  };
+
   const columns = [
     {
       title: "STT",
@@ -280,7 +335,10 @@ const TourManagement = () => {
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 300 }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowEditModal(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+            setSelectedTour(null); // Đảm bảo selectedTour là null khi tạo mới
+            setShowEditModal(true);
+          }}>
             Thêm tour mới
           </Button>
         </div>
@@ -305,7 +363,7 @@ const TourManagement = () => {
               <strong>Thời gian:</strong> {selectedTour.days} NGÀY {selectedTour.nights} ĐÊM
             </p>
             <p>
-              <strong>Ngày khởi hành:</strong> {formatDate(selectedTour.start_date)} {/* Áp dụng formatDate */}
+              <strong>Ngày khởi hành:</strong> {formatDate(selectedTour.start_date)}
             </p>
             <p>
               <strong>Phương tiện:</strong> {selectedTour.transportation || "Chưa có thông tin"}
@@ -317,39 +375,25 @@ const TourManagement = () => {
               <strong>Mã tour:</strong> {selectedTour.tour_code || "Chưa có thông tin"}
             </p>
             <p>
-              <strong>Đặc điểm nổi bật:</strong>
+              <strong>Giá tour:</strong>
             </p>
-            <ul>
-              {Array.isArray(selectedTour.highlights) && selectedTour.highlights.length > 0 ? (
-                selectedTour.highlights.map((highlight, index) => <li key={index}>{highlight}</li>)
-              ) : (
-                <li>Chưa có thông tin</li>
-              )}
-            </ul>
-            <p>
-              <strong>Lịch trình:</strong>
-            </p>
-            {Array.isArray(tourItinerary) && tourItinerary.length > 0 ? (
-              tourItinerary.map((item, index) => (
+            {selectedTour.prices && selectedTour.prices.length > 0 ? (
+              selectedTour.prices.map((price, index) => (
                 <div key={index}>
-                  <p>
-                    <strong>
-                      NGÀY {item.day_number}: {item.title}
-                    </strong>
-                  </p>
-                  <ul>
-                    {Object.entries(item.details).map(([key, value], detailIndex) =>
-                      value ? (
-                        <li key={detailIndex}>
-                          {key}: {value}
-                        </li>
-                      ) : null
-                    )}
-                  </ul>
+                  <Text strong>{price.age_group === "Under 5" ? "Trẻ dưới 5 tuổi" : price.age_group === "5-11" ? "Trẻ 5-11 tuổi" : "Người lớn"}: </Text>
+                  <Text>{formatPrice(price.price)} VNĐ</Text>
+                  {price.single_room_price && (
+                    <>
+                      <Text> (Phòng đơn: {formatPrice(price.single_room_price)} VNĐ)</Text>
+                    </>
+                  )}
+                  <br />
+                  <Text>{price.description}</Text>
+                  <br />
                 </div>
               ))
             ) : (
-              <p>Chưa có lịch trình</p>
+              <p>Chưa có thông tin giá</p>
             )}
           </div>
         )}
@@ -368,11 +412,7 @@ const TourManagement = () => {
       >
         <TourEditForm
           tour={selectedTour}
-          onSubmit={() => {
-            setShowEditModal(false);
-            setSelectedTour(null);
-            fetchTours();
-          }}
+          onSubmit={handleSubmit}
           onCancel={() => {
             setShowEditModal(false);
             setSelectedTour(null);

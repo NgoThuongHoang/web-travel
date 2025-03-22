@@ -14,6 +14,8 @@ import {
   Typography,
   Carousel,
   List,
+  InputNumber,
+  Select, // Thêm Select để chọn status
 } from "antd";
 import {
   UploadOutlined,
@@ -35,6 +37,7 @@ import "../styles/TourEditForm.css";
 const { TextArea } = Input;
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
+const { Option } = Select; // Thêm Option cho Select
 
 const API_BASE_URL = "http://localhost:5001/api/tours";
 
@@ -63,6 +66,11 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [prices, setPrices] = useState([
+    { age_group: "Under 5", price: 0, single_room_price: null, description: "Miễn phí cho trẻ dưới 5 tuổi" },
+    { age_group: "5-11", price: "", single_room_price: "", description: "" },
+    { age_group: "Adult", price: "", single_room_price: "", description: "" },
+  ]);
 
   const carouselRef = useRef(null);
 
@@ -141,7 +149,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     }
   }, [tour]);
 
-  // Chuyển đổi tour?.images sang định dạng fileList cho Upload
+  // Chuyển đổi tour?.images và tour?.prices sang định dạng phù hợp
   useEffect(() => {
     if (tour?.images && Array.isArray(tour.images)) {
       const formattedFileList = tour.images.map((image, index) => {
@@ -160,6 +168,28 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     } else {
       setFileList([]);
     }
+
+    if (tour?.prices && Array.isArray(tour.prices)) {
+      const formattedPrices = [
+        { age_group: "Under 5", price: 0, single_room_price: null, description: "Miễn phí cho trẻ dưới 5 tuổi" },
+        { age_group: "5-11", price: "", single_room_price: "", description: "" },
+        { age_group: "Adult", price: "", single_room_price: "", description: "" },
+      ];
+
+      tour.prices.forEach((price) => {
+        const index = formattedPrices.findIndex((p) => p.age_group === price.age_group);
+        if (index !== -1) {
+          formattedPrices[index] = {
+            age_group: price.age_group,
+            price: price.price || "",
+            single_room_price: price.single_room_price || "",
+            description: price.description || "",
+          };
+        }
+      });
+      setPrices(formattedPrices);
+    }
+
     setHighlights(tour?.highlights || []);
     form.resetFields();
   }, [tour, form]);
@@ -172,11 +202,14 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   // Khởi tạo giá trị ban đầu cho form
   const initialValues = {
     title: tour?.name || "",
-    duration: tour?.days && tour?.nights ? `${tour.days} NGÀY ${tour.nights} ĐÊM` : "",
+    tour_code: tour?.tour_code || "",
+    days: tour?.days || "",
+    nights: tour?.nights || "",
     departureDate: formattedStartDate,
     transportation: tour?.transportation || "",
     departurePoint: tour?.departure_point || "",
-    price: tour?.price || "",
+    status: tour?.status || "active", // Thêm status
+    star_rating: tour?.star_rating || 3, // Thêm star_rating
   };
 
   const onFinish = (values) => {
@@ -189,9 +222,22 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
       })),
       itinerary: itineraryDays,
       highlights: highlights,
+      prices: prices.map((price) => ({
+        age_group: price.age_group,
+        price: parseFloat(price.price) || 0,
+        single_room_price: price.single_room_price ? parseFloat(price.single_room_price) : null,
+        description: price.description || "",
+      })),
     };
     setPreviewData(data);
     setIsPreviewVisible(true);
+  };
+
+  // Hàm xử lý thay đổi giá
+  const handlePriceChange = (index, field, value) => {
+    const updatedPrices = [...prices];
+    updatedPrices[index][field] = value;
+    setPrices(updatedPrices);
   };
 
   // Hàm xử lý upload ảnh tại vị trí cụ thể (cho các ô ảnh trong danh sách)
@@ -303,43 +349,144 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   return (
     <>
       <Form form={form} initialValues={initialValues} onFinish={onFinish} layout="vertical">
-        <Card title="Thông tin chung">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Tiêu đề tour" name="title" rules={[{ required: true, message: "Vui lòng nhập tiêu đề tour" }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Thời gian" name="duration" rules={[{ required: true, message: "Vui lòng nhập thời gian" }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Ngày khởi hành" name="departureDate" rules={[{ required: true, message: "Vui lòng chọn ngày khởi hành" }]}>
-                <Input type="date" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Phương tiện" name="transportation" rules={[{ required: true, message: "Vui lòng nhập phương tiện" }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Điểm khởi hành" name="departurePoint" rules={[{ required: true, message: "Vui lòng nhập điểm khởi hành" }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Giá tour" name="price">
-                <Input placeholder="Nhập giá (hoặc để 'Liên hệ')" />
-              </Form.Item>
-            </Col>
-          </Row>
+      <Card title="Thông tin chung">
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item
+              label="Tiêu đề tour"
+              name="title"
+              rules={[{ required: true, message: "Vui lòng nhập tiêu đề tour" }]}
+            >
+              <Input style={{ width: "100%" }} placeholder="Nhập tiêu đề tour" />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="Thời gian">
+              <Row gutter={8}>
+                <Col span={12}>
+                  <Form.Item
+                    name="days"
+                    rules={[{ required: true, message: "Vui lòng nhập số ngày" }]}
+                    noStyle
+                  >
+                    <InputNumber
+                      min={1}
+                      placeholder="Số ngày"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="nights"
+                    rules={[{ required: true, message: "Vui lòng nhập số đêm" }]}
+                    noStyle
+                  >
+                    <InputNumber
+                      min={0}
+                      placeholder="Số đêm"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Ngày khởi hành"
+              name="departureDate"
+              rules={[{ required: true, message: "Vui lòng chọn ngày khởi hành" }]}
+            >
+              <Input type="date" />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Phương tiện"
+              name="transportation"
+              rules={[{ required: true, message: "Vui lòng nhập phương tiện" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Điểm khởi hành"
+              name="departurePoint"
+              rules={[{ required: true, message: "Vui lòng nhập điểm khởi hành" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Trạng thái"
+              name="status"
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+            >
+              <Select placeholder="Chọn trạng thái">
+                <Option value="active">Hoạt động</Option>
+                <Option value="inactive">Không hoạt động</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Đánh giá sao"
+              name="star_rating"
+              rules={[{ required: true, message: "Vui lòng nhập đánh giá sao" }]}
+            >
+              <InputNumber min={1} max={5} placeholder="Nhập số sao (1-5)" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Card>
+
+        {/* Phần còn lại của form giữ nguyên */}
+        <Card title="Giá tour" style={{ marginTop: 16 }}>
+          {prices.map((price, index) => (
+            <div key={index} style={{ marginBottom: 16 }}>
+              <Title level={5}>{price.age_group === "Under 5" ? "Trẻ dưới 5 tuổi" : price.age_group === "5-11" ? "Trẻ 5-11 tuổi" : "Người lớn"}</Title>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Form.Item label="Giá">
+                    <Input
+                      value={price.price}
+                      onChange={(e) => handlePriceChange(index, "price", e.target.value)}
+                      disabled={price.age_group === "Under 5"}
+                      placeholder="Nhập giá"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="Giá phòng đơn">
+                    <Input
+                      value={price.single_room_price}
+                      onChange={(e) => handlePriceChange(index, "single_room_price", e.target.value)}
+                      disabled={price.age_group === "Under 5"}
+                      placeholder="Nhập giá phòng đơn (nếu có)"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="Mô tả">
+                    <Input
+                      value={price.description}
+                      onChange={(e) => handlePriceChange(index, "description", e.target.value)}
+                      placeholder="Nhập mô tả"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+          ))}
         </Card>
 
         <Card title="Điểm nổi bật" style={{ marginTop: 16 }}>
@@ -385,68 +532,11 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
             block
             icon={<PlusOutlined />}
             className="highlight-add-button"
-            style={{ width: "100%", marginTop: 16 }}
+            style={{ width: "91%", marginTop: 16 }}
           >
             Thêm điểm nổi bật
           </Button>
         </Card>
-
-        <Card title="Ảnh tour" style={{ marginTop: 16 }}>
-          <Form.Item name="images">
-            <Row gutter={[16, 16]}>
-              {fileList.map((file, index) => (
-                <Col span={12} key={index}>
-                  <div className="image-container" style={{ position: "relative", textAlign: "center" }}>
-                    <Image
-                      src={file.url || file.thumbUrl || "/placeholder.svg"}
-                      alt={`Ảnh tour ${index + 1}`}
-                      width={150}
-                      height={150}
-                      preview={{
-                        mask: <EyeOutlined style={{ fontSize: "20px", color: "white" }} />,
-                      }}
-                      style={{ objectFit: "cover" }}
-                    />
-                    <div className="image-actions" style={{ position: "absolute", bottom: 5, right: 5 }}>
-                      <Upload
-                        showUploadList={false}
-                        beforeUpload={() => false}
-                        onChange={onFileChange(index)}
-                      >
-                        <Button icon={<UploadOutlined />} type="text" />
-                      </Upload>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        type="text"
-                        danger
-                        onClick={() => handleRemoveImage(index)}
-                      />
-                    </div>
-                  </div>
-                </Col>
-              ))}
-            </Row>
-
-            <Row justify="center" style={{ marginTop: 16 }}>
-              <Col>
-                <Upload
-                  listType="picture-card"
-                  showUploadList={false}
-                  beforeUpload={() => false}
-                  onChange={onFileChangeSeparate}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <UploadOutlined style={{ fontSize: 24, color: "#999" }} />
-                    <Text style={{ marginTop: 8, color: "#999" }}>
-                      Thêm ảnh
-                    </Text>
-                  </div>
-                </Upload>
-              </Col>
-            </Row>
-          </Form.Item>
-        </Card>
-
         <Card title="Lịch trình" style={{ marginTop: 16 }}>
           <Collapse>
             {itineraryDays.map((day, index) => (
@@ -522,6 +612,62 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
           </Button>
         </Card>
 
+        <Card title="Ảnh tour" style={{ marginTop: 16 }}>
+          <Form.Item name="images">
+            <Row gutter={[16, 16]}>
+              {fileList.map((file, index) => (
+                <Col span={12} key={index}>
+                  <div className="image-container" style={{ position: "relative", textAlign: "center" }}>
+                    <Image
+                      src={file.url || file.thumbUrl || "/placeholder.svg"}
+                      alt={`Ảnh tour ${index + 1}`}
+                      width={150}
+                      height={150}
+                      preview={{
+                        mask: <EyeOutlined style={{ fontSize: "20px", color: "white" }} />,
+                      }}
+                      style={{ objectFit: "cover" }}
+                    />
+                    <div className="image-actions" style={{ position: "absolute", bottom: 5, right: 5 }}>
+                      <Upload
+                        showUploadList={false}
+                        beforeUpload={() => false}
+                        onChange={onFileChange(index)}
+                      >
+                        <Button icon={<UploadOutlined />} type="text" />
+                      </Upload>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        type="text"
+                        danger
+                        onClick={() => handleRemoveImage(index)}
+                      />
+                    </div>
+                  </div>
+                </Col>
+              ))}
+            </Row>
+
+            <Row justify="center" style={{ marginTop: 16 }}>
+              <Col>
+                <Upload
+                  listType="picture-card"
+                  showUploadList={false}
+                  beforeUpload={() => false}
+                  onChange={onFileChangeSeparate}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <UploadOutlined style={{ fontSize: 24, color: "#999" }} />
+                    <Text style={{ marginTop: 8, color: "#999" }}>
+                      Thêm ảnh
+                    </Text>
+                  </div>
+                </Upload>
+              </Col>
+            </Row>
+          </Form.Item>
+        </Card>
+
         <Form.Item style={{ marginTop: 16 }}>
           <Button type="primary" htmlType="submit">
             Xem trước
@@ -532,105 +678,126 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         </Form.Item>
 
         <Modal
-          title="Xem trước tour"
-          open={isPreviewVisible}
-          onCancel={() => setIsPreviewVisible(false)}
-          footer={[
-            <Button key="cancel" onClick={() => setIsPreviewVisible(false)}>
-              Thoát
-            </Button>,
-            <Button key="save" type="primary" onClick={handleSave}>
-              Lưu thay đổi
-            </Button>,
-          ]}
-          width="90%"
-          className="custom-modal"
-          centered
-        >
-          {previewData && (
-            <div>
-              <Title level={2}>{previewData.title}</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Text>
-                    <CalendarOutlined /> Thời gian: {previewData.duration}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Text>
-                    <ClockCircleOutlined /> Khởi hành: {formatDate(previewData.departureDate)} {/* Áp dụng formatDate */}
-                  </Text>
-                </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Text>
-                    <TeamOutlined /> Phương tiện: {previewData.transportation}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Text>
-                    <EnvironmentOutlined /> Điểm khởi hành: {previewData.departurePoint}
-                  </Text>
-                </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Text>
-                    <span role="img" aria-label="money">💰</span> Giá: {previewData.price || "Liên hệ"}
-                  </Text>
-                </Col>
-              </Row>
+        title="Xem trước tour"
+        open={isPreviewVisible}
+        onCancel={() => setIsPreviewVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsPreviewVisible(false)}>
+            Thoát
+          </Button>,
+          <Button key="save" type="primary" onClick={handleSave}>
+            Lưu thay đổi
+          </Button>,
+        ]}
+        width="90%"
+        className="custom-modal"
+        centered
+      >
+        {previewData && (
+          <div>
+            <Title level={2}>{previewData.title}</Title>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Text>
+                  <CalendarOutlined /> Thời gian: {previewData.days} NGÀY {previewData.nights} ĐÊM
+                </Text>
+              </Col>
+              <Col span={12}>
+                <Text>
+                  <ClockCircleOutlined /> Khởi hành: {formatDate(previewData.departureDate)}
+                </Text>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Text>
+                  <TeamOutlined /> Phương tiện: {previewData.transportation}
+                </Text>
+              </Col>
+              <Col span={12}>
+                <Text>
+                  <EnvironmentOutlined /> Điểm khởi hành: {previewData.departurePoint}
+                </Text>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Text>
+                  <span role="img" aria-label="star">⭐</span> Đánh giá: {previewData.star_rating} sao
+                </Text>
+              </Col>
+              <Col span={12}>
+                <Text>
+                  <span role="img" aria-label="money">💰</span> Giá người lớn: {previewData.prices.find(p => p.age_group === "Adult")?.price || "Liên hệ"} VNĐ
+                </Text>
+              </Col>
+            </Row>
 
-              <div className="carousel-container">
-                <Carousel autoplay ref={carouselRef}>
-                  {(previewData.images || []).map((image, index) => (
-                    <div key={index}>
-                      <img
-                        src={image.image_url || "/placeholder.svg"}
-                        alt={`Ảnh tour ${index + 1}`}
-                        style={{ width: "600px", height: "600px", objectFit: "cover" }}
-                      />
-                    </div>
-                  ))}
-                </Carousel>
-                <div className="carousel-arrow prev-arrow" onClick={prev}>
-                  <LeftOutlined />
-                </div>
-                <div className="carousel-arrow next-arrow" onClick={next}>
-                  <RightOutlined />
-                </div>
+            <div className="carousel-container">
+              <Carousel autoplay ref={carouselRef}>
+                {(previewData.images || []).map((image, index) => (
+                  <div key={index}>
+                    <img
+                      src={image.image_url || "/placeholder.svg"}
+                      alt={`Ảnh tour ${index + 1}`}
+                      style={{ width: "600px", height: "600px", objectFit: "cover" }}
+                    />
+                  </div>
+                ))}
+              </Carousel>
+              <div className="carousel-arrow prev-arrow" onClick={prev}>
+                <LeftOutlined />
               </div>
-
-              <Title level={3}>Điểm nổi bật</Title>
-              <List
-                dataSource={previewData.highlights}
-                renderItem={(item, index) => (
-                  <List.Item>
-                    <Text>{`${index + 1}. ${item}`}</Text>
-                  </List.Item>
-                )}
-              />
-
-              <Title level={3}>Lịch trình</Title>
-              {previewData.itinerary.map((day, index) => (
-                <Card key={index} title={`Ngày ${day.day_number}: ${day.title}`} style={{ marginBottom: 16 }}>
-                  <Text strong>Buổi sáng: </Text>
-                  <Text>{day.details?.["Sáng"] || ""}</Text>
-                  <br />
-                  <Text strong>Buổi trưa: </Text>
-                  <Text>{day.details?.["Trưa"] || ""}</Text>
-                  <br />
-                  <Text strong>Buổi chiều: </Text>
-                  <Text>{day.details?.["Chiều"] || ""}</Text>
-                  <br />
-                  <Text strong>Buổi tối: </Text>
-                  <Text>{day.details?.["Tối"] || ""}</Text>
-                </Card>
-              ))}
+              <div className="carousel-arrow next-arrow" onClick={next}>
+                <RightOutlined />
+              </div>
             </div>
-          )}
-        </Modal>
+
+            <Title level={3}>Điểm nổi bật</Title>
+            <List
+              dataSource={previewData.highlights}
+              renderItem={(item, index) => (
+                <List.Item>
+                  <Text>{`${index + 1}. ${item}`}</Text>
+                </List.Item>
+              )}
+            />
+
+            <Title level={3}>Lịch trình</Title>
+            {previewData.itinerary.map((day, index) => (
+              <Card key={index} title={`Ngày ${day.day_number}: ${day.title}`} style={{ marginBottom: 16 }}>
+                <Text strong>Buổi sáng: </Text>
+                <Text>{day.details?.["Sáng"] || ""}</Text>
+                <br />
+                <Text strong>Buổi trưa: </Text>
+                <Text>{day.details?.["Trưa"] || ""}</Text>
+                <br />
+                <Text strong>Buổi chiều: </Text>
+                <Text>{day.details?.["Chiều"] || ""}</Text>
+                <br />
+                <Text strong>Buổi tối: </Text>
+                <Text>{day.details?.["Tối"] || ""}</Text>
+              </Card>
+            ))}
+
+            <Title level={3}>Giá tour</Title>
+            {previewData.prices.map((price, index) => (
+              <div key={index}>
+                <Text strong>{price.age_group === "Under 5" ? "Trẻ dưới 5 tuổi" : price.age_group === "5-11" ? "Trẻ 5-11 tuổi" : "Người lớn"}: </Text>
+                <Text>{price.price} VNĐ</Text>
+                {price.single_room_price && (
+                  <>
+                    <Text> (Phòng đơn: {price.single_room_price} VNĐ)</Text>
+                  </>
+                )}
+                <br />
+                <Text>{price.description}</Text>
+                <br />
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
 
         <Modal
           title="Thông báo"
