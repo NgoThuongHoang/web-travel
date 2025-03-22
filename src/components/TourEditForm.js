@@ -36,6 +36,23 @@ const { TextArea } = Input;
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
 
+const API_BASE_URL = "http://localhost:5001/api/tours";
+
+// Hàm định dạng ngày
+const formatDate = (dateString) => {
+  if (!dateString) return "Chưa có thông tin";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
+  } catch (error) {
+    console.error("Lỗi khi định dạng ngày:", error);
+    return dateString;
+  }
+};
+
 const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState([]);
@@ -49,55 +66,76 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
 
   const carouselRef = useRef(null);
 
-  useEffect(() => {
-    if (tour?.itinerary) {
-      const standardizedItinerary = tour.itinerary.map((day) => {
-        let detailsObject = { Sáng: "", Trưa: "", Tối: "" };
-
-        try {
-          let detailsArray = [];
-          if (typeof day.details === "string") {
-            detailsArray = JSON.parse(day.details);
-          } else if (Array.isArray(day.details)) {
-            detailsArray = day.details;
-          } else if (typeof day.details === "object" && day.details !== null) {
-            detailsObject = {
-              Sáng: day.details["Sáng"] || "",
-              Trưa: day.details["Trưa"] || "",
-              Tối: day.details["Tối"] || "",
-            };
-            return {
-              ...day,
-              details: detailsObject,
-            };
-          }
-
-          if (Array.isArray(detailsArray)) {
-            detailsArray.forEach((detail) => {
-              if (typeof detail === "string") {
-                if (detail.startsWith("Sáng:")) {
-                  detailsObject.Sáng = detail.replace("Sáng:", "").trim();
-                } else if (detail.startsWith("Trưa:")) {
-                  detailsObject.Trưa = detail.replace("Trưa:", "").trim();
-                } else if (detail.startsWith("Chiều:")) {
-                  detailsObject.Trưa = detail.replace("Chiều:", "").trim();
-                } else if (detail.startsWith("Tối:")) {
-                  detailsObject.Tối = detail.replace("Tối:", "").trim();
-                }
-              }
-            });
-          }
-        } catch (error) {
-          console.error("Lỗi khi parse details:", error);
-        }
-
-        return {
-          ...day,
-          details: detailsObject,
-        };
+  // Hàm lấy lịch trình từ API
+  const fetchItinerary = async (tourId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${tourId}/itineraries`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
-      setItineraryDays(standardizedItinerary);
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API lịch trình: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Lịch trình từ API trong TourEditForm:", data);
+
+      if (Array.isArray(data)) {
+        const standardizedItinerary = data.map((day) => {
+          let detailsObject = { Sáng: "", Trưa: "", Chiều: "", Tối: "" };
+
+          try {
+            let detailsArray = [];
+            if (typeof day.details === "string") {
+              detailsArray = JSON.parse(day.details);
+            } else if (Array.isArray(day.details)) {
+              detailsArray = day.details;
+            }
+
+            if (Array.isArray(detailsArray)) {
+              detailsArray.forEach((detail) => {
+                if (typeof detail === "string") {
+                  if (detail.startsWith("Sáng:")) {
+                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                  } else if (detail.startsWith("Trưa:")) {
+                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                  } else if (detail.startsWith("Chiều:")) {
+                    detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                  } else if (detail.startsWith("Tối:")) {
+                    detailsObject.Tối = detail.replace("Tối:", "").trim();
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Lỗi khi parse details:", error);
+          }
+
+          return {
+            day_number: day.day_number,
+            title: day.title,
+            details: detailsObject,
+            id: day.id,
+          };
+        });
+
+        setItineraryDays(standardizedItinerary);
+      } else {
+        throw new Error("Dữ liệu lịch trình không đúng định dạng!");
+      }
+    } catch (error) {
+      console.error("Lỗi fetchItinerary:", error);
+      setItineraryDays([]);
+    }
+  };
+
+  // Gọi API để lấy lịch trình khi tour thay đổi
+  useEffect(() => {
+    if (tour?.id) {
+      fetchItinerary(tour.id);
     } else {
       setItineraryDays([]);
     }
@@ -118,7 +156,6 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
           url: imageUrl,
         };
       });
-      // Không giới hạn số lượng ảnh
       setFileList(formattedFileList);
     } else {
       setFileList([]);
@@ -195,7 +232,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     const newDay = {
       day_number: itineraryDays.length + 1,
       title: `Ngày ${itineraryDays.length + 1}`,
-      details: { Sáng: "", Trưa: "", Tối: "" },
+      details: { Sáng: "", Trưa: "", Chiều: "", Tối: "" },
     };
     setItineraryDays([...itineraryDays, newDay]);
   };
@@ -356,7 +393,6 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
 
         <Card title="Ảnh tour" style={{ marginTop: 16 }}>
           <Form.Item name="images">
-            {/* Hiển thị danh sách ảnh theo dạng lưới 2 cột */}
             <Row gutter={[16, 16]}>
               {fileList.map((file, index) => (
                 <Col span={12} key={index}>
@@ -391,7 +427,6 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
               ))}
             </Row>
 
-            {/* Ô upload ảnh riêng biệt */}
             <Row justify="center" style={{ marginTop: 16 }}>
               <Col>
                 <Upload
@@ -467,6 +502,12 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                     onChange={(e) => updateDayDetails(index, "Trưa", e.target.value)}
                   />
                 </Form.Item>
+                <Form.Item label="Buổi chiều">
+                  <TextArea
+                    value={day.details?.["Chiều"] || ""}
+                    onChange={(e) => updateDayDetails(index, "Chiều", e.target.value)}
+                  />
+                </Form.Item>
                 <Form.Item label="Buổi tối">
                   <TextArea
                     value={day.details?.["Tối"] || ""}
@@ -517,7 +558,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 </Col>
                 <Col span={12}>
                   <Text>
-                    <ClockCircleOutlined /> Khởi hành: {previewData.departureDate}
+                    <ClockCircleOutlined /> Khởi hành: {formatDate(previewData.departureDate)} {/* Áp dụng formatDate */}
                   </Text>
                 </Col>
               </Row>
@@ -574,14 +615,17 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
               <Title level={3}>Lịch trình</Title>
               {previewData.itinerary.map((day, index) => (
                 <Card key={index} title={`Ngày ${day.day_number}: ${day.title}`} style={{ marginBottom: 16 }}>
-                  <Text strong>Buổi sáng:</Text>
-                  <Text>{day.details?.["Sáng"] || "Chưa có thông tin"}</Text>
+                  <Text strong>Buổi sáng: </Text>
+                  <Text>{day.details?.["Sáng"] || ""}</Text>
                   <br />
-                  <Text strong>Buổi trưa:</Text>
-                  <Text>{day.details?.["Trưa"] || "Chưa có thông tin"}</Text>
+                  <Text strong>Buổi trưa: </Text>
+                  <Text>{day.details?.["Trưa"] || ""}</Text>
                   <br />
-                  <Text strong>Buổi tối:</Text>
-                  <Text>{day.details?.["Tối"] || "Chưa có thông tin"}</Text>
+                  <Text strong>Buổi chiều: </Text>
+                  <Text>{day.details?.["Chiều"] || ""}</Text>
+                  <br />
+                  <Text strong>Buổi tối: </Text>
+                  <Text>{day.details?.["Tối"] || ""}</Text>
                 </Card>
               ))}
             </div>

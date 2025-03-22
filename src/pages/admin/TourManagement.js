@@ -10,11 +10,19 @@ const { Title } = Typography;
 const API_BASE_URL = "http://localhost:5001/api/tours";
 
 const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
+  if (!dateString) return "Chưa có thông tin"; // Xử lý trường hợp dateString không tồn tại
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString; // Nếu không parse được, trả về chuỗi gốc
+    }
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
+  } catch (error) {
+    console.error("Lỗi khi định dạng ngày:", error);
+    return dateString; // Trả về chuỗi gốc nếu có lỗi
+  }
 };
 
-// Hàm định dạng giá với dấu phân cách hàng nghìn
 const formatPrice = (price) => {
   return price ? price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "Chưa có giá";
 };
@@ -48,59 +56,11 @@ const TourManagement = () => {
 
       if (Array.isArray(data)) {
         const parsedData = data.map((tour) => {
-          // Tìm giá người lớn (Adult) từ mảng prices
           const adultPrice = tour.prices?.find(price => price.age_group === "Adult")?.price || null;
-
-          // Chuẩn hóa itinerary
-          let itineraryArray = [];
-          if (typeof tour.itinerary === "string") {
-            try {
-              itineraryArray = JSON.parse(tour.itinerary);
-            } catch (error) {
-              console.error("Lỗi khi parse itinerary:", error);
-              itineraryArray = [];
-            }
-          } else if (Array.isArray(tour.itinerary)) {
-            itineraryArray = tour.itinerary;
-          }
-
-          const standardizedItinerary = itineraryArray.map((day, index) => {
-            let detailsObject = { Sáng: "", Trưa: "", Tối: "" };
-            if (typeof day.details === "string") {
-              try {
-                const detailsArray = JSON.parse(day.details);
-                detailsArray.forEach((detail) => {
-                  if (detail.startsWith("Sáng:")) {
-                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
-                  } else if (detail.startsWith("Trưa:")) {
-                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
-                  } else if (detail.startsWith("Chiều:")) {
-                    detailsObject.Trưa = detail.replace("Chiều:", "").trim();
-                  } else if (detail.startsWith("Tối:")) {
-                    detailsObject.Tối = detail.replace("Tối:", "").trim();
-                  }
-                });
-              } catch (error) {
-                console.error("Lỗi khi parse details:", error);
-              }
-            } else if (typeof day.details === "object" && day.details !== null) {
-              detailsObject = {
-                Sáng: day.details["Sáng"] || "",
-                Trưa: day.details["Trưa"] || "",
-                Tối: day.details["Tối"] || "",
-              };
-            }
-            return {
-              day_number: day.day_number || (index + 1),
-              title: day.title || `Ngày ${index + 1}`,
-              details: detailsObject,
-            };
-          });
 
           return {
             ...tour,
             highlights: typeof tour.highlights === "string" ? JSON.parse(tour.highlights) : tour.highlights || [],
-            itinerary: standardizedItinerary,
             images: tour.images || [],
             price: adultPrice,
           };
@@ -135,10 +95,41 @@ const TourManagement = () => {
       console.log("Lịch trình từ API:", data);
 
       if (Array.isArray(data)) {
-        const parsedItinerary = data.map((item) => ({
-          ...item,
-          details: typeof item.details === "string" ? JSON.parse(item.details) : item.details || [],
-        }));
+        const parsedItinerary = data.map((item) => {
+          let detailsObject = { Sáng: "", Trưa: "", Chiều: "", Tối: "" };
+
+          try {
+            let detailsArray = [];
+            if (typeof item.details === "string") {
+              detailsArray = JSON.parse(item.details);
+            } else if (Array.isArray(item.details)) {
+              detailsArray = item.details;
+            }
+
+            if (Array.isArray(detailsArray)) {
+              detailsArray.forEach((detail) => {
+                if (typeof detail === "string") {
+                  if (detail.startsWith("Sáng:")) {
+                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                  } else if (detail.startsWith("Trưa:")) {
+                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                  } else if (detail.startsWith("Chiều:")) {
+                    detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                  } else if (detail.startsWith("Tối:")) {
+                    detailsObject.Tối = detail.replace("Tối:", "").trim();
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Lỗi khi parse details:", error);
+          }
+
+          return {
+            ...item,
+            details: detailsObject,
+          };
+        });
         setTourItinerary(parsedItinerary);
       } else {
         throw new Error("Dữ liệu lịch trình không đúng định dạng!");
@@ -314,7 +305,7 @@ const TourManagement = () => {
               <strong>Thời gian:</strong> {selectedTour.days} NGÀY {selectedTour.nights} ĐÊM
             </p>
             <p>
-              <strong>Ngày khởi hành:</strong> {formatDate(selectedTour.start_date)}
+              <strong>Ngày khởi hành:</strong> {formatDate(selectedTour.start_date)} {/* Áp dụng formatDate */}
             </p>
             <p>
               <strong>Phương tiện:</strong> {selectedTour.transportation || "Chưa có thông tin"}
@@ -347,26 +338,13 @@ const TourManagement = () => {
                     </strong>
                   </p>
                   <ul>
-                    {Array.isArray(item.details) && item.details.length > 0 ? (
-                      item.details.map((detail, detailIndex) => <li key={detailIndex}>{detail}</li>)
-                    ) : (
-                      <li>Chưa có chi tiết</li>
+                    {Object.entries(item.details).map(([key, value], detailIndex) =>
+                      value ? (
+                        <li key={detailIndex}>
+                          {key}: {value}
+                        </li>
+                      ) : null
                     )}
-                  </ul>
-                </div>
-              ))
-            ) : Array.isArray(selectedTour.itinerary) && selectedTour.itinerary.length > 0 ? (
-              selectedTour.itinerary.map((item, index) => (
-                <div key={index}>
-                  <p>
-                    <strong>
-                      NGÀY {item.day_number}: {item.title}
-                    </strong>
-                  </p>
-                  <ul>
-                    {Object.entries(item.details).map(([key, value], detailIndex) => (
-                      value ? <li key={detailIndex}>{`${key}: ${value}`}</li> : null
-                    ))}
                   </ul>
                 </div>
               ))
