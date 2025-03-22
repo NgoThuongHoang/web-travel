@@ -1,10 +1,9 @@
 const express = require('express');
-const { sql } = require('../db'); // Import sql từ db.js
+const { sql } = require('../db');
 
 const router = express.Router();
 
-// Định nghĩa domain của backend
-const BACKEND_URL = 'http://localhost:5001'; // Thay đổi nếu backend chạy trên domain/port khác
+// Định nghĩa domain của backend (bỏ BACKEND_URL)
 const IMAGE_PATH = ''; // Đường dẫn mới
 
 // Middleware kiểm tra pool
@@ -59,13 +58,15 @@ router.get('/', ensurePool, async (req, res) => {
       }
     });
 
-    // Thêm ảnh vào từng tour với domain và đường dẫn mới
+    // Thêm ảnh vào từng tour
     imageResult.recordset.forEach(image => {
       if (tours[image.tour_id]) {
+        const fullImageUrl = `${IMAGE_PATH}${image.image_url}`; // Chỉ giữ image_url gốc
+        console.log(`Image URL for tour ${image.tour_id}: ${fullImageUrl}`);
         tours[image.tour_id].images.push({
           id: image.id,
           tour_id: image.tour_id,
-          image_url: `${BACKEND_URL}${IMAGE_PATH}${image.image_url}`, // Cập nhật đường dẫn
+          image_url: fullImageUrl,
           caption: image.caption
         });
       }
@@ -136,13 +137,17 @@ router.get('/:id', ensurePool, async (req, res) => {
         WHERE tour_id = @tour_id
       `);
 
-    // Thêm domain và đường dẫn mới vào image_url
-    tour.images = imageResult.recordset.map(image => ({
-      id: image.id,
-      tour_id: image.tour_id,
-      image_url: `${BACKEND_URL}${IMAGE_PATH}${image.image_url}`, // Cập nhật đường dẫn
-      caption: image.caption
-    }));
+    // Thêm ảnh
+    tour.images = imageResult.recordset.map(image => {
+      const fullImageUrl = `${IMAGE_PATH}${image.image_url}`; // Chỉ giữ image_url gốc
+      console.log(`Image URL for tour ${id}: ${fullImageUrl}`);
+      return {
+        id: image.id,
+        tour_id: image.tour_id,
+        image_url: fullImageUrl,
+        caption: image.caption
+      };
+    });
 
     res.json(tour);
   } catch (err) {
@@ -151,17 +156,15 @@ router.get('/:id', ensurePool, async (req, res) => {
   }
 });
 
-// API thêm tour mới
+// Các API khác (giữ nguyên)
 router.post('/', ensurePool, async (req, res) => {
   try {
     const { name, start_date, status, days, nights, transportation, departure_point, tour_code, star_rating, highlights, itinerary, prices, images } = req.body;
 
-    // Kiểm tra dữ liệu đầu vào
     if (!name || !start_date || !status || !days || !nights || !transportation || !departure_point || !tour_code || !star_rating || !highlights || !itinerary) {
       return res.status(400).json({ error: 'Tất cả các trường là bắt buộc!' });
     }
 
-    // Thêm tour mới
     const tourResult = await req.app.locals.pool.request()
       .input('name', sql.NVarChar, name)
       .input('start_date', sql.DateTime, new Date(start_date))
@@ -182,7 +185,6 @@ router.post('/', ensurePool, async (req, res) => {
 
     const tourId = tourResult.recordset[0].id;
 
-    // Thêm giá (nếu có)
     if (prices && Array.isArray(prices)) {
       const priceInserts = prices.map(p =>
         req.app.locals.pool.request()
@@ -199,7 +201,6 @@ router.post('/', ensurePool, async (req, res) => {
       await Promise.all(priceInserts);
     }
 
-    // Thêm ảnh (nếu có)
     if (images && Array.isArray(images)) {
       const imageInserts = images.map(img =>
         req.app.locals.pool.request()
@@ -221,12 +222,10 @@ router.post('/', ensurePool, async (req, res) => {
   }
 });
 
-// API lấy lịch trình của tour
 router.get('/:tourId/itineraries', ensurePool, async (req, res) => {
   try {
     const { tourId } = req.params;
 
-    // Kiểm tra tourId hợp lệ
     if (!tourId || isNaN(tourId)) {
       return res.status(400).json({ error: 'Tour ID không hợp lệ!' });
     }
@@ -250,12 +249,10 @@ router.get('/:tourId/itineraries', ensurePool, async (req, res) => {
   }
 });
 
-// API lấy khách sạn của tour
 router.get('/:tourId/hotels', ensurePool, async (req, res) => {
   try {
     const { tourId } = req.params;
 
-    // Kiểm tra tourId hợp lệ
     if (!tourId || isNaN(tourId)) {
       return res.status(400).json({ error: 'Tour ID không hợp lệ!' });
     }
@@ -280,7 +277,6 @@ router.get('/:tourId/hotels', ensurePool, async (req, res) => {
   }
 });
 
-// API xóa tour
 router.delete('/:id', ensurePool, async (req, res) => {
   const pool = req.app.locals.pool;
   const transaction = new sql.Transaction(pool);
@@ -288,17 +284,14 @@ router.delete('/:id', ensurePool, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Kiểm tra id hợp lệ
     if (!id || isNaN(id)) {
       return res.status(400).json({ error: 'ID không hợp lệ!' });
     }
 
     const tourId = parseInt(id);
 
-    // Bắt đầu giao dịch
     await transaction.begin();
 
-    // Kiểm tra xem tour có tồn tại không
     const checkRequest = transaction.request();
     const tourCheck = await checkRequest
       .input('id', sql.Int, tourId)
@@ -309,30 +302,26 @@ router.delete('/:id', ensurePool, async (req, res) => {
       return res.status(404).json({ error: 'Tour không tồn tại!' });
     }
 
-    // 1. Xóa orders liên quan đến tour_id
     const deleteOrdersRequest = transaction.request();
     const deleteOrdersResult = await deleteOrdersRequest
       .input('tour_id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[orders] WHERE tour_id = @tour_id');
     console.log(`Deleted ${deleteOrdersResult.rowsAffected} rows from orders for tour_id ${tourId}`);
 
-    // 2. Xóa tour_tickets (liên quan đến tour_itineraries của tour)
-    // Đầu tiên, lấy danh sách itinerary_id của tour
     const itineraryRequest = transaction.request();
     const itineraries = await itineraryRequest
       .input('tour_id', sql.Int, tourId)
       .query('SELECT id FROM [web_travel].[dbo].[tour_itineraries] WHERE tour_id = @tour_id');
 
     const itineraryIds = itineraries.recordset.map(item => item.id);
-    console.log('Itinerary IDs to delete:', itineraryIds); // Log để kiểm tra
+    console.log('Itinerary IDs to delete:', itineraryIds);
 
     if (itineraryIds.length > 0) {
-      // Xóa từng itinerary_id trong tour_tickets
       for (let i = 0; i < itineraryIds.length; i++) {
         const itineraryId = itineraryIds[i];
         const deleteTicketsRequest = transaction.request();
         const deleteTicketsResult = await deleteTicketsRequest
-          .input(`itinerary_id_${i}`, sql.Int, itineraryId) // Sử dụng tên tham số duy nhất
+          .input(`itinerary_id_${i}`, sql.Int, itineraryId)
           .query('DELETE FROM [web_travel].[dbo].[tour_tickets] WHERE itinerary_id = @itinerary_id_' + i);
         console.log(`Deleted ${deleteTicketsResult.rowsAffected} rows from tour_tickets for itinerary_id ${itineraryId}`);
       }
@@ -340,43 +329,36 @@ router.delete('/:id', ensurePool, async (req, res) => {
       console.log('No itineraries found for tour_id:', tourId);
     }
 
-    // 3. Xóa tour_itineraries
     const deleteItinerariesRequest = transaction.request();
     const deleteItinerariesResult = await deleteItinerariesRequest
       .input('tour_id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[tour_itineraries] WHERE tour_id = @tour_id');
     console.log(`Deleted ${deleteItinerariesResult.rowsAffected} rows from tour_itineraries for tour_id ${tourId}`);
 
-    // 4. Xóa tour_prices
     const deletePricesRequest = transaction.request();
     await deletePricesRequest
       .input('tour_id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[tour_prices] WHERE tour_id = @tour_id');
 
-    // 5. Xóa tour_images
     const deleteImagesRequest = transaction.request();
     await deleteImagesRequest
       .input('tour_id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[tour_images] WHERE tour_id = @tour_id');
 
-    // 6. Xóa tour_hotels
     const deleteHotelsRequest = transaction.request();
     await deleteHotelsRequest
       .input('tour_id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[tour_hotels] WHERE tour_id = @tour_id');
 
-    // 7. Xóa tour chính
     const deleteTourRequest = transaction.request();
     await deleteTourRequest
       .input('id', sql.Int, tourId)
       .query('DELETE FROM [web_travel].[dbo].[tours] WHERE id = @id');
 
-    // Commit giao dịch
     await transaction.commit();
 
-    res.status(204).send(); // Trả về mã 204 (No Content) khi xóa thành công
+    res.status(204).send();
   } catch (err) {
-    // Rollback giao dịch nếu có lỗi
     await transaction.rollback();
     console.error('Lỗi xóa tour:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });

@@ -19,9 +19,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Phục vụ các tệp tĩnh từ thư mục public/images/images_tour/anh_tour_viet_nam
-app.use('/images/images_tour/anh_tour_viet_nam', express.static(path.join(__dirname, 'public/images/images_tour/anh_tour_viet_nam')));
-
 // Kết nối database
 connectDB()
   .then(pool => {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Table, Card, Input, Button, Space, Modal, Form, Typography, message, Image } from "antd";
+import { Table, Card, Input, Button, Space, Modal, Typography, message, Image } from "antd";
 import { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import TourEditForm from "../../components/TourEditForm";
 
 const { Title } = Typography;
 
@@ -26,7 +27,6 @@ const TourManagement = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const fetchTours = async () => {
@@ -51,12 +51,58 @@ const TourManagement = () => {
           // Tìm giá người lớn (Adult) từ mảng prices
           const adultPrice = tour.prices?.find(price => price.age_group === "Adult")?.price || null;
 
+          // Chuẩn hóa itinerary
+          let itineraryArray = [];
+          if (typeof tour.itinerary === "string") {
+            try {
+              itineraryArray = JSON.parse(tour.itinerary);
+            } catch (error) {
+              console.error("Lỗi khi parse itinerary:", error);
+              itineraryArray = [];
+            }
+          } else if (Array.isArray(tour.itinerary)) {
+            itineraryArray = tour.itinerary;
+          }
+
+          const standardizedItinerary = itineraryArray.map((day, index) => {
+            let detailsObject = { Sáng: "", Trưa: "", Tối: "" };
+            if (typeof day.details === "string") {
+              try {
+                const detailsArray = JSON.parse(day.details);
+                detailsArray.forEach((detail) => {
+                  if (detail.startsWith("Sáng:")) {
+                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                  } else if (detail.startsWith("Trưa:")) {
+                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                  } else if (detail.startsWith("Chiều:")) {
+                    detailsObject.Trưa = detail.replace("Chiều:", "").trim();
+                  } else if (detail.startsWith("Tối:")) {
+                    detailsObject.Tối = detail.replace("Tối:", "").trim();
+                  }
+                });
+              } catch (error) {
+                console.error("Lỗi khi parse details:", error);
+              }
+            } else if (typeof day.details === "object" && day.details !== null) {
+              detailsObject = {
+                Sáng: day.details["Sáng"] || "",
+                Trưa: day.details["Trưa"] || "",
+                Tối: day.details["Tối"] || "",
+              };
+            }
+            return {
+              day_number: day.day_number || (index + 1),
+              title: day.title || `Ngày ${index + 1}`,
+              details: detailsObject,
+            };
+          });
+
           return {
             ...tour,
             highlights: typeof tour.highlights === "string" ? JSON.parse(tour.highlights) : tour.highlights || [],
-            itinerary: typeof tour.itinerary === "string" ? JSON.parse(tour.itinerary) : tour.itinerary || [],
-            images: tour.images || [], // Đảm bảo images luôn là mảng
-            price: adultPrice, // Thêm giá người lớn vào dữ liệu tour
+            itinerary: standardizedItinerary,
+            images: tour.images || [],
+            price: adultPrice,
           };
         });
         setTours(parsedData);
@@ -108,40 +154,6 @@ const TourManagement = () => {
     fetchTours();
   }, [searchText]);
 
-  const handleFormSubmit = async (values) => {
-    try {
-      const formattedValues = {
-        ...values,
-        itinerary: values.itinerary
-          ? values.itinerary.split("\n").map((line) => {
-              const [day, title] = line.split(": ");
-              return { day, title, details: [] };
-            })
-          : [],
-        highlights: values.highlights ? values.highlights.split("\n") : [],
-      };
-
-      const url = selectedTour ? `${API_BASE_URL}/${selectedTour.id}` : API_BASE_URL;
-      const method = selectedTour ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formattedValues),
-      });
-
-      if (!response.ok) throw new Error(`Lỗi khi ${selectedTour ? "cập nhật" : "thêm"} tour`);
-      await fetchTours();
-      setShowEditModal(false);
-      setSelectedTour(null);
-      form.resetFields();
-      message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
-    } catch (error) {
-      message.error(`Lỗi khi ${selectedTour ? "cập nhật" : "thêm"} tour!`);
-      console.error(error);
-    }
-  };
-
   const handleDelete = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/${selectedTour.id}`, {
@@ -189,7 +201,7 @@ const TourManagement = () => {
       title: "Giá",
       dataIndex: "price",
       key: "price",
-      render: (text) => formatPrice(text), // Sử dụng hàm formatPrice để định dạng giá
+      render: (text) => formatPrice(text),
     },
     {
       title: "Thời gian",
@@ -202,7 +214,7 @@ const TourManagement = () => {
       render: (_, record) => (
         record.images && record.images.length > 0 ? (
           <Image
-            src={record.images[0].image_url} // Sử dụng image_url từ dữ liệu API
+            src={record.images[0].image_url}
             alt={record.name}
             width={50}
             height={50}
@@ -256,20 +268,6 @@ const TourManagement = () => {
       ),
     },
   ];
-
-  useEffect(() => {
-    if (selectedTour) {
-      form.setFieldsValue({
-        ...selectedTour,
-        itinerary: selectedTour.itinerary
-          ? selectedTour.itinerary.map((item) => `${item.day}: ${item.title}`).join("\n")
-          : "",
-        highlights: selectedTour.highlights ? selectedTour.highlights.join("\n") : "",
-      });
-    } else {
-      form.resetFields();
-    }
-  }, [selectedTour, form]);
 
   return (
     <div className="tour-management">
@@ -362,15 +360,13 @@ const TourManagement = () => {
                 <div key={index}>
                   <p>
                     <strong>
-                      {item.day}: {item.title}
+                      NGÀY {item.day_number}: {item.title}
                     </strong>
                   </p>
                   <ul>
-                    {Array.isArray(item.details) && item.details.length > 0 ? (
-                      item.details.map((detail, detailIndex) => <li key={detailIndex}>{detail}</li>)
-                    ) : (
-                      <li>Chưa có chi tiết</li>
-                    )}
+                    {Object.entries(item.details).map(([key, value], detailIndex) => (
+                      value ? <li key={detailIndex}>{`${key}: ${value}`}</li> : null
+                    ))}
                   </ul>
                 </div>
               ))
@@ -385,56 +381,25 @@ const TourManagement = () => {
       <Modal
         title={selectedTour ? "Sửa tour" : "Thêm tour mới"}
         open={showEditModal}
-        onOk={() => form.submit()}
+        onOk={() => setShowEditModal(false)}
         onCancel={() => {
           setShowEditModal(false);
           setSelectedTour(null);
-          form.resetFields();
         }}
+        footer={null}
       >
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          <Form.Item name="name" label="Tên tour" rules={[{ required: true, message: "Vui lòng nhập tên tour" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="start_date"
-            label="Ngày khởi hành"
-            rules={[{ required: true, message: "Vui lòng chọn ngày khởi hành" }]}
-          >
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item name="price" label="Giá">
-            <Input />
-          </Form.Item>
-          <Form.Item name="days" label="Số ngày" rules={[{ required: true, message: "Vui lòng nhập số ngày" }]}>
-            <Input type="number" />
-          </Form.Item>
-          <Form.Item name="nights" label="Số đêm" rules={[{ required: true, message: "Vui lòng nhập số đêm" }]}>
-            <Input type="number" />
-          </Form.Item>
-          <Form.Item name="transportation" label="Phương tiện">
-            <Input />
-          </Form.Item>
-          <Form.Item name="departure_point" label="Điểm khởi hành">
-            <Input />
-          </Form.Item>
-          <Form.Item name="tour_code" label="Mã tour">
-            <Input />
-          </Form.Item>
-          <Form.Item name="highlights" label="Đặc điểm nổi bật">
-            <Input.TextArea rows={3} placeholder="Nhập mỗi đặc điểm trên một dòng" />
-          </Form.Item>
-          <Form.Item name="itinerary" label="Lịch trình">
-            <Input.TextArea rows={4} placeholder="Nhập lịch trình theo định dạng: NGÀY 1: Tiêu đề" />
-          </Form.Item>
-          <Form.Item
-            name="status"
-            label="Trạng thái"
-            rules={[{ required: true, message: "Vui lòng nhập trạng thái (active, pending, completed)" }]}
-          >
-            <Input placeholder="Nhập trạng thái: active, pending, hoặc completed" />
-          </Form.Item>
-        </Form>
+        <TourEditForm
+          tour={selectedTour}
+          onSubmit={() => {
+            setShowEditModal(false);
+            setSelectedTour(null);
+            fetchTours();
+          }}
+          onCancel={() => {
+            setShowEditModal(false);
+            setSelectedTour(null);
+          }}
+        />
       </Modal>
 
       {/* Modal Xóa */}

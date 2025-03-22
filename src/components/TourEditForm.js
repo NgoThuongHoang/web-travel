@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Form,
   Input,
@@ -28,33 +28,128 @@ import {
   EnvironmentOutlined,
   LeftOutlined,
   RightOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import "../styles/TourEditForm.css";
-
 
 const { TextArea } = Input;
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
 
-
-const TourEditForm = ({ initialValues, onSave }) => {
+const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   const [form] = Form.useForm();
-  const [fileList, setFileList] = useState(initialValues.images || []);
-  const [itineraryDays, setItineraryDays] = useState(initialValues.itinerary || []);
-  const [highlights, setHighlights] = useState(initialValues.highlights || []);
+  const [fileList, setFileList] = useState([]);
+  const [itineraryDays, setItineraryDays] = useState([]);
+  const [highlights, setHighlights] = useState([]);
   const [deletingDayIndex, setDeletingDayIndex] = useState(null);
   const [deletingHighlightIndex, setDeletingHighlightIndex] = useState(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [previewData, setPreviewData] = useState(null);
-  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false); // State cho modal thành công
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
   const carouselRef = useRef(null);
+
+  useEffect(() => {
+    if (tour?.itinerary) {
+      const standardizedItinerary = tour.itinerary.map((day) => {
+        let detailsObject = { Sáng: "", Trưa: "", Tối: "" };
+
+        try {
+          let detailsArray = [];
+          if (typeof day.details === "string") {
+            detailsArray = JSON.parse(day.details);
+          } else if (Array.isArray(day.details)) {
+            detailsArray = day.details;
+          } else if (typeof day.details === "object" && day.details !== null) {
+            detailsObject = {
+              Sáng: day.details["Sáng"] || "",
+              Trưa: day.details["Trưa"] || "",
+              Tối: day.details["Tối"] || "",
+            };
+            return {
+              ...day,
+              details: detailsObject,
+            };
+          }
+
+          if (Array.isArray(detailsArray)) {
+            detailsArray.forEach((detail) => {
+              if (typeof detail === "string") {
+                if (detail.startsWith("Sáng:")) {
+                  detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                } else if (detail.startsWith("Trưa:")) {
+                  detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                } else if (detail.startsWith("Chiều:")) {
+                  detailsObject.Trưa = detail.replace("Chiều:", "").trim();
+                } else if (detail.startsWith("Tối:")) {
+                  detailsObject.Tối = detail.replace("Tối:", "").trim();
+                }
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Lỗi khi parse details:", error);
+        }
+
+        return {
+          ...day,
+          details: detailsObject,
+        };
+      });
+
+      setItineraryDays(standardizedItinerary);
+    } else {
+      setItineraryDays([]);
+    }
+  }, [tour]);
+
+  // Chuyển đổi tour?.images sang định dạng fileList cho Upload
+  useEffect(() => {
+    if (tour?.images && Array.isArray(tour.images)) {
+      const formattedFileList = tour.images.map((image, index) => {
+        let imageUrl = image.image_url;
+        if (imageUrl.startsWith('http://localhost:5001')) {
+          imageUrl = imageUrl.replace('http://localhost:5001', '');
+        }
+        return {
+          uid: image.id.toString(),
+          name: imageUrl.split('/').pop(),
+          status: 'done',
+          url: imageUrl,
+        };
+      });
+      // Không giới hạn số lượng ảnh
+      setFileList(formattedFileList);
+    } else {
+      setFileList([]);
+    }
+    setHighlights(tour?.highlights || []);
+    form.resetFields();
+  }, [tour, form]);
+
+  // Định dạng start_date thành yyyy-MM-dd để phù hợp với Input type="date"
+  const formattedStartDate = tour?.start_date
+    ? new Date(tour.start_date).toISOString().split("T")[0]
+    : "";
+
+  // Khởi tạo giá trị ban đầu cho form
+  const initialValues = {
+    title: tour?.name || "",
+    duration: tour?.days && tour?.nights ? `${tour.days} NGÀY ${tour.nights} ĐÊM` : "",
+    departureDate: formattedStartDate,
+    transportation: tour?.transportation || "",
+    departurePoint: tour?.departure_point || "",
+    price: tour?.price || "",
+  };
 
   const onFinish = (values) => {
     const data = {
       ...values,
-      images: fileList,
+      images: fileList.map((file) => ({
+        id: file.uid,
+        image_url: file.url || file.thumbUrl,
+        caption: file.caption || null,
+      })),
       itinerary: itineraryDays,
       highlights: highlights,
     };
@@ -62,15 +157,45 @@ const TourEditForm = ({ initialValues, onSave }) => {
     setIsPreviewVisible(true);
   };
 
-  const onFileChange = ({ fileList: newFileList }) => {
+  // Hàm xử lý upload ảnh tại vị trí cụ thể (cho các ô ảnh trong danh sách)
+  const onFileChange = (index) => ({ file }) => {
+    const newFileList = [...fileList];
+    const newFile = {
+      uid: file.uid || Date.now().toString(),
+      name: file.name,
+      status: 'done',
+      url: URL.createObjectURL(file),
+      file: file,
+    };
+    newFileList[index] = newFile;
     setFileList(newFileList);
+  };
+
+  // Hàm xử lý upload ảnh từ ô upload riêng biệt
+  const onFileChangeSeparate = ({ file }) => {
+    const newFile = {
+      uid: file.uid || Date.now().toString(),
+      name: file.name,
+      status: 'done',
+      url: URL.createObjectURL(file),
+      file: file,
+    };
+
+    const updatedFileList = [...fileList, newFile];
+    setFileList(updatedFileList);
+  };
+
+  const handleRemoveImage = (index) => {
+    const updatedFileList = [...fileList];
+    updatedFileList.splice(index, 1);
+    setFileList(updatedFileList);
   };
 
   const addNewDay = () => {
     const newDay = {
       day_number: itineraryDays.length + 1,
       title: `Ngày ${itineraryDays.length + 1}`,
-      details: { morning: "", afternoon: "", evening: "" },
+      details: { Sáng: "", Trưa: "", Tối: "" },
     };
     setItineraryDays([...itineraryDays, newDay]);
   };
@@ -96,13 +221,14 @@ const TourEditForm = ({ initialValues, onSave }) => {
   };
 
   const handleSave = () => {
-    onSave(previewData); // Gọi hàm onSave để lưu dữ liệu
-    setIsPreviewVisible(false); // Đóng modal xem trước
-    setIsSuccessModalVisible(true); // Mở modal thành công
+    onSubmit(previewData);
+    setIsPreviewVisible(false);
+    setIsSuccessModalVisible(true);
   };
 
   const handleCloseSuccessModal = () => {
-    setIsSuccessModalVisible(false); // Đóng modal thành công
+    setIsSuccessModalVisible(false);
+    onCancel();
   };
 
   const addHighlight = () => {
@@ -143,31 +269,31 @@ const TourEditForm = ({ initialValues, onSave }) => {
         <Card title="Thông tin chung">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Tiêu đề tour" name="title" rules={[{ required: true }]}>
+              <Form.Item label="Tiêu đề tour" name="title" rules={[{ required: true, message: "Vui lòng nhập tiêu đề tour" }]}>
                 <Input />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Thời gian" name="duration" rules={[{ required: true }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Ngày khởi hành" name="departureDate" rules={[{ required: true }]}>
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Phương tiện" name="transportation" rules={[{ required: true }]}>
+              <Form.Item label="Thời gian" name="duration" rules={[{ required: true, message: "Vui lòng nhập thời gian" }]}>
                 <Input />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Điểm khởi hành" name="departurePoint" rules={[{ required: true }]}>
+              <Form.Item label="Ngày khởi hành" name="departureDate" rules={[{ required: true, message: "Vui lòng chọn ngày khởi hành" }]}>
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Phương tiện" name="transportation" rules={[{ required: true, message: "Vui lòng nhập phương tiện" }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Điểm khởi hành" name="departurePoint" rules={[{ required: true, message: "Vui lòng nhập điểm khởi hành" }]}>
                 <Input />
               </Form.Item>
             </Col>
@@ -222,6 +348,7 @@ const TourEditForm = ({ initialValues, onSave }) => {
             block
             icon={<PlusOutlined />}
             className="highlight-add-button"
+            style={{ width: "100%", marginTop: 16 }}
           >
             Thêm điểm nổi bật
           </Button>
@@ -229,39 +356,56 @@ const TourEditForm = ({ initialValues, onSave }) => {
 
         <Card title="Ảnh tour" style={{ marginTop: 16 }}>
           <Form.Item name="images">
-            <Row gutter={[8, 8]}>
+            {/* Hiển thị danh sách ảnh theo dạng lưới 2 cột */}
+            <Row gutter={[16, 16]}>
               {fileList.map((file, index) => (
-                <Col key={index} span={6}>
-                  <div className="image-container">
+                <Col span={12} key={index}>
+                  <div className="image-container" style={{ position: "relative", textAlign: "center" }}>
                     <Image
-                      src={file.thumbUrl || file.url}
+                      src={file.url || file.thumbUrl || "/placeholder.svg"}
                       alt={`Ảnh tour ${index + 1}`}
-                      width={300}
-                      height={300}
+                      width={150}
+                      height={150}
                       preview={{
                         mask: <EyeOutlined style={{ fontSize: "20px", color: "white" }} />,
                       }}
+                      style={{ objectFit: "cover" }}
                     />
-                    <div className="image-actions">
+                    <div className="image-actions" style={{ position: "absolute", bottom: 5, right: 5 }}>
                       <Upload
                         showUploadList={false}
                         beforeUpload={() => false}
-                        onChange={onFileChange}
+                        onChange={onFileChange(index)}
                       >
                         <Button icon={<UploadOutlined />} type="text" />
                       </Upload>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        type="text"
+                        danger
+                        onClick={() => handleRemoveImage(index)}
+                      />
                     </div>
                   </div>
                 </Col>
               ))}
-              <Col span={6}>
+            </Row>
+
+            {/* Ô upload ảnh riêng biệt */}
+            <Row justify="center" style={{ marginTop: 16 }}>
+              <Col>
                 <Upload
                   listType="picture-card"
-                  fileList={fileList}
-                  onChange={onFileChange}
+                  showUploadList={false}
                   beforeUpload={() => false}
+                  onChange={onFileChangeSeparate}
                 >
-                  {fileList.length < 5 && <UploadOutlined />}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <UploadOutlined style={{ fontSize: 24, color: "#999" }} />
+                    <Text style={{ marginTop: 8, color: "#999" }}>
+                      Thêm ảnh
+                    </Text>
+                  </div>
                 </Upload>
               </Col>
             </Row>
@@ -313,20 +457,20 @@ const TourEditForm = ({ initialValues, onSave }) => {
                 </Form.Item>
                 <Form.Item label="Buổi sáng">
                   <TextArea
-                    value={day.details.morning}
-                    onChange={(e) => updateDayDetails(index, "morning", e.target.value)}
+                    value={day.details?.["Sáng"] || ""}
+                    onChange={(e) => updateDayDetails(index, "Sáng", e.target.value)}
                   />
                 </Form.Item>
                 <Form.Item label="Buổi trưa">
                   <TextArea
-                    value={day.details.afternoon}
-                    onChange={(e) => updateDayDetails(index, "afternoon", e.target.value)}
+                    value={day.details?.["Trưa"] || ""}
+                    onChange={(e) => updateDayDetails(index, "Trưa", e.target.value)}
                   />
                 </Form.Item>
                 <Form.Item label="Buổi tối">
                   <TextArea
-                    value={day.details.evening}
-                    onChange={(e) => updateDayDetails(index, "evening", e.target.value)}
+                    value={day.details?.["Tối"] || ""}
+                    onChange={(e) => updateDayDetails(index, "Tối", e.target.value)}
                   />
                 </Form.Item>
               </Panel>
@@ -340,6 +484,9 @@ const TourEditForm = ({ initialValues, onSave }) => {
         <Form.Item style={{ marginTop: 16 }}>
           <Button type="primary" htmlType="submit">
             Xem trước
+          </Button>
+          <Button style={{ marginLeft: 8 }} onClick={onCancel}>
+            Hủy
           </Button>
         </Form.Item>
 
@@ -355,7 +502,7 @@ const TourEditForm = ({ initialValues, onSave }) => {
               Lưu thay đổi
             </Button>,
           ]}
-          width="90%" // Giữ độ rộng modal hợp lý
+          width="90%"
           className="custom-modal"
           centered
         >
@@ -396,10 +543,10 @@ const TourEditForm = ({ initialValues, onSave }) => {
 
               <div className="carousel-container">
                 <Carousel autoplay ref={carouselRef}>
-                  {previewData.images.map((image, index) => (
+                  {(previewData.images || []).map((image, index) => (
                     <div key={index}>
                       <img
-                        src={image.thumbUrl || image.url || "/placeholder.svg"}
+                        src={image.image_url || "/placeholder.svg"}
                         alt={`Ảnh tour ${index + 1}`}
                         style={{ width: "600px", height: "600px", objectFit: "cover" }}
                       />
@@ -428,20 +575,19 @@ const TourEditForm = ({ initialValues, onSave }) => {
               {previewData.itinerary.map((day, index) => (
                 <Card key={index} title={`Ngày ${day.day_number}: ${day.title}`} style={{ marginBottom: 16 }}>
                   <Text strong>Buổi sáng:</Text>
-                  <Text>{day.details.morning}</Text>
+                  <Text>{day.details?.["Sáng"] || "Chưa có thông tin"}</Text>
                   <br />
                   <Text strong>Buổi trưa:</Text>
-                  <Text>{day.details.afternoon}</Text>
+                  <Text>{day.details?.["Trưa"] || "Chưa có thông tin"}</Text>
                   <br />
                   <Text strong>Buổi tối:</Text>
-                  <Text>{day.details.evening}</Text>
+                  <Text>{day.details?.["Tối"] || "Chưa có thông tin"}</Text>
                 </Card>
               ))}
             </div>
           )}
         </Modal>
 
-        {/* Modal thông báo thành công */}
         <Modal
           title="Thông báo"
           open={isSuccessModalVisible}

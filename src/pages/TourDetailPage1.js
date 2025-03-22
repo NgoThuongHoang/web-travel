@@ -13,7 +13,7 @@ import {
   Divider,
   Table,
   Avatar,
-  Spin, // Thêm Spin vào import
+  Spin,
 } from "antd";
 import {
   CalendarOutlined,
@@ -30,7 +30,6 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
-// Dữ liệu ảo cho tour đã xem
 const mockViewedTours = [
   {
     id: 1,
@@ -48,8 +47,7 @@ const mockViewedTours = [
   },
 ];
 
-// Dữ liệu ảo cho tour liên quan
-const mockRelatedTours = [  
+const mockRelatedTours = [
   {
     id: 1,
     name: "Tour Nha Trang - Đà Lạt",
@@ -74,23 +72,25 @@ const TourDetailPage1 = () => {
   const [relatedTours, setRelatedTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState([]);
   const carouselRef = useRef(null);
 
-  // Gọi API để lấy dữ liệu
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setImageLoadErrors([]);
 
-        // Lấy dữ liệu tour (bao gồm cả ảnh)
         const tourResponse = await fetch("http://localhost:5001/api/tours/3");
         if (!tourResponse.ok) {
           throw new Error("Không thể lấy dữ liệu tour");
         }
         const tourData = await tourResponse.json();
+        console.log("Dữ liệu từ API:", tourData);
+        console.log("Số lượng ảnh:", tourData.images ? tourData.images.length : 0);
+        console.log("Danh sách URL ảnh:", tourData.images ? tourData.images.map(img => img.image_url) : []);
 
-        // Parse itinerary nếu nó là chuỗi JSON
         if (tourData.itinerary && typeof tourData.itinerary === "string") {
           try {
             tourData.itinerary = JSON.parse(tourData.itinerary);
@@ -99,7 +99,6 @@ const TourDetailPage1 = () => {
             tourData.itinerary = [];
           }
         }
-        // Parse highlights nếu nó là chuỗi JSON
         if (tourData.highlights && typeof tourData.highlights === "string") {
           try {
             tourData.highlights = JSON.parse(tourData.highlights);
@@ -110,14 +109,12 @@ const TourDetailPage1 = () => {
         }
         setTourData(tourData);
 
-        // Lấy dữ liệu chi tiết lịch trình
         try {
           const itineraryResponse = await fetch("http://localhost:5001/api/tours/3/itineraries");
           if (!itineraryResponse.ok) {
             throw new Error("Không thể lấy dữ liệu lịch trình");
           }
           const itineraryData = await itineraryResponse.json();
-          // Parse details nếu nó là chuỗi JSON
           const parsedItineraryData = itineraryData.map(item => {
             if (item.details && typeof item.details === "string") {
               try {
@@ -132,10 +129,9 @@ const TourDetailPage1 = () => {
           setItineraryDetails(parsedItineraryData);
         } catch (err) {
           console.warn("Không thể lấy dữ liệu lịch trình:", err.message);
-          setItineraryDetails([]); // Nếu không có API, để mảng rỗng
+          setItineraryDetails([]);
         }
 
-        // Lấy dữ liệu tour đã xem
         try {
           const viewedToursResponse = await fetch("http://localhost:5001/api/tours/viewed");
           if (!viewedToursResponse.ok) {
@@ -145,10 +141,9 @@ const TourDetailPage1 = () => {
           setViewedTours(viewedToursData);
         } catch (err) {
           console.warn("Không thể lấy dữ liệu tour đã xem, sử dụng dữ liệu ảo:", err.message);
-          setViewedTours(mockViewedTours); // Sử dụng dữ liệu ảo
+          setViewedTours(mockViewedTours);
         }
 
-        // Lấy dữ liệu tour liên quan
         try {
           const relatedToursResponse = await fetch("http://localhost:5001/api/tours/related");
           if (!relatedToursResponse.ok) {
@@ -158,7 +153,7 @@ const TourDetailPage1 = () => {
           setRelatedTours(relatedToursData);
         } catch (err) {
           console.warn("Không thể lấy dữ liệu tour liên quan, sử dụng dữ liệu ảo:", err.message);
-          setRelatedTours(mockRelatedTours); // Sử dụng dữ liệu ảo
+          setRelatedTours(mockRelatedTours);
         }
 
       } catch (err) {
@@ -172,29 +167,25 @@ const TourDetailPage1 = () => {
     fetchData();
   }, []);
 
-  // Nếu đang tải, hiển thị Spin
   if (loading) {
     return <Spin tip="Đang tải dữ liệu..." />;
   }
 
-  // Nếu có lỗi, hiển thị thông báo lỗi
   if (error) {
     return <div>{error}</div>;
   }
 
-  // Nếu không có dữ liệu tour, hiển thị thông báo
   if (!tourData) {
     return <div>Không tìm thấy dữ liệu tour.</div>;
   }
 
-  // Dữ liệu tour
   const tourInfo = {
     title: tourData.name || "Không có tiêu đề",
-    duration: tourData.days && tourData.nights 
-      ? `${tourData.days} NGÀY ${tourData.nights} ĐÊM` 
+    duration: tourData.days && tourData.nights
+      ? `${tourData.days} NGÀY ${tourData.nights} ĐÊM`
       : "Không xác định",
-    departureDate: tourData.start_date 
-      ? new Date(tourData.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+    departureDate: tourData.start_date
+      ? new Date(tourData.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
       : "Không xác định",
     transportation: tourData.transportation || "Không xác định",
     departurePoint: tourData.departure_point || "Không xác định",
@@ -202,15 +193,23 @@ const TourDetailPage1 = () => {
     highlights: Array.isArray(tourData.highlights) ? tourData.highlights : [],
   };
 
-  // Dữ liệu ảnh
-  const tourImages = tourData.images && Array.isArray(tourData.images) 
-    ? tourData.images.map((img) => img.image_url).filter(Boolean) 
+  const tourImages = tourData.images && Array.isArray(tourData.images)
+    ? tourData.images
+        .map((img) => {
+          // Bỏ tiền tố http://localhost:5001 nếu có
+          let imageUrl = img.image_url;
+          if (imageUrl.startsWith('http://localhost:5001')) {
+            imageUrl = imageUrl.replace('http://localhost:5001', '');
+          }
+          return imageUrl;
+        })
+        .filter(Boolean)
+        .slice(0, 10) // Giới hạn tối đa 10 ảnh để tránh lỗi
     : [];
+  console.log("Tour images (sau khi xử lý):", tourImages);
 
-  // Dữ liệu lịch trình
-  const itinerary = Array.isArray(tourData.itinerary) 
+  const itinerary = Array.isArray(tourData.itinerary)
     ? tourData.itinerary.map((day, index) => {
-        // Tìm chi tiết lịch trình từ itineraryDetails dựa trên day_number
         const details = itineraryDetails.find((item) => item.day_number === (index + 1)) || { details: [] };
         return {
           day: day.day || `NGÀY ${index + 1}`,
@@ -220,7 +219,6 @@ const TourDetailPage1 = () => {
       })
     : [];
 
-  // Dữ liệu bảng giá
   const priceColumns = [
     { title: "Nhóm tuổi", dataIndex: "age_group", key: "age_group" },
     { title: "Giá", dataIndex: "price", key: "price" },
@@ -228,7 +226,7 @@ const TourDetailPage1 = () => {
     { title: "Mô tả", dataIndex: "description", key: "description" },
   ];
 
-  const priceData = tourData.prices && Array.isArray(tourData.prices) 
+  const priceData = tourData.prices && Array.isArray(tourData.prices)
     ? tourData.prices.map((price, index) => ({
         key: index + 1,
         age_group: price.age_group || "Không xác định",
@@ -238,7 +236,6 @@ const TourDetailPage1 = () => {
       }))
     : [];
 
-  // Dữ liệu giá không bao gồm (giữ nguyên hardcode vì không có dữ liệu từ API)
   const priceExclusions = [
     "Tiền tip cho HDV và lái xe",
     "Phụ thu phòng đơn: 1.200.000đ/khách",
@@ -257,7 +254,6 @@ const TourDetailPage1 = () => {
     { title: "Chi tiết", dataIndex: "detail", key: "detail" },
   ];
 
-  // Quy định hủy tour (giữ nguyên như code gốc)
   const cancellationPolicy = (
     <div style={{ lineHeight: "1.8" }}>
       <Title level={4}>Quy định thanh toán, hủy vé</Title>
@@ -333,6 +329,8 @@ const TourDetailPage1 = () => {
                           alt={`Ảnh tour ${index + 1}`}
                           style={{ width: "100%", height: "auto" }}
                           onError={(e) => {
+                            console.error(`Failed to load image: ${image}`);
+                            setImageLoadErrors((prev) => [...prev, image]);
                             e.target.src = "/placeholder.svg";
                           }}
                         />
@@ -349,6 +347,17 @@ const TourDetailPage1 = () => {
               ) : (
                 <div style={{ textAlign: "center", padding: "20px" }}>
                   <Text>Không có ảnh cho tour này.</Text>
+                </div>
+              )}
+              {imageLoadErrors.length > 0 && (
+                <div style={{ textAlign: "center", padding: "10px", color: "red" }}>
+                  <Text>Có {imageLoadErrors.length} ảnh không tải được. Vui lòng kiểm tra đường dẫn ảnh hoặc server.</Text>
+                  <ul>
+                    {imageLoadErrors.slice(0, 5).map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                    {imageLoadErrors.length > 5 && <li>...và {imageLoadErrors.length - 5} ảnh khác</li>}
+                  </ul>
                 </div>
               )}
             </div>
