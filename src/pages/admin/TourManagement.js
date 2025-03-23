@@ -182,12 +182,19 @@ const TourManagement = () => {
         star_rating: parseInt(tourData.star_rating) || 3,
         transportation: tourData.transportation || "Không xác định",
         departure_point: tourData.departurePoint || "Không xác định",
+        highlights: tourData.highlights || [], // Thêm highlights
+        itinerary: tourData.itinerary || [], // Thêm itinerary
         prices: tourData.prices || [],
-        images: tourData.images || [],
+        images: (tourData.images || [])
+          .filter(image => image.image_url) // Lọc bỏ các ảnh không có image_url
+          .map((image) => ({
+            image_url: image.image_url,
+            caption: image.caption || null,
+          })),
       };
-
+  
       console.log("tourPayload:", tourPayload);
-
+  
       let tourResponse;
       if (selectedTour) {
         // Nếu là chỉnh sửa, gửi yêu cầu PUT
@@ -208,12 +215,12 @@ const TourManagement = () => {
           body: JSON.stringify(tourPayload),
         });
       }
-
+  
       if (!tourResponse.ok) {
         const errorData = await tourResponse.json();
         throw new Error(errorData.error || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour: ${tourResponse.status} - Không có thông tin lỗi chi tiết`);
       }
-
+  
       message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
       await fetchTours();
     } catch (error) {

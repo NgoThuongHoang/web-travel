@@ -309,7 +309,7 @@ router.post('/', ensurePool, async (req, res) => {
 router.put('/:id', ensurePool, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, start_date, status, days, nights, transportation, departure_point, star_rating, prices, images } = req.body;
+    const { name, start_date, status, days, nights, transportation, departure_point, star_rating, highlights, itinerary, prices, images } = req.body;
 
     if (!id || isNaN(id)) {
       return res.status(400).json({ error: 'ID không hợp lệ!' });
@@ -324,6 +324,8 @@ router.put('/:id', ensurePool, async (req, res) => {
     if (!transportation) missingFields.push("transportation");
     if (!departure_point) missingFields.push("departure_point");
     if (!star_rating) missingFields.push("star_rating");
+    if (!highlights) missingFields.push("highlights");
+    if (!itinerary) missingFields.push("itinerary");
 
     if (missingFields.length > 0) {
       return res.status(400).json({ error: `Thiếu các trường bắt buộc: ${missingFields.join(", ")}` });
@@ -349,12 +351,34 @@ router.put('/:id', ensurePool, async (req, res) => {
       .input('transportation', sql.NVarChar, transportation)
       .input('departure_point', sql.NVarChar, departure_point)
       .input('star_rating', sql.Int, star_rating)
+      .input('highlights', sql.NVarChar(sql.MAX), JSON.stringify(highlights)) // Cập nhật highlights
       .query(`
         UPDATE [web_travel].[dbo].[tours]
         SET name = @name, start_date = @start_date, status = @status, days = @days, nights = @nights,
-            transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating
+            transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating,
+            highlights = @highlights
         WHERE id = @id
       `);
+
+    // Xóa lịch trình cũ và thêm lịch trình mới
+    await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(id))
+      .query('DELETE FROM [web_travel].[dbo].[tour_itineraries] WHERE tour_id = @tour_id');
+
+    if (itinerary && Array.isArray(itinerary)) {
+      const itineraryInserts = itinerary.map(day =>
+        req.app.locals.pool.request()
+          .input('tour_id', sql.Int, parseInt(id))
+          .input('day_number', sql.Int, day.day_number)
+          .input('title', sql.NVarChar, day.title)
+          .input('details', sql.NVarChar(sql.MAX), JSON.stringify(day.details))
+          .query(`
+            INSERT INTO [web_travel].[dbo].[tour_itineraries] (tour_id, day_number, title, details)
+            VALUES (@tour_id, @day_number, @title, @details)
+          `)
+      );
+      await Promise.all(itineraryInserts);
+    }
 
     // Xóa giá cũ và thêm giá mới
     await req.app.locals.pool.request()

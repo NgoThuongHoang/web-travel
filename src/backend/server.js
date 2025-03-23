@@ -13,6 +13,7 @@ const PORT = 5001;
 
 // Middleware
 app.use(express.json());
+app.use('/images', express.static('public/images')); // Phục vụ file tĩnh từ thư mục public/images
 app.use(cors({
   origin: "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
