@@ -187,7 +187,7 @@ function Home() {
                                         <h3 className="product-name">
                                             <a className="text-decoration-none text-split text-split-2" 
                                             href="/toursDetail1" 
-                                            title="MŨI NÉ - NGHĨ DƯỎNG">MŨI NÉ - THIÊN ĐƯỜNG NGHỈ DƯỎNG</a>
+                                            title="MŨI NÉ - NGHỈ DƯỠNG">MŨI NÉ - THIÊN ĐƯỜNG NGHỈ DƯỠNG</a>
                                         </h3>
                                         <p className="product-info">
                                             <img src="./images/icon-p1.png" alt="Icon product" />3 NGÀY

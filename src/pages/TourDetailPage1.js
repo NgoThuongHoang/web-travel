@@ -23,6 +23,10 @@ import {
   StarOutlined,
   LeftOutlined,
   RightOutlined,
+  SunOutlined,
+  CoffeeOutlined,
+  CloudOutlined,
+  MoonOutlined,
 } from "@ant-design/icons";
 import '../styles/TourDetailPage.css';
 
@@ -82,6 +86,7 @@ const TourDetailPage1 = () => {
         setError(null);
         setImageLoadErrors([]);
 
+        // Lấy dữ liệu tour
         const tourResponse = await fetch("http://localhost:5001/api/tours/3");
         if (!tourResponse.ok) {
           throw new Error("Không thể lấy dữ liệu tour");
@@ -91,6 +96,7 @@ const TourDetailPage1 = () => {
         console.log("Số lượng ảnh:", tourData.images ? tourData.images.length : 0);
         console.log("Danh sách URL ảnh:", tourData.images ? tourData.images.map(img => img.image_url) : []);
 
+        // Parse itinerary và highlights nếu là chuỗi
         if (tourData.itinerary && typeof tourData.itinerary === "string") {
           try {
             tourData.itinerary = JSON.parse(tourData.itinerary);
@@ -109,6 +115,7 @@ const TourDetailPage1 = () => {
         }
         setTourData(tourData);
 
+        // Lấy dữ liệu lịch trình
         try {
           const itineraryResponse = await fetch("http://localhost:5001/api/tours/3/itineraries");
           if (!itineraryResponse.ok) {
@@ -116,15 +123,47 @@ const TourDetailPage1 = () => {
           }
           const itineraryData = await itineraryResponse.json();
           const parsedItineraryData = itineraryData.map(item => {
+            let detailsObject = { Sáng: "", Trưa: "", Chiều: "", Tối: "" };
+
             if (item.details && typeof item.details === "string") {
               try {
-                item.details = JSON.parse(item.details);
+                const detailsArray = JSON.parse(item.details);
+                if (Array.isArray(detailsArray)) {
+                  detailsArray.forEach(detail => {
+                    if (typeof detail === "string") {
+                      if (detail.startsWith("Sáng:")) {
+                        detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                      } else if (detail.startsWith("Trưa:")) {
+                        detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                      } else if (detail.startsWith("Chiều:")) {
+                        detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                      } else if (detail.startsWith("Tối:")) {
+                        detailsObject.Tối = detail.replace("Tối:", "").trim();
+                      }
+                    }
+                  });
+                }
               } catch (err) {
                 console.error("Lỗi parse details:", err);
-                item.details = [];
+                return { ...item, details: detailsObject };
               }
+            } else if (Array.isArray(item.details)) {
+              item.details.forEach(detail => {
+                if (typeof detail === "string") {
+                  if (detail.startsWith("Sáng:")) {
+                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                  } else if (detail.startsWith("Trưa:")) {
+                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                  } else if (detail.startsWith("Chiều:")) {
+                    detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                  } else if (detail.startsWith("Tối:")) {
+                    detailsObject.Tối = detail.replace("Tối:", "").trim();
+                  }
+                }
+              });
             }
-            return item;
+
+            return { ...item, details: detailsObject };
           });
           setItineraryDetails(parsedItineraryData);
         } catch (err) {
@@ -132,6 +171,7 @@ const TourDetailPage1 = () => {
           setItineraryDetails([]);
         }
 
+        // Lấy dữ liệu tour đã xem
         try {
           const viewedToursResponse = await fetch("http://localhost:5001/api/tours/viewed");
           if (!viewedToursResponse.ok) {
@@ -144,6 +184,7 @@ const TourDetailPage1 = () => {
           setViewedTours(mockViewedTours);
         }
 
+        // Lấy dữ liệu tour liên quan
         try {
           const relatedToursResponse = await fetch("http://localhost:5001/api/tours/related");
           if (!relatedToursResponse.ok) {
@@ -196,7 +237,6 @@ const TourDetailPage1 = () => {
   const tourImages = tourData.images && Array.isArray(tourData.images)
     ? tourData.images
         .map((img) => {
-          // Bỏ tiền tố http://localhost:5001 nếu có
           let imageUrl = img.image_url;
           if (imageUrl.startsWith('http://localhost:5001')) {
             imageUrl = imageUrl.replace('http://localhost:5001', '');
@@ -204,20 +244,16 @@ const TourDetailPage1 = () => {
           return imageUrl;
         })
         .filter(Boolean)
-        .slice(0, 10) // Giới hạn tối đa 10 ảnh để tránh lỗi
+        .slice(0, 10)
     : [];
   console.log("Tour images (sau khi xử lý):", tourImages);
 
-  const itinerary = Array.isArray(tourData.itinerary)
-    ? tourData.itinerary.map((day, index) => {
-        const details = itineraryDetails.find((item) => item.day_number === (index + 1)) || { details: [] };
-        return {
-          day: day.day || `NGÀY ${index + 1}`,
-          title: day.title || "Không có tiêu đề",
-          details: Array.isArray(details.details) ? details.details : [],
-        };
-      })
-    : [];
+  // Chuẩn bị dữ liệu lịch trình
+  const itinerary = itineraryDetails.map((day, index) => ({
+    day: `NGÀY ${day.day_number}`,
+    title: day.title || "Không có tiêu đề",
+    details: day.details || { Sáng: "", Trưa: "", Chiều: "", Tối: "" },
+  }));
 
   const priceColumns = [
     { title: "Nhóm tuổi", dataIndex: "age_group", key: "age_group" },
@@ -227,14 +263,34 @@ const TourDetailPage1 = () => {
   ];
 
   const priceData = tourData.prices && Array.isArray(tourData.prices)
-    ? tourData.prices.map((price, index) => ({
+  ? tourData.prices.map((price, index) => {
+      console.log("Price item:", price);
+      // Chuyển đổi tên nhóm tuổi
+      const ageGroupMap = {
+        "Under 5": "Dưới 5 tuổi",
+        "5-11": "Từ 5 - 11 tuổi",
+        "Adult": "Người lớn",
+      };
+      const ageGroup = price.age_group ? price.age_group.trim() : "Không xác định";
+      const displayAgeGroup = ageGroupMap[ageGroup] || ageGroup;
+
+      // Xử lý giá: Nếu là "Dưới 5 tuổi" và giá là 0, hiển thị "Miễn phí"
+      let displayPrice;
+      if (displayAgeGroup === "Dưới 5 tuổi" && parseFloat(price.price) === 0) {
+        displayPrice = "Miễn phí";
+      } else {
+        displayPrice = price.price != null ? `${parseFloat(price.price).toLocaleString('vi-VN')} VND` : "Liên hệ";
+      }
+
+      return {
         key: index + 1,
-        age_group: price.age_group || "Không xác định",
-        price: price.price ? `${price.price.toLocaleString('vi-VN')} VND` : "Liên hệ",
-        single_room_price: price.single_room_price ? `${price.single_room_price.toLocaleString('vi-VN')} VND` : "Không có",
+        age_group: displayAgeGroup,
+        price: displayPrice,
+        single_room_price: price.single_room_price != null ? `${parseFloat(price.single_room_price).toLocaleString('vi-VN')} VND` : "Không có",
         description: price.description || "Không có mô tả",
-      }))
-    : [];
+      };
+    })
+  : [];
 
   const priceExclusions = [
     "Tiền tip cho HDV và lái xe",
@@ -393,19 +449,56 @@ const TourDetailPage1 = () => {
                   <Timeline>
                     {itinerary.map((day, index) => (
                       <Timeline.Item key={index}>
-                        <Title level={4}>{day.day}</Title>
-                        <p><strong>{day.title}</strong></p>
-                        {day.details.length > 0 ? (
-                          <List
-                            dataSource={day.details}
-                            renderItem={(detail) => (
-                              <List.Item style={{ padding: "4px 0" }}>
-                                - {detail}
-                              </List.Item>
+                        {/* Định dạng tiêu đề ngày: NGÀY 1: TP.HCM - PHAN THIẾT */}
+                        <Title level={4}>
+                          {day.day}: {day.title.toUpperCase()}
+                        </Title>
+                        {day.details && (
+                          <div style={{ lineHeight: "1.8" }}>
+                            {day.details.Sáng && (
+                              <div style={{ marginBottom: 12 }}>
+                                <Text strong>
+                                  <SunOutlined style={{ marginRight: 8, color: "#fadb14" }} />
+                                  Buổi sáng:
+                                </Text>
+                                <br />
+                                <Text style={{ marginLeft: 24 }}>{day.details.Sáng}</Text>
+                              </div>
                             )}
-                          />
-                        ) : (
-                          <Text>Không có chi tiết lịch trình cho ngày này.</Text>
+                            {day.details.Trưa && (
+                              <div style={{ marginBottom: 12 }}>
+                                <Text strong>
+                                  <CoffeeOutlined style={{ marginRight: 8, color: "#d46b08" }} />
+                                  Buổi trưa:
+                                </Text>
+                                <br />
+                                <Text style={{ marginLeft: 24 }}>{day.details.Trưa}</Text>
+                              </div>
+                            )}
+                            {day.details.Chiều && (
+                              <div style={{ marginBottom: 12 }}>
+                                <Text strong>
+                                  <CloudOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+                                  Buổi chiều:
+                                </Text>
+                                <br />
+                                <Text style={{ marginLeft: 24 }}>{day.details.Chiều}</Text>
+                              </div>
+                            )}
+                            {day.details.Tối && (
+                              <div style={{ marginBottom: 12 }}>
+                                <Text strong>
+                                  <MoonOutlined style={{ marginRight: 8, color: "#722ed1" }} />
+                                  Buổi tối:
+                                </Text>
+                                <br />
+                                <Text style={{ marginLeft: 24 }}>{day.details.Tối}</Text>
+                              </div>
+                            )}
+                            {!day.details.Sáng && !day.details.Trưa && !day.details.Chiều && !day.details.Tối && (
+                              <Text>Không có chi tiết lịch trình cho ngày này.</Text>
+                            )}
+                          </div>
                         )}
                       </Timeline.Item>
                     ))}
@@ -414,26 +507,33 @@ const TourDetailPage1 = () => {
                   <Text>Không có lịch trình chi tiết cho tour này.</Text>
                 )}
               </TabPane>
+
               <TabPane tab="Bảng giá" key="2">
-                {priceData.length > 0 ? (
-                  <Card title="Giá tour">
-                    <Table columns={priceColumns} dataSource={priceData} pagination={false} bordered />
-                  </Card>
-                ) : (
-                  <Card title="Giá tour">
+                <Card title="Giá tour">
+                  {priceData.length > 0 ? (
+                    <Table
+                      columns={priceColumns}
+                      dataSource={priceData.filter(p => p.age_group !== "Không xác định")}
+                      pagination={false}
+                      bordered
+                    />
+                  ) : (
                     <Text>Giá tour: Liên hệ</Text>
-                  </Card>
-                )}
+                  )}
+                </Card>
                 <Card title="Giá tour không bao gồm" style={{ marginTop: 16 }}>
                   <Table columns={exclusionColumns} dataSource={exclusionData} pagination={false} bordered />
                 </Card>
               </TabPane>
+
               <TabPane tab="Ngày khởi hành" key="3">
                 <p>Ngày khởi hành: {tourInfo.departureDate}</p>
               </TabPane>
+
               <TabPane tab="Quy định" key="4">
                 {cancellationPolicy}
               </TabPane>
+
               <TabPane tab="Bình luận" key="5">
                 <p>Phần bình luận Facebook sẽ được tích hợp ở đây.</p>
               </TabPane>
@@ -442,8 +542,15 @@ const TourDetailPage1 = () => {
 
           <Col xs={24} lg={8}>
             <Card className="booking-card">
-              <Title level={3}>
-                Giá tour: {priceData.length > 0 ? priceData[0].price : "Liên hệ"}
+              <Title level={3} className="tour-price-title">
+                Giá tour: <span className="tour-price-value">
+                  {priceData.length > 0 ? (
+                    (() => {
+                      const adultPrice = priceData.find(p => p.age_group === "Người lớn");
+                      return adultPrice ? adultPrice.price : "Liên hệ";
+                    })()
+                  ) : "Liên hệ"}
+                </span>
               </Title>
               <Button
                 type="default"
@@ -454,7 +561,7 @@ const TourDetailPage1 = () => {
                 Gửi yêu cầu tư vấn
               </Button>
               <Divider />
-              <Title level={4}>Điểm nổi bật:</Title>
+              <Title level={4} className="highlights-title">Điểm nổi bật:</Title>
               <List
                 dataSource={tourInfo.highlights}
                 renderItem={(item) => <List.Item>{item}</List.Item>}
