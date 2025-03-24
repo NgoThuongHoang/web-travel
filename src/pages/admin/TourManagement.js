@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Table, Card, Input, Button, Space, Modal, Typography, message, Image } from "antd";
+import { Table, Card, Input, Button, Space, Modal, Typography, message, Image, Select } from "antd";
 import { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import TourEditForm from "../../components/TourEditForm";
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const API_BASE_URL = "http://localhost:5001/api/tours";
 
@@ -30,6 +31,7 @@ const formatPrice = (price) => {
 const TourManagement = () => {
   const [tours, setTours] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [filterStatus, setFilterStatus] = useState(""); // Thêm state để lưu trạng thái lọc
   const [selectedTour, setSelectedTour] = useState(null);
   const [tourItinerary, setTourItinerary] = useState([]);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -40,7 +42,12 @@ const TourManagement = () => {
   const fetchTours = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}?search=${searchText}`, {
+      // Tạo query string với cả search và status
+      const query = new URLSearchParams();
+      if (searchText) query.append("search", searchText);
+      if (filterStatus) query.append("status", filterStatus);
+
+      const response = await fetch(`${API_BASE_URL}?${query.toString()}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -63,6 +70,7 @@ const TourManagement = () => {
             highlights: typeof tour.highlights === "string" ? JSON.parse(tour.highlights) : tour.highlights || [],
             images: tour.images || [],
             price: adultPrice,
+            displayStatus: tour.status === "pending" ? "Đang chờ" : "Hoạt động",
           };
         });
         setTours(parsedData);
@@ -141,9 +149,10 @@ const TourManagement = () => {
     }
   };
 
+  // Gọi fetchTours khi searchText hoặc filterStatus thay đổi
   useEffect(() => {
     fetchTours();
-  }, [searchText]);
+  }, [searchText, filterStatus]);
 
   const handleDelete = async () => {
     try {
@@ -172,7 +181,6 @@ const TourManagement = () => {
 
   const handleSubmit = async (tourData) => {
     try {
-      // Chuẩn bị dữ liệu tour
       const tourPayload = {
         name: tourData.title || "Tour không có tiêu đề",
         days: parseInt(tourData.days) || 1,
@@ -182,22 +190,22 @@ const TourManagement = () => {
         star_rating: parseInt(tourData.star_rating) || 3,
         transportation: tourData.transportation || "Không xác định",
         departure_point: tourData.departurePoint || "Không xác định",
-        highlights: tourData.highlights || [], // Thêm highlights
-        itinerary: tourData.itinerary || [], // Thêm itinerary
+        highlights: tourData.highlights || [],
+        itinerary: tourData.itinerary || [],
         prices: tourData.prices || [],
         images: (tourData.images || [])
-          .filter(image => image.image_url) // Lọc bỏ các ảnh không có image_url
+          .filter(image => image.image_url)
           .map((image) => ({
             image_url: image.image_url,
             caption: image.caption || null,
           })),
+        region: tourData.region || "Không xác định",
       };
-  
+
       console.log("tourPayload:", tourPayload);
-  
+
       let tourResponse;
       if (selectedTour) {
-        // Nếu là chỉnh sửa, gửi yêu cầu PUT
         tourResponse = await fetch(`${API_BASE_URL}/${selectedTour.id}`, {
           method: "PUT",
           headers: {
@@ -206,7 +214,6 @@ const TourManagement = () => {
           body: JSON.stringify(tourPayload),
         });
       } else {
-        // Nếu là tạo mới, gửi yêu cầu POST
         tourResponse = await fetch(`${API_BASE_URL}`, {
           method: "POST",
           headers: {
@@ -215,12 +222,12 @@ const TourManagement = () => {
           body: JSON.stringify(tourPayload),
         });
       }
-  
+
       if (!tourResponse.ok) {
         const errorData = await tourResponse.json();
         throw new Error(errorData.error || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour: ${tourResponse.status} - Không có thông tin lỗi chi tiết`);
       }
-  
+
       message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
       await fetchTours();
     } catch (error) {
@@ -245,6 +252,12 @@ const TourManagement = () => {
       key: "name",
     },
     {
+      title: "Khu vực",
+      dataIndex: "region",
+      key: "region",
+      render: (text) => text || "Không xác định",
+    },
+    {
       title: "Ngày Khởi Hành",
       dataIndex: "start_date",
       key: "start_date",
@@ -260,6 +273,24 @@ const TourManagement = () => {
       title: "Thời gian",
       key: "duration",
       render: (_, record) => `${record.days} NGÀY ${record.nights} ĐÊM`,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "displayStatus",
+      key: "status",
+      render: (text, record) => (
+        <span
+          style={{
+            padding: "4px 12px",
+            borderRadius: "16px",
+            backgroundColor: record.status === "active" ? "#52c41a" : "#fadb14", // Xanh cho active, vàng cho pending
+            color: record.status === "active" ? "#fff" : "#000",
+            fontWeight: "500",
+          }}
+        >
+          {text}
+        </span>
+      ),
     },
     {
       title: "Ảnh",
@@ -337,13 +368,24 @@ const TourManagement = () => {
           }}
         >
           <Input
-            placeholder="Tìm kiếm tour..."
+            placeholder="Tìm kiếm theo tên tour hoặc mã tour..."
             prefix={<SearchOutlined />}
+            value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 300 }}
           />
+          <Select
+            placeholder="Lọc theo trạng thái"
+            style={{ width: 200 }}
+            value={filterStatus}
+            onChange={(value) => setFilterStatus(value)}
+          >
+            <Option value="">Tất cả</Option>
+            <Option value="active">Hoạt động</Option>
+            <Option value="pending">Đang chờ</Option>
+          </Select>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-            setSelectedTour(null); // Đảm bảo selectedTour là null khi tạo mới
+            setSelectedTour(null);
             setShowEditModal(true);
           }}>
             Thêm tour mới
@@ -359,12 +401,14 @@ const TourManagement = () => {
         />
       </Card>
 
-      {/* Modal Chi tiết */}
       <Modal title="Chi tiết tour" open={showDetailModal} onCancel={() => setShowDetailModal(false)} footer={null}>
         {selectedTour && (
           <div>
             <p>
               <strong>Tên tour:</strong> {selectedTour.name}
+            </p>
+            <p>
+              <strong>Khu vực:</strong> {selectedTour.region || "Không xác định"}
             </p>
             <p>
               <strong>Thời gian:</strong> {selectedTour.days} NGÀY {selectedTour.nights} ĐÊM
@@ -380,6 +424,9 @@ const TourManagement = () => {
             </p>
             <p>
               <strong>Mã tour:</strong> {selectedTour.tour_code || "Chưa có thông tin"}
+            </p>
+            <p>
+              <strong>Trạng thái:</strong> {selectedTour.status === "pending" ? "Đang chờ" : "Hoạt động"}
             </p>
             <p>
               <strong>Giá tour:</strong>
@@ -406,7 +453,6 @@ const TourManagement = () => {
         )}
       </Modal>
 
-      {/* Modal Chỉnh sửa/Thêm mới */}
       <Modal
         title={selectedTour ? "Sửa tour" : "Thêm tour mới"}
         open={showEditModal}
@@ -427,7 +473,6 @@ const TourManagement = () => {
         />
       </Modal>
 
-      {/* Modal Xóa */}
       <Modal
         title="Xác nhận xóa"
         open={showDeleteModal}

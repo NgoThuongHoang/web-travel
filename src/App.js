@@ -9,7 +9,7 @@ import About from './pages/About';
 import News from './pages/News';
 import Contact from './pages/Contact';
 import TourDetailPage from './pages/TourDetailPage';
-import PaymentPage from './pages/PaymentPage';
+import PaymentPage from './components/PaymentPage';
 import Login from './pages/Login';
 import Admin from './pages/admin/Admin';
 import TourManagement from './pages/admin/TourManagement';
@@ -24,46 +24,45 @@ import TourEditPage from './pages/admin/TourEditPage';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'antd/dist/reset.css';
 import BackToTop from './components/BackToTop';
-
 import TourDetailPage1 from './pages/TourDetailPage1';
-
 
 function Layout() {
     const location = useLocation();
-    const isAdminRoute = location.pathname.startsWith('/admin') || 
-                         location.pathname.startsWith('/quan-ly-tour') || 
-                         location.pathname.startsWith('/quan-ly-dat-tour') ||
-                         location.pathname.startsWith('/thong-ke-doanh-thu') ||
-                         location.pathname.startsWith('/quan-ly-nguoi-dung') ||
-                         location.pathname.startsWith('/bao-cao') ||
-                         location.pathname.startsWith('/cham-soc-khach-hang') ||
-                         location.pathname.startsWith('/tra-cuu') ||
-                         location.pathname.startsWith('/sua-noi-dung');
-                         location.pathname.startsWith('/quan-ly-tai-khoan');
+    const isAdminRoute =
+        location.pathname.startsWith('/admin') ||
+        location.pathname.startsWith('/quan-ly-tour') ||
+        location.pathname.startsWith('/quan-ly-dat-tour') ||
+        location.pathname.startsWith('/thong-ke-doanh-thu') ||
+        location.pathname.startsWith('/quan-ly-nguoi-dung') ||
+        location.pathname.startsWith('/bao-cao') ||
+        location.pathname.startsWith('/cham-soc-khach-hang') ||
+        location.pathname.startsWith('/tra-cuu') ||
+        location.pathname.startsWith('/sua-noi-dung') ||
+        location.pathname.startsWith('/quan-ly-tai-khoan');
 
-    // Kiểm tra nếu là trang đăng nhập
     const isLoginPage = location.pathname === '/dang-nhap';
+
+    // Lấy query string để truyền tourId vào PaymentPage
+    const queryParams = new URLSearchParams(location.search);
+    const tourId = queryParams.get('tourId'); // Lấy tourId từ query string (ví dụ: /thanh-toan?tourId=1)
 
     return (
         <>
-            {/* Chỉ hiển thị Header nếu không phải trang đăng nhập */}
             {!isLoginPage && (isAdminRoute ? <AdminHeader /> : <Header />)}
             <BackToTop />
             <main>
                 <Routes>
-                    {/* Trang chính */}
                     <Route path="/" element={<Home />} />
                     <Route path="/tours" element={<Tours />} />
                     <Route path="/tours/:id" element={<TourDetails />} />
                     <Route path="/toursDetail/" element={<TourDetailPage />} />
                     <Route path="/toursDetail1/" element={<TourDetailPage1 />} />
-                    <Route path="/thanh-toan" element={<PaymentPage />} />
+                    {/* Truyền tourId vào PaymentPage */}
+                    <Route path="/thanh-toan" element={<PaymentPage tourId={tourId} />} />
                     <Route path="/ve-chung-toi" element={<About />} />
                     <Route path="/tin-tuc" element={<News />} />
                     <Route path="/lien-he" element={<Contact />} />
                     <Route path="/dang-nhap" element={<Login />} />
-                    
-                    {/* Nhóm route admin */}
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/admin/quan-ly-tour" element={<TourManagement />} />
                     <Route path="/admin/quan-ly-dat-tour" element={<BookingManagement />} />
@@ -76,7 +75,6 @@ function Layout() {
                     <Route path="/admin/quan-ly-tai-khoan" element={<AccountManagement />} />
                 </Routes>
             </main>
-            {/* Chỉ hiển thị Footer nếu không phải trang đăng nhập */}
             {!isLoginPage && <Footer />}
         </>
     );

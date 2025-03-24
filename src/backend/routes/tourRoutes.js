@@ -1,13 +1,13 @@
 const express = require('express');
 const { sql } = require('../db');
-const multer = require('multer'); // Thêm import multer
-const path = require('path'); // Thêm import path
-const fs = require('fs'); // Thêm import fs
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
-// Định nghĩa domain của backend (bỏ BACKEND_URL)
-const IMAGE_PATH = ''; // Đường dẫn mới
+// Định nghĩa domain của backend
+const IMAGE_PATH = ''; // Đường dẫn đến ảnh, cần cấu hình nếu cần
 
 // Middleware kiểm tra pool
 const ensurePool = (req, res, next) => {
@@ -20,9 +20,9 @@ const ensurePool = (req, res, next) => {
 // Cấu hình multer để lưu file
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads'); // Thư mục lưu ảnh
+    const uploadDir = path.join(__dirname, '../uploads');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true }); // Thêm recursive để tạo thư mục nếu chưa tồn tại
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
@@ -40,7 +40,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'Không có file được upload!' });
     }
-    const imageUrl = `/uploads/${req.file.filename}`; // Đường dẫn ảnh
+    const imageUrl = `/uploads/${req.file.filename}`;
     res.status(200).json({ url: imageUrl });
   } catch (err) {
     console.error('Lỗi upload ảnh:', err);
@@ -51,11 +51,29 @@ router.post('/upload', upload.single('file'), (req, res) => {
 // API lấy danh sách tour
 router.get('/', ensurePool, async (req, res) => {
   try {
-    const tourResult = await req.app.locals.pool.request().query(`
+    const { search, status } = req.query;
+
+    let query = `
       SELECT t.*, tp.age_group, tp.price, tp.single_room_price, tp.description
       FROM [web_travel].[dbo].[tours] t
       LEFT JOIN [web_travel].[dbo].[tour_prices] tp ON t.id = tp.tour_id
-    `);
+    `;
+    const params = {};
+
+    if (search) {
+      query += ` WHERE (t.name LIKE @search OR t.tour_code LIKE @search)`;
+      params.search = `%${search}%`;
+    }
+
+    if (status && (status === 'active' || status === 'pending')) {
+      query += search ? ` AND t.status = @status` : ` WHERE t.status = @status`;
+      params.status = status;
+    }
+
+    const tourResult = await req.app.locals.pool.request()
+      .input('search', sql.NVarChar, params.search)
+      .input('status', sql.NVarChar, params.status)
+      .query(query);
 
     const imageResult = await req.app.locals.pool.request().query(`
       SELECT id, tour_id, image_url, caption
@@ -77,8 +95,11 @@ router.get('/', ensurePool, async (req, res) => {
           tour_code: row.tour_code,
           star_rating: row.star_rating,
           highlights: row.highlights ? JSON.parse(row.highlights) : [],
+          region: row.region,
+          total_tickets: row.total_tickets,
+          remaining_tickets: row.remaining_tickets,
           prices: [],
-          images: []
+          images: [],
         };
       }
       if (row.age_group) {
@@ -143,10 +164,13 @@ router.get('/:id', ensurePool, async (req, res) => {
       departure_point: tourResult.recordset[0].departure_point,
       tour_code: tourResult.recordset[0].tour_code,
       star_rating: tourResult.recordset[0].star_rating,
-      highlights: tourResult.recordset[0].highlights,
+      highlights: tourResult.recordset[0].highlights ? JSON.parse(tourResult.recordset[0].highlights) : [],
       itinerary: tourResult.recordset[0].itinerary,
+      total_tickets: tourResult.recordset[0].total_tickets,
+      remaining_tickets: tourResult.recordset[0].remaining_tickets,
+      region: tourResult.recordset[0].region,
       prices: [],
-      images: []
+      images: [],
     };
 
     tourResult.recordset.forEach(row => {
@@ -168,9 +192,8 @@ router.get('/:id', ensurePool, async (req, res) => {
         WHERE tour_id = @tour_id
       `);
 
-    // Thêm ảnh
     tour.images = imageResult.recordset.map(image => {
-      const fullImageUrl = `${IMAGE_PATH}${image.image_url}`; // Chỉ giữ image_url gốc
+      const fullImageUrl = `${IMAGE_PATH}${image.image_url}`;
       console.log(`Image URL for tour ${id}: ${fullImageUrl}`);
       return {
         id: image.id,
@@ -180,6 +203,13 @@ router.get('/:id', ensurePool, async (req, res) => {
       };
     });
 
+    // Kiểm tra nếu remaining_tickets là null hoặc undefined
+    if (tour.remaining_tickets === null || tour.remaining_tickets === undefined) {
+      console.warn(`remaining_tickets is null or undefined for tour ${id}, defaulting to total_tickets`);
+      tour.remaining_tickets = tour.total_tickets || 0;
+    }
+
+    console.log('Tour data being sent:', tour);
     res.json(tour);
   } catch (err) {
     console.error('Lỗi lấy chi tiết tour:', err);
@@ -190,7 +220,28 @@ router.get('/:id', ensurePool, async (req, res) => {
 // API tạo tour mới
 router.post('/', ensurePool, async (req, res) => {
   try {
-    const { name, start_date, status, days, nights, transportation, departure_point, star_rating, highlights, itinerary, prices, images } = req.body;
+    const { 
+      name, 
+      start_date, 
+      status: rawStatus, 
+      days, 
+      nights, 
+      transportation, 
+      departure_point, 
+      star_rating, 
+      highlights, 
+      itinerary, 
+      prices, 
+      images, 
+      region = "Không xác định",
+      total_tickets // Thêm total_tickets vào body
+    } = req.body;
+
+    // Kiểm tra status
+    const status = rawStatus || 'active';
+    if (status !== 'active' && status !== 'pending') {
+      return res.status(400).json({ error: "Trạng thái không hợp lệ! Chỉ chấp nhận 'active' hoặc 'pending'." });
+    }
 
     // Kiểm tra các trường bắt buộc
     const missingFields = [];
@@ -204,33 +255,30 @@ router.post('/', ensurePool, async (req, res) => {
     if (!star_rating) missingFields.push("star_rating");
     if (!highlights) missingFields.push("highlights");
     if (!itinerary) missingFields.push("itinerary");
+    if (!total_tickets) missingFields.push("total_tickets"); // Kiểm tra total_tickets
 
     if (missingFields.length > 0) {
       return res.status(400).json({ error: `Thiếu các trường bắt buộc: ${missingFields.join(", ")}` });
     }
 
-    // Lấy tour_code lớn nhất hiện có
     const maxTourCodeResult = await req.app.locals.pool.request().query(`
       SELECT MAX(tour_code) as max_tour_code
       FROM [web_travel].[dbo].[tours]
       WHERE tour_code LIKE 'TOUR-[0-9][0-9]'
     `);
 
-    let newTourCodeNumber = 1; // Mặc định bắt đầu từ 1
+    let newTourCodeNumber = 1;
     const maxTourCode = maxTourCodeResult.recordset[0].max_tour_code;
 
     if (maxTourCode) {
-      // Lấy số thứ tự từ tour_code lớn nhất (ví dụ: TOUR-05 -> lấy 05)
       const match = maxTourCode.match(/TOUR-(\d+)/);
       if (match) {
-        newTourCodeNumber = parseInt(match[1]) + 1; // Tăng số thứ tự lên 1
+        newTourCodeNumber = parseInt(match[1]) + 1;
       }
     }
 
-    // Tạo tour_code mới với định dạng TOUR-XX (ví dụ: TOUR-01, TOUR-02, ...)
-    const tour_code = `TOUR-${newTourCodeNumber.toString().padStart(2, '0')}`; // Đảm bảo số có 2 chữ số (01, 02, ...)
+    const tour_code = `TOUR-${newTourCodeNumber.toString().padStart(2, '0')}`;
 
-    // Thêm tour vào bảng dbo.tours
     const tourResult = await req.app.locals.pool.request()
       .input('name', sql.NVarChar, name)
       .input('start_date', sql.DateTime, new Date(start_date))
@@ -242,15 +290,23 @@ router.post('/', ensurePool, async (req, res) => {
       .input('tour_code', sql.NVarChar, tour_code)
       .input('star_rating', sql.Int, star_rating)
       .input('highlights', sql.NVarChar(sql.MAX), JSON.stringify(highlights))
+      .input('region', sql.NVarChar, region)
+      .input('total_tickets', sql.Int, total_tickets) // Thêm total_tickets
+      .input('remaining_tickets', sql.Int, total_tickets) // Khởi tạo remaining_tickets bằng total_tickets
       .query(`
-        INSERT INTO [web_travel].[dbo].[tours] (name, start_date, status, days, nights, transportation, departure_point, tour_code, star_rating, highlights)
-        VALUES (@name, @start_date, @status, @days, @nights, @transportation, @departure_point, @tour_code, @star_rating, @highlights);
+        INSERT INTO [web_travel].[dbo].[tours] (
+          name, start_date, status, days, nights, transportation, departure_point, 
+          tour_code, star_rating, highlights, region, total_tickets, remaining_tickets
+        )
+        VALUES (
+          @name, @start_date, @status, @days, @nights, @transportation, @departure_point, 
+          @tour_code, @star_rating, @highlights, @region, @total_tickets, @remaining_tickets
+        );
         SELECT SCOPE_IDENTITY() as id;
       `);
 
     const tourId = tourResult.recordset[0].id;
 
-    // Lưu itinerary vào bảng dbo.tour_itineraries
     if (itinerary && Array.isArray(itinerary)) {
       const itineraryInserts = itinerary.map(day =>
         req.app.locals.pool.request()
@@ -266,7 +322,6 @@ router.post('/', ensurePool, async (req, res) => {
       await Promise.all(itineraryInserts);
     }
 
-    // Lưu prices vào bảng dbo.tour_prices
     if (prices && Array.isArray(prices)) {
       const priceInserts = prices.map(p =>
         req.app.locals.pool.request()
@@ -283,7 +338,6 @@ router.post('/', ensurePool, async (req, res) => {
       await Promise.all(priceInserts);
     }
 
-    // Lưu images vào bảng dbo.tour_images
     if (images && Array.isArray(images)) {
       const imageInserts = images.map(img =>
         req.app.locals.pool.request()
@@ -309,10 +363,30 @@ router.post('/', ensurePool, async (req, res) => {
 router.put('/:id', ensurePool, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, start_date, status, days, nights, transportation, departure_point, star_rating, highlights, itinerary, prices, images } = req.body;
+    const { 
+      name, 
+      start_date, 
+      status: rawStatus, 
+      days, 
+      nights, 
+      transportation, 
+      departure_point, 
+      star_rating, 
+      highlights, 
+      itinerary, 
+      prices, 
+      images, 
+      region = "Không xác định",
+      total_tickets // Thêm total_tickets vào body
+    } = req.body;
 
     if (!id || isNaN(id)) {
       return res.status(400).json({ error: 'ID không hợp lệ!' });
+    }
+
+    const status = rawStatus || 'active';
+    if (status !== 'active' && status !== 'pending') {
+      return res.status(400).json({ error: "Trạng thái không hợp lệ! Chỉ chấp nhận 'active' hoặc 'pending'." });
     }
 
     const missingFields = [];
@@ -326,21 +400,24 @@ router.put('/:id', ensurePool, async (req, res) => {
     if (!star_rating) missingFields.push("star_rating");
     if (!highlights) missingFields.push("highlights");
     if (!itinerary) missingFields.push("itinerary");
+    if (!total_tickets) missingFields.push("total_tickets"); // Kiểm tra total_tickets
 
     if (missingFields.length > 0) {
       return res.status(400).json({ error: `Thiếu các trường bắt buộc: ${missingFields.join(", ")}` });
     }
 
-    // Kiểm tra tour có tồn tại không
     const tourCheck = await req.app.locals.pool.request()
       .input('id', sql.Int, parseInt(id))
-      .query('SELECT 1 FROM [web_travel].[dbo].[tours] WHERE id = @id');
+      .query('SELECT remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @id');
 
     if (tourCheck.recordset.length === 0) {
       return res.status(404).json({ error: 'Tour không tồn tại!' });
     }
 
-    // Cập nhật thông tin tour
+    const currentRemainingTickets = tourCheck.recordset[0].remaining_tickets;
+    const bookedTickets = tourCheck.recordset[0].total_tickets - currentRemainingTickets;
+    const newRemainingTickets = total_tickets - bookedTickets;
+
     await req.app.locals.pool.request()
       .input('id', sql.Int, parseInt(id))
       .input('name', sql.NVarChar, name)
@@ -351,16 +428,18 @@ router.put('/:id', ensurePool, async (req, res) => {
       .input('transportation', sql.NVarChar, transportation)
       .input('departure_point', sql.NVarChar, departure_point)
       .input('star_rating', sql.Int, star_rating)
-      .input('highlights', sql.NVarChar(sql.MAX), JSON.stringify(highlights)) // Cập nhật highlights
+      .input('highlights', sql.NVarChar(sql.MAX), JSON.stringify(highlights))
+      .input('region', sql.NVarChar, region)
+      .input('total_tickets', sql.Int, total_tickets)
+      .input('remaining_tickets', sql.Int, newRemainingTickets)
       .query(`
         UPDATE [web_travel].[dbo].[tours]
         SET name = @name, start_date = @start_date, status = @status, days = @days, nights = @nights,
             transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating,
-            highlights = @highlights
+            highlights = @highlights, region = @region, total_tickets = @total_tickets, remaining_tickets = @remaining_tickets
         WHERE id = @id
       `);
 
-    // Xóa lịch trình cũ và thêm lịch trình mới
     await req.app.locals.pool.request()
       .input('tour_id', sql.Int, parseInt(id))
       .query('DELETE FROM [web_travel].[dbo].[tour_itineraries] WHERE tour_id = @tour_id');
@@ -380,7 +459,6 @@ router.put('/:id', ensurePool, async (req, res) => {
       await Promise.all(itineraryInserts);
     }
 
-    // Xóa giá cũ và thêm giá mới
     await req.app.locals.pool.request()
       .input('tour_id', sql.Int, parseInt(id))
       .query('DELETE FROM [web_travel].[dbo].[tour_prices] WHERE tour_id = @tour_id');
@@ -401,7 +479,6 @@ router.put('/:id', ensurePool, async (req, res) => {
       await Promise.all(priceInserts);
     }
 
-    // Xóa hình ảnh cũ và thêm hình ảnh mới
     await req.app.locals.pool.request()
       .input('tour_id', sql.Int, parseInt(id))
       .query('DELETE FROM [web_travel].[dbo].[tour_images] WHERE tour_id = @tour_id');
@@ -533,8 +610,6 @@ router.delete('/:id', ensurePool, async (req, res) => {
           .query('DELETE FROM [web_travel].[dbo].[tour_tickets] WHERE itinerary_id = @itinerary_id_' + i);
         console.log(`Deleted ${deleteTicketsResult.rowsAffected} rows from tour_tickets for itinerary_id ${itineraryId}`);
       }
-    } else {
-      console.log('No itineraries found for tour_id:', tourId);
     }
 
     const deleteItinerariesRequest = transaction.request();
@@ -569,6 +644,242 @@ router.delete('/:id', ensurePool, async (req, res) => {
   } catch (err) {
     await transaction.rollback();
     console.error('Lỗi xóa tour:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// API đặt tour
+router.post('/:tourId/book', ensurePool, async (req, res) => {
+  try {
+    const { tourId } = req.params;
+    const {
+      full_name,
+      phone,
+      email,
+      birth_date,
+      id_number,
+      start_date,
+      adults,
+      children_under_5,
+      children_5_11,
+      single_rooms,
+      pickup_point,
+      special_requests,
+      payment_method,
+      total_amount,
+    } = req.body;
+
+    const total_booked_tickets = (adults || 0) + (children_under_5 || 0) + (children_5_11 || 0);
+
+    const tourCheck = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(tourId))
+      .query('SELECT total_tickets, remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @tour_id');
+
+    if (tourCheck.recordset.length === 0) {
+      return res.status(404).json({ error: 'Tour không tồn tại!' });
+    }
+
+    const remaining_tickets = tourCheck.recordset[0].remaining_tickets;
+
+    if (remaining_tickets < total_booked_tickets) {
+      return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remaining_tickets} vé.` });
+    }
+
+    await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(tourId))
+      .input('full_name', sql.NVarChar, full_name)
+      .input('phone', sql.NVarChar, phone)
+      .input('email', sql.NVarChar, email)
+      .input('birth_date', sql.DateTime, birth_date ? new Date(birth_date) : null)
+      .input('id_number', sql.NVarChar, id_number)
+      .input('start_date', sql.DateTime, start_date ? new Date(start_date) : null)
+      .input('adults', sql.Int, adults || 0)
+      .input('children_under_5', sql.Int, children_under_5 || 0)
+      .input('children_5_11', sql.Int, children_5_11 || 0)
+      .input('single_rooms', sql.Int, single_rooms || 0)
+      .input('pickup_point', sql.NVarChar, pickup_point)
+      .input('special_requests', sql.NVarChar, special_requests)
+      .input('payment_method', sql.NVarChar, payment_method)
+      .input('total_booked_tickets', sql.Int, total_booked_tickets)
+      .input('total_amount', sql.Float, total_amount || 0)
+      .input('status', sql.NVarChar, 'pending')
+      .input('order_date', sql.DateTime, new Date())
+      .query(`
+        INSERT INTO [web_travel].[dbo].[orders] (
+          tour_id, full_name, phone, email, birth_date, id_number, start_date, 
+          adults, children_under_5, children_5_11, single_rooms, pickup_point, 
+          special_requests, payment_method, total_booked_tickets, total_amount, 
+          status, order_date
+        )
+        VALUES (
+          @tour_id, @full_name, @phone, @email, @birth_date, @id_number, @start_date, 
+          @adults, @children_under_5, @children_5_11, @single_rooms, @pickup_point, 
+          @special_requests, @payment_method, @total_booked_tickets, @total_amount, 
+          @status, @order_date
+        )
+      `);
+
+    res.status(201).json({ message: 'Đặt tour thành công! Đơn hàng đang chờ xác nhận.' });
+  } catch (err) {
+    console.error('Lỗi đặt tour:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// API duyệt đơn hàng
+router.put('/:orderId/confirm', ensurePool, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const orderCheck = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(orderId))
+      .query(`
+        SELECT tour_id, total_booked_tickets, status
+        FROM [web_travel].[dbo].[orders]
+        WHERE id = @order_id
+      `);
+
+    if (orderCheck.recordset.length === 0) {
+      return res.status(404).json({ error: 'Đơn hàng không tồn tại!' });
+    }
+
+    const order = orderCheck.recordset[0];
+    if (order.status !== 'pending') {
+      return res.status(400).json({ error: 'Đơn hàng không ở trạng thái chờ xác nhận!' });
+    }
+
+    const tourCheck = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT remaining_tickets
+        FROM [web_travel].[dbo].[tours]
+        WHERE id = @tour_id
+      `);
+
+    if (tourCheck.recordset.length === 0) {
+      return res.status(404).json({ error: 'Tour không tồn tại!' });
+    }
+
+    const remaining_tickets = tourCheck.recordset[0].remaining_tickets;
+    const total_booked_tickets = order.total_booked_tickets;
+
+    if (remaining_tickets < total_booked_tickets) {
+      return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remaining_tickets} vé.` });
+    }
+
+    await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(orderId))
+      .input('status', sql.NVarChar, 'confirmed')
+      .query(`
+        UPDATE [web_travel].[dbo].[orders]
+        SET status = @status
+        WHERE id = @order_id
+      `);
+
+    await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .input('total_booked_tickets', sql.Int, total_booked_tickets)
+      .query(`
+        UPDATE [web_travel].[dbo].[tours]
+        SET remaining_tickets = remaining_tickets - @total_booked_tickets
+        WHERE id = @tour_id
+      `);
+
+    const updatedTour = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT remaining_tickets
+        FROM [web_travel].[dbo].[tours]
+        WHERE id = @tour_id
+      `);
+
+    res.status(200).json({
+      message: 'Duyệt đơn hàng thành công!',
+      updated_remaining_tickets: updatedTour.recordset[0].remaining_tickets,
+    });
+  } catch (err) {
+    console.error('Lỗi duyệt đơn hàng:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// API lấy thông tin tour theo ID
+router.get('/:tourId', ensurePool, async (req, res) => {
+  try {
+    const { tourId } = req.params;
+
+    if (!tourId || isNaN(tourId)) {
+      return res.status(400).json({ error: 'Tour ID không hợp lệ!' });
+    }
+
+    const tourResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(tourId))
+      .query(`
+        SELECT t.*
+        FROM [web_travel].[dbo].[tours] t
+        WHERE t.id = @tour_id
+      `);
+
+    if (tourResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Tour không tồn tại!' });
+    }
+
+    const tour = tourResult.recordset[0];
+
+    // Kiểm tra và log giá trị remaining_tickets
+    console.log('Tour data:', tour);
+    console.log('Remaining tickets:', tour.remaining_tickets);
+
+    // Kiểm tra nếu remaining_tickets là null hoặc undefined
+    if (tour.remaining_tickets === null || tour.remaining_tickets === undefined) {
+      console.warn(`remaining_tickets is null or undefined for tour ${tourId}, defaulting to total_tickets`);
+      tour.remaining_tickets = tour.total_tickets || 0;
+    }
+
+    const pricesResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(tourId))
+      .query(`
+        SELECT age_group, price, single_room_price, description
+        FROM [web_travel].[dbo].[tour_prices]
+        WHERE tour_id = @tour_id
+      `);
+
+    const imagesResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, parseInt(tourId))
+      .query(`
+        SELECT id, tour_id, image_url, caption
+        FROM [web_travel].[dbo].[tour_images]
+        WHERE tour_id = @tour_id
+      `);
+
+    const tourData = {
+      id: tour.id,
+      name: tour.name,
+      start_date: tour.start_date,
+      status: tour.status,
+      days: tour.days,
+      nights: tour.nights,
+      transportation: tour.transportation,
+      departure_point: tour.departure_point,
+      tour_code: tour.tour_code,
+      star_rating: tour.star_rating,
+      highlights: tour.highlights ? JSON.parse(tour.highlights) : [],
+      region: tour.region,
+      total_tickets: tour.total_tickets,
+      remaining_tickets: tour.remaining_tickets,
+      prices: pricesResult.recordset,
+      images: imagesResult.recordset.map(image => ({
+        id: image.id,
+        tour_id: image.tour_id,
+        image_url: `${IMAGE_PATH}${image.image_url}`,
+        caption: image.caption,
+      })),
+    };
+
+    console.log('Tour data being sent:', tourData);
+    res.status(200).json(tourData);
+  } catch (err) {
+    console.error('Lỗi lấy thông tin tour:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });

@@ -215,6 +215,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     departurePoint: tour?.departure_point || "",
     status: tour?.status || "active",
     star_rating: tour?.star_rating || 3,
+    region: tour?.region || "",
   };
 
   const onFinish = (values) => {
@@ -242,7 +243,9 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         single_room_price: price.single_room_price ? parseFloat(price.single_room_price) : null,
         description: price.description || "",
       })),
+      region: values.region || "Không xác định", 
     };
+    console.log("Data gửi từ TourEditForm:", data); // Thêm log để kiểm tra
     setPreviewData(data);
     setIsPreviewVisible(true);
   };
@@ -383,6 +386,20 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
+              <Form.Item
+                label="Khu vực"
+                name="region"
+                rules={[{ required: true, message: "Vui lòng chọn khu vực" }]}
+              >
+                <Select placeholder="Chọn khu vực">
+                  <Option value="Miền Bắc">Miền Bắc</Option>
+                  <Option value="Miền Trung">Miền Trung</Option>
+                  <Option value="Miền Nam">Miền Nam</Option>
+                  <Option value="Nước ngoài">Nước ngoài</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
               <Form.Item label="Thời gian">
                 <Row gutter={8}>
                   <Col span={12}>
@@ -453,7 +470,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
               >
                 <Select placeholder="Chọn trạng thái">
                   <Option value="active">Hoạt động</Option>
-                  <Option value="inactive">Không hoạt động</Option>
+                  <Option value="pending">Đang chờ</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -726,6 +743,11 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
             <div>
               <Title level={2}>{previewData.title}</Title>
               <Row gutter={16}>
+                <Col span={12}>
+                  <Text>
+                    <EnvironmentOutlined /> Khu vực: {previewData.region || "Không xác định"}
+                  </Text>
+                </Col>
                 <Col span={12}>
                   <Text>
                     <CalendarOutlined /> Thời gian: {previewData.days} NGÀY {previewData.nights} ĐÊM
