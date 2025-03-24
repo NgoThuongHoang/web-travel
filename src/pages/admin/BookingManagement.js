@@ -1,463 +1,301 @@
-import { useState, useEffect } from "react"
-import { Card, Table, Button, Input, Modal, Form, Space, Typography, List, Select, Checkbox } from "antd"
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons"
+import { useState, useEffect } from "react";
+import { Card, Table, Button, Input, Modal, Form, Space, Typography, Select, message } from "antd";
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import axios from 'axios';
 
-const { Title } = Typography
-const { Option } = Select
+const { Title } = Typography;
+const { Option } = Select;
 
-// Dữ liệu mẫu
-const INITIAL_ORDERS = [
-  {
-    id: 1,
-    customerName: "Nguyễn Văn An",
-    tourName: "Tour Đà Nẵng",
-    tourCode: "DN001",
-    orderDate: "2024-03-01",
-    startDate: "2024-05-15",
-    endDate: "2024-05-20",
-    status: "confirmed",
-    participants: [
-      { name: "Nguyễn Văn An", phone: "0901234567" },
-      { name: "Trần Thị B", phone: "0912345678" },
-    ],
-  },
-  {
-    id: 2,
-    customerName: "Trần Thị Bình",
-    tourName: "Tour Hạ Long",
-    tourCode: "HL002",
-    orderDate: "2024-03-05",
-    startDate: "2024-06-10",
-    endDate: "2024-06-17",
-    status: "pending",
-    participants: [
-      { name: "Trần Thị Bình", phone: "0923456789" },
-      { name: "Lê Văn C", phone: "0934567890" },
-      { name: "Phạm Thị D", phone: "0945678901" },
-    ],
-  },
-  {
-    id: 3,
-    customerName: "Lê Văn Cường",
-    tourName: "Tour Phú Quốc",
-    tourCode: "PQ003",
-    orderDate: "2024-03-10",
-    startDate: "2024-07-01",
-    endDate: "2024-07-05",
-    status: "cancelled",
-    participants: [
-      { name: "Lê Văn Cường", phone: "0956789012" },
-      { name: "Nguyễn Thị E", phone: "0967890123" },
-    ],
-  },
-]
+const API_URL = 'http://localhost:5001/api';
 
-// Hàm định dạng ngày tháng
 const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  const day = String(date.getDate()).padStart(2, "0")
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
-}
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('vi-VN');
+};
 
 const OrderManagement = () => {
-  const [form] = Form.useForm()
-  const [orders, setOrders] = useState(INITIAL_ORDERS)
-  const [selectedOrder, setSelectedOrder] = useState(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [searchText, setSearchText] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
-  const [customerFilter, setCustomerFilter] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
-  const [selectedOrders, setSelectedOrders] = useState([])
+  const [form] = Form.useForm();
+  const [orders, setOrders] = useState([]);
+  const [tours, setTours] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchTours();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/orders`);
+      setOrders(response.data || []);
+    } catch (error) {
+      message.error('Không thể tải danh sách đơn hàng: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTours = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/tours`);
+      setTours(response.data || []);
+    } catch (error) {
+      message.error('Không thể tải danh sách tour: ' + (error.response?.data?.error || error.message));
+    }
+  };
 
   useEffect(() => {
     if (selectedOrder && showEditModal) {
       form.setFieldsValue({
-        customerName: selectedOrder.customerName,
-        tourName: selectedOrder.tourName,
-        tourCode: selectedOrder.tourCode,
-        orderDate: selectedOrder.orderDate,
-        startDate: selectedOrder.startDate,
-        endDate: selectedOrder.endDate,
+        full_name: selectedOrder.full_name,
+        tourId: selectedOrder.tour_id,
+        phone: selectedOrder.phone,
+        email: selectedOrder.email,
+        birth_date: selectedOrder.birth_date ? new Date(selectedOrder.birth_date).toISOString().split('T')[0] : null,
+        orderDate: selectedOrder.order_date ? new Date(selectedOrder.order_date).toISOString().split('T')[0] : null,
+        startDate: selectedOrder.start_date ? new Date(selectedOrder.start_date).toISOString().split('T')[0] : null,
+        endDate: selectedOrder.end_date ? new Date(selectedOrder.end_date).toISOString().split('T')[0] : null,
+        adults: selectedOrder.adults,
+        children_under_5: selectedOrder.children_under_5,
+        children_5_11: selectedOrder.children_5_11,
+        single_rooms: selectedOrder.single_rooms,
+        pickup_point: selectedOrder.pickup_point,
+        special_requests: selectedOrder.special_requests,
+        payment_method: selectedOrder.payment_method,
+        total_amount: selectedOrder.total_amount,
         status: selectedOrder.status,
-        participants: selectedOrder.participants,
-      })
+      });
     } else {
-      form.resetFields()
+      form.resetFields();
     }
-  }, [selectedOrder, showEditModal, form])
+  }, [selectedOrder, showEditModal, form]);
 
-  const handleFormSubmit = (values) => {
-    const newOrder = {
-      id: selectedOrder ? selectedOrder.id : Date.now(),
-      ...values,
-      orderDate: values.orderDate,
-      startDate: values.startDate,
-      endDate: values.endDate,
-      itinerary: selectedOrder ? selectedOrder.itinerary : [],
+  const handleFormSubmit = async (values) => {
+    try {
+      const orderData = {
+        full_name: values.full_name,
+        tour_id: values.tourId,
+        phone: values.phone,
+        email: values.email,
+        birth_date: values.birth_date,
+        order_date: values.orderDate,
+        start_date: values.startDate,
+        end_date: values.endDate,
+        adults: values.adults,
+        children_under_5: values.children_under_5,
+        children_5_11: values.children_5_11,
+        single_rooms: values.single_rooms,
+        pickup_point: values.pickup_point,
+        special_requests: values.special_requests,
+        payment_method: values.payment_method,
+        total_amount: values.total_amount,
+        status: values.status,
+      };
+
+      if (selectedOrder) {
+        await axios.put(`${API_URL}/orders/${selectedOrder.id}`, orderData);
+        message.success('Cập nhật đơn hàng thành công');
+      } else {
+        await axios.post(`${API_URL}/tours/${values.tourId}/book`, orderData);
+        message.success('Tạo đơn hàng thành công');
+      }
+      fetchOrders();
+      setShowEditModal(false);
+      setSelectedOrder(null);
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi lưu đơn hàng: ' + (error.response?.data?.error || error.message));
     }
-    if (selectedOrder) {
-      setOrders((prevOrders) => prevOrders.map((order) => (order.id === selectedOrder.id ? newOrder : order)))
-    } else {
-      setOrders((prevOrders) => [...prevOrders, newOrder])
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${API_URL}/orders/${selectedOrder.id}`);
+      message.success('Xóa đơn hàng thành công');
+      fetchOrders();
+      setShowDeleteModal(false);
+      setSelectedOrder(null);
+    } catch (error) {
+      message.error('Không thể xóa đơn hàng: ' + (error.response?.data?.error || error.message));
     }
-    setShowEditModal(false)
-    setSelectedOrder(null)
-  }
+  };
+
+  const handleConfirmOrders = async () => {
+    try {
+      await Promise.all(selectedOrders.map(id => axios.put(`${API_URL}/orders/${id}/confirm`)));
+      message.success('Xác nhận đơn hàng thành công');
+      fetchOrders();
+      setSelectedOrders([]);
+    } catch (error) {
+      message.error('Không thể xác nhận đơn hàng: ' + (error.response?.data?.error || error.message));
+    }
+  };
 
   const getFilteredOrders = () => {
-    return orders.filter(
-      (order) =>
-        (order.customerName.toLowerCase().includes(searchText.toLowerCase()) ||
-          order.tourName.toLowerCase().includes(searchText.toLowerCase()) ||
-          order.tourCode.toLowerCase().includes(searchText.toLowerCase()) ||
-          formatDate(order.orderDate).includes(searchText)) &&
+    return orders.filter(order => {
+      const tour = tours.find(t => t.id === order.tour_id);
+      return (
+        (order.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+         (tour?.name || '').toLowerCase().includes(searchText.toLowerCase()) ||
+         (tour?.tour_code || '').toLowerCase().includes(searchText.toLowerCase()) ||
+         formatDate(order.order_date).includes(searchText)) &&
         (statusFilter ? order.status === statusFilter : true)
-    )
-  }
-
-  const handleSelectOrder = (selectedRowKeys) => {
-    setSelectedOrders(selectedRowKeys)
-  }
-
-  const markAsConfirmed = () => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        selectedOrders.includes(order.id) ? { ...order, status: "confirmed" } : order
-      )
-    )
-    setSelectedOrders([])
-  }
+      );
+    });
+  };
 
   const columns = [
-    {
-      title: "STT",
-      key: "index",
-      width: 60,
-      render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
-    },
-    {
-      title: "Khách hàng",
-      dataIndex: "customerName",
-      key: "customerName",
-      sorter: (a, b) => a.customerName.localeCompare(b.customerName),
-    },
-    {
-      title: "Tour",
-      dataIndex: "tourName",
-      key: "tourName",
-      sorter: (a, b) => a.tourName.localeCompare(b.tourName),
-    },
-    {
-      title: "Mã tour",
-      dataIndex: "tourCode",
-      key: "tourCode",
-      sorter: (a, b) => a.tourCode.localeCompare(b.tourCode),
-    },
-    {
-      title: "Ngày đặt",
-      dataIndex: "orderDate",
-      key: "orderDate",
-      render: (orderDate) => formatDate(orderDate),
-      sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
-    },
+    { title: "STT", render: (_, __, index) => index + 1 },
+    { title: "Khách hàng", dataIndex: "full_name", sorter: (a, b) => a.full_name?.localeCompare(b.full_name) },
+    { title: "Tour", render: (_, record) => tours.find(t => t.id === record.tour_id)?.name || 'N/A' },
+    { title: "Mã tour", render: (_, record) => tours.find(t => t.id === record.tour_id)?.tour_code || 'N/A' },
+    { title: "Ngày đặt", dataIndex: "order_date", render: formatDate, sorter: (a, b) => new Date(a.order_date) - new Date(b.order_date) },
     {
       title: "Trạng thái",
       dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        const color = status === "confirmed" ? "green" : status === "pending" ? "gold" : "red"
-        const text = status === "confirmed" ? "Đã xác nhận" : status === "pending" ? "Chờ xác nhận" : "Đã hủy"
-        return <span style={{ color: color }}>{text}</span>
+      render: status => {
+        const color = status === "confirmed" ? "green" : status === "pending" ? "gold" : "red";
+        const text = status === "confirmed" ? "Đã xác nhận" : status === "pending" ? "Chờ xác nhận" : "Đã hủy";
+        return <span style={{ color }}>{text}</span>;
       },
-      sorter: (a, b) => a.status.localeCompare(b.status),
+      sorter: (a, b) => a.status?.localeCompare(b.status),
     },
     {
       title: "Thao tác",
-      key: "action",
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setSelectedOrder(record)
-              setShowDetailModal(true)
-            }}
-          >
-            Chi tiết
-          </Button>
-          <Button
-            type="default"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setSelectedOrder(record)
-              setShowEditModal(true)
-            }}
-          >
-            Sửa
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => {
-              setSelectedOrder(record)
-              setShowDeleteModal(true)
-            }}
-          >
-            Xóa
-          </Button>
+          <Button type="primary" icon={<EyeOutlined />} onClick={() => { setSelectedOrder(record); setShowDetailModal(true); }}>Chi tiết</Button>
+          <Button type="default" icon={<EditOutlined />} onClick={() => { setSelectedOrder(record); setShowEditModal(true); }}>Sửa</Button>
+          <Button danger icon={<DeleteOutlined />} onClick={() => { setSelectedOrder(record); setShowDeleteModal(true); }}>Xóa</Button>
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
     <div className="order-management">
       <Card>
         <Title level={2}>Quản lý đặt tour</Title>
-
-        <div style={{ marginBottom: 16 }}>
-          <Space wrap>
-            <Input
-              placeholder="Tìm kiếm theo tên khách hàng, tour, mã tour hoặc ngày đặt"
-              prefix={<SearchOutlined />}
-              style={{ width: 425 }}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            <Select
-              placeholder="Chọn trạng thái"
-              style={{ width: 200 }}
-              onChange={(value) => setStatusFilter(value)}
-              allowClear
-            >
-              <Option value="confirmed">Đã xác nhận</Option>
-              <Option value="pending">Chờ xác nhận</Option>
-              <Option value="cancelled">Đã hủy</Option>
-            </Select>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setShowEditModal(true)}
-            >
-              Thêm đơn đặt tour
-            </Button>
-            <Button
-              type="default"
-              icon={<PlusOutlined />}
-              onClick={markAsConfirmed}
-              disabled={selectedOrders.length === 0}
-              style={{ backgroundColor: selectedOrders.length > 0 ? 'green' : undefined, color: selectedOrders.length > 0 ? 'white' : undefined }}
-            >
-              Xác nhận đơn chọn
-            </Button>
-          </Space>
-        </div>
-
+        <Space style={{ marginBottom: 16 }} wrap>
+          <Input placeholder="Tìm kiếm theo tên khách hàng, tour, mã tour hoặc ngày đặt" prefix={<SearchOutlined />} style={{ width: 425 }} onChange={(e) => setSearchText(e.target.value)} />
+          <Select placeholder="Chọn trạng thái" style={{ width: 200 }} onChange={setStatusFilter} allowClear>
+            <Option value="confirmed">Đã xác nhận</Option>
+            <Option value="pending">Chờ xác nhận</Option>
+            <Option value="cancelled">Đã hủy</Option>
+          </Select>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setSelectedOrder(null); setShowEditModal(true); }}>Thêm đơn đặt tour</Button>
+          <Button type="default" icon={<PlusOutlined />} onClick={handleConfirmOrders} disabled={!selectedOrders.length} style={{ backgroundColor: selectedOrders.length ? 'green' : undefined, color: selectedOrders.length ? 'white' : undefined }}>
+            Xác nhận đơn chọn
+          </Button>
+        </Space>
         <Table
           rowKey="id"
           dataSource={getFilteredOrders()}
           columns={columns}
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: orders.length,
-            onChange: (page) => setCurrentPage(page),
-          }}
-          rowSelection={{
-            selectedRowKeys: selectedOrders,
-            onChange: handleSelectOrder,
-          }}
+          loading={loading}
+          rowSelection={{ selectedRowKeys: selectedOrders, onChange: setSelectedOrders }}
+          pagination={{ pageSize: 10 }}
         />
       </Card>
 
       {/* Modal Chi tiết */}
-      <Modal
-        title="Chi tiết đơn đặt tour"
-        visible={showDetailModal}
-        onCancel={() => setShowDetailModal(false)}
-        footer={null}
-        width={600}
-      >
+      <Modal title="Chi tiết đơn đặt tour" open={showDetailModal} onCancel={() => setShowDetailModal(false)} footer={null} width={800}>
         {selectedOrder && (
-          <div>
-            <p>
-              <strong>Khách hàng:</strong> {selectedOrder.customerName}
-            </p>
-            <p>
-              <strong>Tour:</strong> {selectedOrder.tourName}
-            </p>
-            <p>
-              <strong>Mã tour:</strong> {selectedOrder.tourCode}
-            </p>
-            <p>
-              <strong>Ngày đặt:</strong> {formatDate(selectedOrder.orderDate)}
-            </p>
-            <p>
-              <strong>Ngày bắt đầu:</strong> {formatDate(selectedOrder.startDate)}
-            </p>
-            <p>
-              <strong>Ngày kết thúc:</strong> {formatDate(selectedOrder.endDate)}
-            </p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
-              {selectedOrder.status === "confirmed"
-                ? "Đã xác nhận"
-                : selectedOrder.status === "pending"
-                  ? "Chờ xác nhận"
-                  : "Đã hủy"}
-            </p>
-            <p>
-              <strong>Số người tham gia:</strong> {selectedOrder.participants.length}
-            </p>
-            <strong>Chi tiết người tham gia:</strong>
-            <List
-              dataSource={selectedOrder.participants}
-              renderItem={(item, index) => (
-                <List.Item>
-                  <List.Item.Meta title={`${index + 1}. ${item.name}`} description={`Số điện thoại: ${item.phone}`} />
-                </List.Item>
-              )}
-            />
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {/* Cột trái */}
+            <div style={{ flex: 1, paddingRight: '20px' }}>
+              <p><strong>Khách hàng (người đặt tour):</strong> {selectedOrder.full_name}</p>
+              <p><strong>Giới tính:</strong> {selectedOrder.travelers?.[0]?.gender || 'N/A'}</p>
+              <p><strong>Ngày sinh:</strong> {selectedOrder.birth_date ? formatDate(selectedOrder.birth_date) : 'N/A'}</p>
+              <p><strong>Số điện thoại:</strong> {selectedOrder.phone}</p>
+              <p><strong>Tour:</strong> {tours.find(t => t.id === selectedOrder.tour_id)?.name || 'N/A'}</p>
+              <p><strong>Mã tour:</strong> {tours.find(t => t.id === selectedOrder.tour_id)?.tour_code || 'N/A'}</p>
+              <p><strong>Ngày đặt:</strong> {formatDate(selectedOrder.order_date)}</p>
+              <p><strong>Ngày bắt đầu:</strong> {formatDate(selectedOrder.start_date)}</p>
+              <p><strong>Ngày kết thúc:</strong> {formatDate(selectedOrder.end_date)}</p>
+              <p><strong>Trạng thái:</strong> {selectedOrder.status === "confirmed" ? "Đã xác nhận" : selectedOrder.status === "pending" ? "Chờ xác nhận" : "Đã hủy"}</p>
+              <p><strong>Người đi cùng:</strong></p>
+              <ul>
+                {selectedOrder.travelers?.length > 0 ? (
+                  selectedOrder.travelers.map((traveler, index) => (
+                    <li key={index}>
+                      {traveler.traveler_type} {index + 1}: {traveler.full_name} ({traveler.gender}, {formatDate(traveler.birth_date)})
+                      {traveler.phone && `, SĐT: ${traveler.phone}`}
+                      {traveler.single_room && ', Phòng đơn'}
+                    </li>
+                  ))
+                ) : (
+                  <li>Không có người đi cùng</li>
+                )}
+              </ul>
+            </div>
+            {/* Cột phải */}
+            <div style={{ flex: 1, paddingLeft: '20px' }}>
+              <p><strong>Số người lớn:</strong> {selectedOrder.adults || 0}</p>
+              <p><strong>Trẻ dưới 5 tuổi:</strong> {selectedOrder.children_under_5 || 0}</p>
+              <p><strong>Trẻ 5-11 tuổi:</strong> {selectedOrder.children_5_11 || 0}</p>
+              <p><strong>Số phòng đơn:</strong> {selectedOrder.single_rooms || 0}</p>
+              <p><strong>Tổng tiền:</strong> {selectedOrder.total_amount?.toLocaleString() || 0} VND</p>
+              <p><strong>Phương thức thanh toán:</strong> {selectedOrder.payment_method || 'N/A'}</p>
+              <p><strong>Yêu cầu đặc biệt:</strong> {selectedOrder.special_requests || 'N/A'}</p>
+              <p><strong>Điểm đón:</strong> {selectedOrder.pickup_point || 'N/A'}</p>
+              <p><strong>Email:</strong> {selectedOrder.email || 'N/A'}</p>
+            </div>
           </div>
         )}
       </Modal>
 
       {/* Modal Chỉnh sửa/Thêm mới */}
-      <Modal
-        title={selectedOrder ? "Sửa thông tin đơn đặt tour" : "Thêm đơn đặt tour mới"}
-        visible={showEditModal}
-        onOk={() => form.submit()}
-        onCancel={() => {
-          setShowEditModal(false)
-          setSelectedOrder(null)
-        }}
-        width={800}
-      >
+      <Modal title={selectedOrder ? "Sửa thông tin đơn đặt tour" : "Thêm đơn đặt tour mới"} open={showEditModal} onOk={() => form.submit()} onCancel={() => { setShowEditModal(false); setSelectedOrder(null); }} width={800}>
         <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          <Form.Item
-            name="customerName"
-            label="Khách hàng:"
-            rules={[{ required: true, message: "Vui lòng nhập tên khách hàng" }]}
-            style={{ fontWeight: "bold" }}
-          >
+          <Form.Item name="full_name" label="Tên khách hàng" rules={[{ required: true, message: "Vui lòng nhập tên khách hàng" }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="tourName" label="Tour:" rules={[{ required: true, message: "Vui lòng nhập tên tour" }]} style={{ fontWeight: "bold" }}>
+          <Form.Item name="tourId" label="Chọn tour" rules={[{ required: true, message: "Vui lòng chọn tour" }]}>
+            <Select>
+              {tours.map(tour => <Option key={tour.id} value={tour.id}>{tour.name} ({tour.tour_code})</Option>)}
+            </Select>
+          </Form.Item>
+          <Form.Item name="phone" label="Số điện thoại" rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="tourCode" label="Mã tour:" rules={[{ required: true, message: "Vui lòng nhập mã tour" }]} style={{ fontWeight: "bold" }}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="orderDate" label="Ngày đặt:" rules={[{ required: true, message: "Vui lòng chọn ngày đặt" }]} style={{ fontWeight: "bold" }}>
-            <Input type="date" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            name="startDate"
-            label="Ngày bắt đầu:"
-            rules={[{ required: true, message: "Vui lòng chọn ngày bắt đầu" }]}
-            style={{ fontWeight: "bold" }}
-          >
-            <Input type="date" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            name="endDate"
-            label="Ngày kết thúc:"
-            rules={[{ required: true, message: "Vui lòng chọn ngày kết thúc" }]}
-            style={{ fontWeight: "bold" }}
-          >
-            <Input type="date" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="status" label="Trạng thái:" rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]} style={{ fontWeight: "bold" }}>
+          <Form.Item name="email" label="Email"><Input /></Form.Item>
+          <Form.Item name="birth_date" label="Ngày sinh"><Input type="date" /></Form.Item>
+          <Form.Item name="orderDate" label="Ngày đặt" rules={[{ required: true, message: "Vui lòng chọn ngày đặt" }]}><Input type="date" /></Form.Item>
+          <Form.Item name="startDate" label="Ngày bắt đầu" rules={[{ required: true, message: "Vui lòng chọn ngày bắt đầu" }]}><Input type="date" /></Form.Item>
+          <Form.Item name="endDate" label="Ngày kết thúc" rules={[{ required: true, message: "Vui lòng chọn ngày kết thúc" }]}><Input type="date" /></Form.Item>
+          <Form.Item name="adults" label="Số người lớn" rules={[{ required: true, message: "Vui lòng nhập số người lớn" }]}><Input type="number" min={0} /></Form.Item>
+          <Form.Item name="children_under_5" label="Trẻ dưới 5 tuổi"><Input type="number" min={0} /></Form.Item>
+          <Form.Item name="children_5_11" label="Trẻ 5-11 tuổi"><Input type="number" min={0} /></Form.Item>
+          <Form.Item name="single_rooms" label="Số phòng đơn"><Input type="number" min={0} /></Form.Item>
+          <Form.Item name="pickup_point" label="Điểm đón"><Input /></Form.Item>
+          <Form.Item name="special_requests" label="Yêu cầu đặc biệt"><Input /></Form.Item>
+          <Form.Item name="payment_method" label="Phương thức thanh toán"><Input /></Form.Item>
+          <Form.Item name="total_amount" label="Tổng tiền" rules={[{ required: true, message: "Vui lòng nhập tổng tiền" }]}><Input type="number" /></Form.Item>
+          <Form.Item name="status" label="Trạng thái" rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}>
             <Select>
               <Option value="confirmed">Đã xác nhận</Option>
               <Option value="pending">Chờ xác nhận</Option>
               <Option value="cancelled">Đã hủy</Option>
             </Select>
           </Form.Item>
-          <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-            {/* Các trường nhập liệu khác */}
-            <Form.Item
-              name="customerName"
-              label="Khách hàng:"
-              rules={[{ required: true, message: "Vui lòng nhập tên khách hàng" }]}
-              style={{ fontWeight: "bold" }}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item name="tourName" label="Tour:" rules={[{ required: true, message: "Vui lòng nhập tên tour" }]} style={{ fontWeight: "bold" }}>
-              <Input />
-            </Form.Item>
-            {/* ... */}
-
-            {/* Phần Chi tiết người tham gia */}
-            <Form.Item label="Chi tiết người tham gia:" required style={{ fontWeight: "bold" }}>
-              <Form.List name="participants">
-                {(fields, { add, remove }) => (
-                  <>
-                    {fields.map(({ key, name, ...restField }) => (
-                      <Space
-                        key={key}
-                        style={{ display: "flex", marginBottom: 12, gap: 8 }} // Giảm margin và thêm gap
-                        align="baseline"
-                      >
-                        <Form.Item
-                          {...restField}
-                          name={[name, "name"]}
-                          rules={[{ required: true, message: "Vui lòng nhập tên" }]}
-                          style={{ marginBottom: 0 }} // Loại bỏ margin dưới của Form.Item
-                        >
-                          <Input placeholder="Tên người tham gia" />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, "phone"]}
-                          rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
-                          style={{ marginBottom: 0 }} // Loại bỏ margin dưới của Form.Item
-                        >
-                          <Input placeholder="Số điện thoại" />
-                        </Form.Item>
-                        <Button onClick={() => remove(name)} type="link" danger>
-                          Xóa
-                        </Button>
-                      </Space>
-                    ))}
-                    <Form.Item style={{ marginBottom: 0 }}> {/* Loại bỏ margin dưới của Form.Item */}
-                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                        Thêm người tham gia
-                      </Button>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            </Form.Item>
-          </Form>
         </Form>
       </Modal>
 
       {/* Modal Xóa */}
-      <Modal
-        title="Xác nhận xóa"
-        visible={showDeleteModal}
-        onOk={() => {
-          setOrders(orders.filter((order) => order.id !== selectedOrder.id))
-          setShowDeleteModal(false)
-          setSelectedOrder(null)
-        }}
-        onCancel={() => {
-          setShowDeleteModal(false)
-          setSelectedOrder(null)
-        }}
-      >
+      <Modal title="Xác nhận xóa" open={showDeleteModal} onOk={handleDelete} onCancel={() => { setShowDeleteModal(false); setSelectedOrder(null); }}>
         <p>Bạn có chắc chắn muốn xóa đơn đặt tour này?</p>
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default OrderManagement
+export default OrderManagement;

@@ -11,8 +11,6 @@ const API_BASE_URL = "http://localhost:5001/api/tours";
 
 const PaymentPage = ({ tourId }) => {
   const [tour, setTour] = useState(null);
-  const [loading, setLoading] = useState(true); // Thêm trạng thái loading
-  const [error, setError] = useState(null); // Thêm trạng thái error
   const [nguoiLon, setNguoiLon] = useState(1);
   const [treEm, setTreEm] = useState(0);
   const [emBe, setEmBe] = useState(0);
@@ -25,63 +23,35 @@ const PaymentPage = ({ tourId }) => {
   const [useContactInfo, setUseContactInfo] = useState(false);
   const formRef = useRef(null);
 
-  // Hàm lấy thông tin tour từ API
-  const fetchTour = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`${API_BASE_URL}/${tourId}`);
-      if (!response.ok) {
-        throw new Error(`Lỗi khi lấy thông tin tour: ${response.statusText}`);
-      }
-      const data = await response.json();
-      console.log('Tour data:', data); // Log để kiểm tra dữ liệu từ API
-      setTour(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Lỗi fetchTour:', error);
-      setError(error.message);
-      setLoading(false);
-      Modal.error({
-        title: 'Lỗi',
-        content: `Không thể lấy thông tin tour: ${error.message}. Vui lòng kiểm tra backend hoặc thử lại sau!`,
-      });
-    }
-  };
-
   useEffect(() => {
-    if (tourId) {
-      fetchTour();
-    } else {
-      setLoading(false);
-      Modal.error({
-        title: 'Lỗi',
-        content: 'Không tìm thấy tourId. Vui lòng kiểm tra đường dẫn!',
-      });
-    }
+    const fetchTour = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${tourId}`);
+        if (!response.ok) throw new Error(`Lỗi khi lấy thông tin tour: ${response.statusText}`);
+        const data = await response.json();
+        setTour(data);
+      } catch (error) {
+        Modal.error({ title: 'Lỗi', content: `Không thể lấy thông tin tour: ${error.message}` });
+      }
+    };
+    if (tourId) fetchTour();
+    else Modal.error({ title: 'Lỗi', content: 'Không tìm thấy tourId!' });
   }, [tourId]);
 
-  // Khởi tạo mảng singleRoomSelections khi số lượng hành khách thay đổi
   useEffect(() => {
     const totalTravelers = nguoiLon + treEm + emBe;
     setSingleRoomSelections(new Array(totalTravelers).fill(false));
   }, [nguoiLon, treEm, emBe]);
 
-  // Điền thông tin tự động cho Người lớn 1 khi useContactInfo thay đổi
   useEffect(() => {
     if (useContactInfo) {
       const contactInfo = formRef.current?.getFieldsValue(['username', 'tel']);
-      if (contactInfo) {
-        formRef.current?.setFieldsValue({
-          username_traveler_0: contactInfo.username || '',
-          phone_traveler_0: contactInfo.tel || '',
-        });
-      }
-    } else {
       formRef.current?.setFieldsValue({
-        username_traveler_0: '',
-        phone_traveler_0: '',
+        username_traveler_0: contactInfo.username || '',
+        phone_traveler_0: contactInfo.tel || '',
       });
+    } else {
+      formRef.current?.setFieldsValue({ username_traveler_0: '', phone_traveler_0: '' });
     }
   }, [useContactInfo]);
 
@@ -98,18 +68,11 @@ const PaymentPage = ({ tourId }) => {
 
   const totalTickets = nguoiLon + treEm + emBe;
 
-  const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
-  };
-
+  const formatPrice = (price) => price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
   const formatDate = (dateString) => {
     if (!dateString) return "Chưa có thông tin";
-    try {
-      const date = new Date(dateString);
-      return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getFullYear()}`;
-    } catch (error) {
-      return dateString;
-    }
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getFullYear()}`;
   };
 
   const renderTravelerFields = () => {
@@ -123,10 +86,7 @@ const PaymentPage = ({ tourId }) => {
           <Text strong style={{ display: 'block', marginBottom: '10px' }}>{`${travelerType} ${i + 1}`}</Text>
           {i === 0 && travelerType === 'Người lớn' && (
             <Form.Item>
-              <Checkbox
-                checked={useContactInfo}
-                onChange={(e) => setUseContactInfo(e.target.checked)}
-              >
+              <Checkbox checked={useContactInfo} onChange={(e) => setUseContactInfo(e.target.checked)}>
                 Sử dụng thông tin liên lạc
               </Checkbox>
             </Form.Item>
@@ -169,9 +129,7 @@ const PaymentPage = ({ tourId }) => {
                 <Form.Item
                   name={`phone_traveler_${i}`}
                   label="Số điện thoại"
-                  rules={[
-                    { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' },
-                  ]}
+                  rules={[{ pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' }]}
                 >
                   <Input placeholder="Nhập số điện thoại" />
                 </Form.Item>
@@ -206,46 +164,57 @@ const PaymentPage = ({ tourId }) => {
   const handleSubmit = async () => {
     try {
       await formRef.current.validateFields();
-
       if (!isAgreed) {
         setShowAgreeError(true);
-      } else {
-        setShowAgreeError(false);
-      }
-
+        Modal.error({ title: 'Lỗi', content: 'Vui lòng đồng ý với Điều khoản thanh toán!' });
+        return;
+      } else setShowAgreeError(false);
+  
       if (!selectedPayment) {
         setShowPaymentError(true);
-      } else {
-        setShowPaymentError(false);
-      }
-
+        Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn phương thức thanh toán!' });
+        return;
+      } else setShowPaymentError(false);
+  
       if (tour && totalTickets > tour.remaining_tickets) {
-        Modal.error({
-          title: 'Lỗi',
-          content: `Số vé đặt (${totalTickets}) vượt quá số vé còn lại (${tour.remaining_tickets})!`,
-        });
+        Modal.error({ title: 'Lỗi', content: `Số vé đặt (${totalTickets}) vượt quá số vé còn lại (${tour.remaining_tickets})!` });
         return;
       }
-
-      if (!isAgreed || !selectedPayment) {
-        Modal.error({
-          title: 'Lỗi',
-          content: !isAgreed
-            ? 'Vui lòng đồng ý với Điều khoản thanh toán trước khi tiếp tục!'
-            : 'Vui lòng chọn phương thức thanh toán trước khi tiếp tục!',
-        });
-        return;
-      }
-
+  
       const formValues = formRef.current.getFieldsValue();
-
+  
+      // Thu thập thông tin người đi cùng (bỏ qua người đặt tour - Người lớn 1)
+      const travelers = [];
+      for (let i = 1; i < totalTickets; i++) { // Bắt đầu từ i = 1 để bỏ qua Người lớn 1
+        const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
+        const birthDate = formValues[`ngaysinh_traveler_${i}`];
+        if (!birthDate) {
+          Modal.error({ title: 'Lỗi', content: `Ngày sinh của ${travelerType} ${i} không hợp lệ!` });
+          return;
+        }
+        travelers.push({
+          full_name: formValues[`username_traveler_${i}`],
+          gender: formValues[`gender_traveler_${i}`],
+          birth_date: birthDate.format('YYYY-MM-DD'),
+          phone: formValues[`phone_traveler_${i}`] || null,
+          single_room: formValues[`single_room_traveler_${i}`] || false,
+          traveler_type: travelerType,
+        });
+      }
+  
+      // Tính end_date dựa trên start_date và số ngày của tour
+      const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
+      const tourDays = tour?.days || 4;
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + tourDays);
+  
       const bookingData = {
         full_name: formValues.username,
         phone: formValues.tel,
         email: formValues.email,
         birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
-        id_number: formValues.id_number || "N/A",
-        start_date: tour?.start_date || "2025-03-15",
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
         adults: nguoiLon,
         children_under_5: emBe,
         children_5_11: treEm,
@@ -254,28 +223,26 @@ const PaymentPage = ({ tourId }) => {
         special_requests: formValues.additional_notes || formValues.notes?.join(", ") || "",
         payment_method: selectedPayment,
         total_amount: totalPrice,
+        travelers, // Chỉ chứa người đi cùng
       };
-
+  
+      console.log('Booking Data:', bookingData);
+  
       const response = await fetch(`${API_BASE_URL}/${tourId}/book`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Lỗi khi đặt tour!');
       }
-
+  
       setIsModalVisible(true);
     } catch (error) {
-      console.log('Validation failed:', error);
-      Modal.error({
-        title: 'Lỗi',
-        content: error.message || 'Đã có lỗi xảy ra khi đặt tour. Vui lòng thử lại!',
-      });
+      console.error('Lỗi khi đặt tour:', error);
+      Modal.error({ title: 'Lỗi', content: error.message || 'Đã có lỗi xảy ra khi đặt tour!' });
     }
   };
 
@@ -286,44 +253,18 @@ const PaymentPage = ({ tourId }) => {
 
   const handleAgreeChange = (e) => {
     setIsAgreed(e.target.checked);
-    if (e.target.checked) {
-      setShowAgreeError(false);
-    }
+    if (e.target.checked) setShowAgreeError(false);
   };
 
-  // Xử lý trạng thái loading và lỗi
-  if (loading) {
-    return <div>Đang tải thông tin tour...</div>;
-  }
-
-  if (error) {
-    return (
-      <div>
-        <Text style={{ color: 'red' }}>Lỗi: {error}</Text>
-        <Button onClick={fetchTour} style={{ marginTop: '10px' }}>
-          Thử lại
-        </Button>
-      </div>
-    );
-  }
-
-  if (!tour) {
-    return <div>Không tìm thấy thông tin tour!</div>;
-  }
+  if (!tour) return <div>Đang tải thông tin tour...</div>;
 
   return (
     <div>
       <div className="breadCrumbs">
         <div className="center">
           <ol className="breadcrumb">
-            <li className="breadcrumb-item">
-              <a className="text-decoration-none" href="/">
-                <span>Trang chủ</span>
-              </a>
-            </li>
-            <li className="breadcrumb-item active">
-              <span>Thanh toán</span>
-            </li>
+            <li className="breadcrumb-item"><a href="/" className="text-decoration-none"><span>Trang chủ</span></a></li>
+            <li className="breadcrumb-item active"><span>Thanh toán</span></li>
           </ol>
         </div>
       </div>
@@ -332,49 +273,28 @@ const PaymentPage = ({ tourId }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div className="form-container">
             <Title level={3} style={{ color: '#003087' }}>Tổng Quan Về Chuyến Đi</Title>
-            <Form
-              layout="vertical"
-              ref={formRef}
-              className="c-wrap contactform"
-              id="contactform"
-            >
+            <Form layout="vertical" ref={formRef} className="c-wrap contactform" id="contactform">
               <Title level={4}>Thông Tin Liên Lạc</Title>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    name="username"
-                    label={<span>Họ và tên <span style={{ color: 'red' }}>*</span></span>}
-                    rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
-                  >
+                  <Form.Item name="username" label={<span>Họ và tên <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}>
                     <Input placeholder="Nhập Họ và tên" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item
-                    name="email"
-                    label={<span>Email <span style={{ color: 'red' }}>*</span></span>}
-                    rules={[{ type: 'email', required: true, message: 'Vui lòng nhập email hợp lệ!' }]}
-                  >
+                  <Form.Item name="email" label={<span>Email <span style={{ color: 'red' }}>*</span></span>} rules={[{ type: 'email', required: true, message: 'Vui lòng nhập email hợp lệ!' }]}>
                     <Input placeholder="sample@gmail.com" />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    name="tel"
-                    label={<span>Số điện thoại <span style={{ color: 'red' }}>*</span></span>}
-                    rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }]}
-                  >
+                  <Form.Item name="tel" label={<span>Số điện thoại <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }]}>
                     <Input placeholder="Nhập số điện thoại liên hệ" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item
-                    name="dia_chi"
-                    label={<span>Địa chỉ <span style={{ color: 'red' }}>*</span></span>}
-                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
-                  >
+                  <Form.Item name="dia_chi" label={<span>Địa chỉ <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}>
                     <Input placeholder="Nhập địa chỉ liên hệ" />
                   </Form.Item>
                 </Col>
@@ -390,11 +310,7 @@ const PaymentPage = ({ tourId }) => {
                       <Button icon={<PlusOutlined />} onClick={() => setNguoiLon(nguoiLon + 1)} />
                     </Space>
                   </Form.Item>
-                  <Form.Item
-                    name="tre_em"
-                    label={<span>Trẻ em <Text type="secondary">(Từ 5 đến dưới 11 tuổi)</Text></span>}
-                    initialValue={treEm}
-                  >
+                  <Form.Item name="tre_em" label={<span>Trẻ em <Text type="secondary">(Từ 5 đến dưới 11 tuổi)</Text></span>} initialValue={treEm}>
                     <Space>
                       <Button icon={<MinusOutlined />} onClick={() => setTreEm(Math.max(0, treEm - 1))} />
                       <Input style={{ width: '60px', textAlign: 'center' }} value={treEm} readOnly />
@@ -403,11 +319,7 @@ const PaymentPage = ({ tourId }) => {
                   </Form.Item>
                 </div>
                 <div className="traveler-count">
-                  <Form.Item
-                    name="em_be"
-                    label={<span>Em bé <Text type="secondary">(Dưới 5 tuổi)</Text></span>}
-                    initialValue={emBe}
-                  >
+                  <Form.Item name="em_be" label={<span>Em bé <Text type="secondary">(Dưới 5 tuổi)</Text></span>} initialValue={emBe}>
                     <Space>
                       <Button icon={<MinusOutlined />} onClick={() => setEmBe(Math.max(0, emBe - 1))} />
                       <Input style={{ width: '60px', textAlign: 'center' }} value={emBe} readOnly />
@@ -461,52 +373,23 @@ const PaymentPage = ({ tourId }) => {
 
               <div className="section-spacing">
                 <Title level={4}>Phương Thức Thanh Toán</Title>
-                <Form.Item
-                  name="payment"
-                  rules={[{ required: true, message: 'Vui lòng chọn phương thức thanh toán!' }]}
-                >
+                <Form.Item name="payment" rules={[{ required: true, message: 'Vui lòng chọn phương thức thanh toán!' }]}>
                   <Radio.Group onChange={(e) => setSelectedPayment(e.target.value)} value={selectedPayment}>
                     <div className="payment-methods">
                       <div className="payment-option">
-                        <Radio value="Thanh toán tại văn phòng Lửa Việt">
-                          Thanh toán tại văn phòng Lửa Việt
-                        </Radio>
+                        <Radio value="Thanh toán tại văn phòng Lửa Việt">Thanh toán tại văn phòng Lửa Việt</Radio>
                         <div className={`address-details ${selectedPayment === 'Thanh toán tại văn phòng Lửa Việt' ? 'active' : ''}`}>
                           <Text>
                             <div>Thanh toán trực tiếp tại</div>
-                            <div style={{ marginTop: '8px' }}>
-                              <strong>Văn phòng HCM</strong><br />
-                              677 Trần Hưng Đạo, Phường 1, Quận 5, TP. HCM<br />
-                              Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
-                            </div>
-                            <div style={{ marginTop: '8px' }}>
-                              <strong>Văn phòng Hà Nội</strong><br />
-                              Tầng 3, Tòa nhà Dolphin Plaza, số 28 Trần Bình, Phường Mỹ Đình 2, Quận Nam Từ Liêm, TP. Hà Nội<br />
-                              Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
-                            </div>
-                            <div style={{ marginTop: '8px' }}>
-                              <strong>Văn phòng Cần Thơ</strong><br />
-                              Số 09 Cách Mạng Tháng Tám, Phường Thới Bình, Quận Ninh Kiều, TP. Cần Thơ<br />
-                              Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
-                            </div>
+                            <div style={{ marginTop: '8px' }}><strong>Văn phòng HCM</strong><br />677 Trần Hưng Đạo, Phường 1, Quận 5, TP. HCM<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
+                            <div style={{ marginTop: '8px' }}><strong>Văn phòng Hà Nội</strong><br />Tầng 3, Tòa nhà Dolphin Plaza, số 28 Trần Bình, Phường Mỹ Đình 2, Quận Nam Từ Liêm, TP. Hà Nội<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
+                            <div style={{ marginTop: '8px' }}><strong>Văn phòng Cần Thơ</strong><br />Số 09 Cách Mạng Tháng Tám, Phường Thới Bình, Quận Ninh Kiều, TP. Cần Thơ<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
                           </Text>
                         </div>
                       </div>
-                      <div className="payment-option">
-                        <Radio value="Thu tiền tại nhà">
-                          Thu tiền tại nhà
-                        </Radio>
-                      </div>
-                      <div className="payment-option">
-                        <Radio value="Chuyển khoản">
-                          Chuyển khoản
-                        </Radio>
-                      </div>
-                      <div className="payment-option">
-                        <Radio value="Thanh toán online">
-                          Thanh toán online
-                        </Radio>
-                      </div>
+                      <div className="payment-option"><Radio value="Thu tiền tại nhà">Thu tiền tại nhà</Radio></div>
+                      <div className="payment-option"><Radio value="Chuyển khoản">Chuyển khoản</Radio></div>
+                      <div className="payment-option"><Radio value="Thanh toán online">Thanh toán online</Radio></div>
                     </div>
                   </Radio.Group>
                   {showPaymentError && (
@@ -520,79 +403,32 @@ const PaymentPage = ({ tourId }) => {
           </div>
 
           <div className="summary-container">
-            <img
-              src={tour?.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"}
-              alt="Tour Image"
-              className="tour-image"
-            />
-            <Text style={{ display: 'block', marginBottom: '10px' }}>
-              <a href="#" style={{ marginRight: '5px' }}>#️⃣</a> Mã tour: {tour?.tour_code || "HNLCSP4N3D"}
-            </Text>
+            <img src={tour?.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"} alt="Tour Image" className="tour-image" />
+            <Text style={{ display: 'block', marginBottom: '10px' }}><a href="#" style={{ marginRight: '5px' }}>#️⃣</a> Mã tour: {tour?.tour_code || "HNLCSP4N3D"}</Text>
             <Title level={4}>{tour?.name || "MIỀN BẮC 4N3Đ | HÀ NỘI – LÀO CAI – SA PA"}</Title>
-            <Text style={{ display: 'block', marginBottom: '10px' }}>
-              {formatDate(tour?.start_date) || "15-03-2025"} → {formatDate(new Date(new Date(tour?.start_date).getTime() + tour?.days * 24 * 60 * 60 * 1000)) || "19-03-2025"}
-            </Text>
-            <Text style={{ display: 'block', marginBottom: '10px', color: 'red' }}>
-              Số vé còn lại: {tour.remaining_tickets !== undefined ? tour.remaining_tickets : 'Không có dữ liệu'}
-            </Text>
+            <Text style={{ display: 'block', marginBottom: '10px' }}>{formatDate(tour?.start_date) || "15-03-2025"} → {formatDate(new Date(new Date(tour?.start_date).getTime() + tour?.days * 24 * 60 * 60 * 1000)) || "19-03-2025"}</Text>
+            <Text style={{ display: 'block', marginBottom: '10px', color: 'red' }}>Số vé còn lại: {tour?.remaining_tickets !== undefined ? tour.remaining_tickets : 'Đang tải...'}</Text>
             <Divider />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <Text>Người lớn:</Text>
-              <Text strong>{`${nguoiLon} x ${formatPrice(nguoiLonPrice)}`}</Text>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <Text>Trẻ em:</Text>
-              <Text strong>{`${treEm} x ${formatPrice(treEmPrice)}`}</Text>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <Text>Em bé:</Text>
-              <Text strong>{`${emBe} x ${formatPrice(emBePrice)}`}</Text>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <Text>Phòng đơn:</Text>
-              <Text strong>{formatPrice(totalPhongDon)}</Text>
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Người lớn:</Text><Text strong>{`${nguoiLon} x ${formatPrice(nguoiLonPrice)}`}</Text></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Trẻ em:</Text><Text strong>{`${treEm} x ${formatPrice(treEmPrice)}`}</Text></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Em bé:</Text><Text strong>{`${emBe} x ${formatPrice(emBePrice)}`}</Text></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Phòng đơn:</Text><Text strong>{formatPrice(totalPhongDon)}</Text></div>
             <Divider />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <Text strong>Tổng cộng:</Text>
-              <Text strong className="total-price">{formatPrice(totalPrice)}</Text>
-            </div>
-            <Button
-              type="primary"
-              className="book-button"
-              onClick={handleSubmit}
-              disabled={tour.remaining_tickets === 0}
-            >
-              {tour.remaining_tickets === 0 ? 'Hết vé' : 'Đặt Ngay'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text strong>Tổng cộng:</Text><Text strong className="total-price">{formatPrice(totalPrice)}</Text></div>
+            <Button type="primary" className="book-button" onClick={handleSubmit} disabled={tour?.remaining_tickets === 0}>
+              {tour?.remaining_tickets === 0 ? 'Hết vé' : 'Đặt Ngay'}
             </Button>
           </div>
         </div>
       </div>
 
-      <Modal
-        visible={isModalVisible}
-        onCancel={handleModalClose}
-        footer={null}
-        closable={true}
-        className="success-modal"
-        centered
-      >
+      <Modal visible={isModalVisible} onCancel={handleModalClose} footer={null} closable={true} className="success-modal" centered>
         <div className="success-modal-content">
           <CheckCircleOutlined className="success-icon" />
           <Title level={4} className="success-title">Đặt tour thành công</Title>
-          <Text className="success-message">
-            Đơn đặt tour của bạn đã được gửi thành công!
-          </Text>
-          <Text className="success-message">
-            Vui lòng chờ xác nhận từ nhân viên trong thời gian sớm nhất.
-          </Text>
-          <Button
-            type="primary"
-            className="success-button"
-            onClick={handleModalClose}
-          >
-            OK
-          </Button>
+          <Text className="success-message">Đơn đặt tour của bạn đã được gửi thành công!</Text>
+          <Text className="success-message">Vui lòng chờ xác nhận từ nhân viên trong thời gian sớm nhất.</Text>
+          <Button type="primary" className="success-button" onClick={handleModalClose}>OK</Button>
         </div>
       </Modal>
     </div>

@@ -7,6 +7,7 @@ const path = require('path');
 // Import routes
 const tourRoutes = require('./routes/tourRoutes');
 const accountRoutes = require('./routes/accountRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 const PORT = 5001;
@@ -34,6 +35,8 @@ connectDB()
 // Sử dụng routes
 app.use('/api/tours', tourRoutes);
 app.use('/api/accounts', accountRoutes);
+app.use('/api/orders', orderRoutes);
+
 
 // Khởi động server
 app.listen(PORT, () => {

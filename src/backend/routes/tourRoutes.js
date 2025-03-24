@@ -650,155 +650,98 @@ router.delete('/:id', ensurePool, async (req, res) => {
 
 // API đặt tour
 router.post('/:tourId/book', ensurePool, async (req, res) => {
+  const { tourId } = req.params;
+  const { full_name, phone, email, birth_date, start_date, end_date, adults, children_under_5, children_5_11, single_rooms, pickup_point, special_requests, payment_method, total_amount, travelers } = req.body;
+
   try {
-    const { tourId } = req.params;
-    const {
-      full_name,
-      phone,
-      email,
-      birth_date,
-      id_number,
-      start_date,
-      adults,
-      children_under_5,
-      children_5_11,
-      single_rooms,
-      pickup_point,
-      special_requests,
-      payment_method,
-      total_amount,
-    } = req.body;
-
-    const total_booked_tickets = (adults || 0) + (children_under_5 || 0) + (children_5_11 || 0);
-
-    const tourCheck = await req.app.locals.pool.request()
-      .input('tour_id', sql.Int, parseInt(tourId))
-      .query('SELECT total_tickets, remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @tour_id');
-
-    if (tourCheck.recordset.length === 0) {
-      return res.status(404).json({ error: 'Tour không tồn tại!' });
+    // Kiểm tra dữ liệu đầu vào
+    if (!full_name || !phone || !email || !start_date || !adults || !payment_method || !total_amount) {
+      return res.status(400).json({ error: 'Thiếu các trường bắt buộc: full_name, phone, email, start_date, adults, payment_method, total_amount' });
     }
 
-    const remaining_tickets = tourCheck.recordset[0].remaining_tickets;
-
-    if (remaining_tickets < total_booked_tickets) {
-      return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remaining_tickets} vé.` });
+    // Kiểm tra tourId có tồn tại không
+    const tourResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, tourId)
+      .query('SELECT * FROM [web_travel].[dbo].[tours] WHERE id = @tour_id');
+    if (tourResult.recordset.length === 0) {
+      return res.status(404).json({ error: `Tour với ID ${tourId} không tồn tại` });
     }
 
-    await req.app.locals.pool.request()
-      .input('tour_id', sql.Int, parseInt(tourId))
+    const tour = tourResult.recordset[0];
+
+    // Kiểm tra ngày tháng
+    const parsedBirthDate = birth_date ? new Date(birth_date) : null;
+    const parsedStartDate = new Date(start_date);
+    const parsedEndDate = new Date(end_date);
+    if (birth_date && isNaN(parsedBirthDate)) {
+      return res.status(400).json({ error: 'birth_date không đúng định dạng YYYY-MM-DD' });
+    }
+    if (isNaN(parsedStartDate)) {
+      return res.status(400).json({ error: 'start_date không đúng định dạng YYYY-MM-DD' });
+    }
+    if (isNaN(parsedEndDate)) {
+      return res.status(400).json({ error: 'end_date không đúng định dạng YYYY-MM-DD' });
+    }
+
+    // Kiểm tra travelers (nếu có)
+    if (travelers && Array.isArray(travelers)) {
+      for (const traveler of travelers) {
+        if (!traveler.full_name || !traveler.gender || !traveler.birth_date || !traveler.traveler_type) {
+          return res.status(400).json({ error: 'Mỗi traveler phải có full_name, gender, birth_date, và traveler_type' });
+        }
+        const travelerBirthDate = new Date(traveler.birth_date);
+        if (isNaN(travelerBirthDate)) {
+          return res.status(400).json({ error: `birth_date của traveler ${traveler.full_name} không đúng định dạng YYYY-MM-DD` });
+        }
+      }
+    }
+
+    // Lưu vào bảng orders
+    const orderResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, tourId)
       .input('full_name', sql.NVarChar, full_name)
       .input('phone', sql.NVarChar, phone)
       .input('email', sql.NVarChar, email)
-      .input('birth_date', sql.DateTime, birth_date ? new Date(birth_date) : null)
-      .input('id_number', sql.NVarChar, id_number)
-      .input('start_date', sql.DateTime, start_date ? new Date(start_date) : null)
-      .input('adults', sql.Int, adults || 0)
-      .input('children_under_5', sql.Int, children_under_5 || 0)
-      .input('children_5_11', sql.Int, children_5_11 || 0)
-      .input('single_rooms', sql.Int, single_rooms || 0)
+      .input('birth_date', sql.Date, birth_date)
+      .input('start_date', sql.Date, start_date)
+      .input('end_date', sql.Date, end_date)
+      .input('adults', sql.Int, adults)
+      .input('children_under_5', sql.Int, children_under_5)
+      .input('children_5_11', sql.Int, children_5_11)
+      .input('single_rooms', sql.Int, single_rooms)
       .input('pickup_point', sql.NVarChar, pickup_point)
       .input('special_requests', sql.NVarChar, special_requests)
       .input('payment_method', sql.NVarChar, payment_method)
-      .input('total_booked_tickets', sql.Int, total_booked_tickets)
-      .input('total_amount', sql.Float, total_amount || 0)
-      .input('status', sql.NVarChar, 'pending')
-      .input('order_date', sql.DateTime, new Date())
+      .input('total_amount', sql.Int, total_amount)
       .query(`
-        INSERT INTO [web_travel].[dbo].[orders] (
-          tour_id, full_name, phone, email, birth_date, id_number, start_date, 
-          adults, children_under_5, children_5_11, single_rooms, pickup_point, 
-          special_requests, payment_method, total_booked_tickets, total_amount, 
-          status, order_date
-        )
-        VALUES (
-          @tour_id, @full_name, @phone, @email, @birth_date, @id_number, @start_date, 
-          @adults, @children_under_5, @children_5_11, @single_rooms, @pickup_point, 
-          @special_requests, @payment_method, @total_booked_tickets, @total_amount, 
-          @status, @order_date
-        )
+        INSERT INTO [web_travel].[dbo].[orders] (tour_id, full_name, phone, email, birth_date, start_date, end_date, adults, children_under_5, children_5_11, single_rooms, pickup_point, special_requests, payment_method, total_amount, status)
+        OUTPUT INSERTED.id
+        VALUES (@tour_id, @full_name, @phone, @email, @birth_date, @start_date, @end_date, @adults, @children_under_5, @children_5_11, @single_rooms, @pickup_point, @special_requests, @payment_method, @total_amount, 'pending')
       `);
 
-    res.status(201).json({ message: 'Đặt tour thành công! Đơn hàng đang chờ xác nhận.' });
+    const orderId = orderResult.recordset[0].id;
+
+    // Lưu danh sách travelers (người đi cùng) vào bảng order_travelers
+    if (travelers && travelers.length > 0) {
+      for (const traveler of travelers) {
+        await req.app.locals.pool.request()
+          .input('order_id', sql.Int, orderId)
+          .input('full_name', sql.NVarChar, traveler.full_name)
+          .input('gender', sql.NVarChar, traveler.gender)
+          .input('birth_date', sql.Date, traveler.birth_date)
+          .input('phone', sql.NVarChar, traveler.phone)
+          .input('single_room', sql.Bit, traveler.single_room ? 1 : 0)
+          .input('traveler_type', sql.NVarChar, traveler.traveler_type)
+          .query(`
+            INSERT INTO [web_travel].[dbo].[order_travelers] (order_id, full_name, gender, birth_date, phone, single_room, traveler_type)
+            VALUES (@order_id, @full_name, @gender, @birth_date, @phone, @single_room, @traveler_type)
+          `);
+      }
+    }
+
+    res.status(201).json({ message: 'Đặt tour thành công', orderId });
   } catch (err) {
-    console.error('Lỗi đặt tour:', err);
-    res.status(500).json({ error: 'Lỗi server: ' + err.message });
-  }
-});
-
-// API duyệt đơn hàng
-router.put('/:orderId/confirm', ensurePool, async (req, res) => {
-  try {
-    const { orderId } = req.params;
-
-    const orderCheck = await req.app.locals.pool.request()
-      .input('order_id', sql.Int, parseInt(orderId))
-      .query(`
-        SELECT tour_id, total_booked_tickets, status
-        FROM [web_travel].[dbo].[orders]
-        WHERE id = @order_id
-      `);
-
-    if (orderCheck.recordset.length === 0) {
-      return res.status(404).json({ error: 'Đơn hàng không tồn tại!' });
-    }
-
-    const order = orderCheck.recordset[0];
-    if (order.status !== 'pending') {
-      return res.status(400).json({ error: 'Đơn hàng không ở trạng thái chờ xác nhận!' });
-    }
-
-    const tourCheck = await req.app.locals.pool.request()
-      .input('tour_id', sql.Int, order.tour_id)
-      .query(`
-        SELECT remaining_tickets
-        FROM [web_travel].[dbo].[tours]
-        WHERE id = @tour_id
-      `);
-
-    if (tourCheck.recordset.length === 0) {
-      return res.status(404).json({ error: 'Tour không tồn tại!' });
-    }
-
-    const remaining_tickets = tourCheck.recordset[0].remaining_tickets;
-    const total_booked_tickets = order.total_booked_tickets;
-
-    if (remaining_tickets < total_booked_tickets) {
-      return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remaining_tickets} vé.` });
-    }
-
-    await req.app.locals.pool.request()
-      .input('order_id', sql.Int, parseInt(orderId))
-      .input('status', sql.NVarChar, 'confirmed')
-      .query(`
-        UPDATE [web_travel].[dbo].[orders]
-        SET status = @status
-        WHERE id = @order_id
-      `);
-
-    await req.app.locals.pool.request()
-      .input('tour_id', sql.Int, order.tour_id)
-      .input('total_booked_tickets', sql.Int, total_booked_tickets)
-      .query(`
-        UPDATE [web_travel].[dbo].[tours]
-        SET remaining_tickets = remaining_tickets - @total_booked_tickets
-        WHERE id = @tour_id
-      `);
-
-    const updatedTour = await req.app.locals.pool.request()
-      .input('tour_id', sql.Int, order.tour_id)
-      .query(`
-        SELECT remaining_tickets
-        FROM [web_travel].[dbo].[tours]
-        WHERE id = @tour_id
-      `);
-
-    res.status(200).json({
-      message: 'Duyệt đơn hàng thành công!',
-      updated_remaining_tickets: updatedTour.recordset[0].remaining_tickets,
-    });
-  } catch (err) {
-    console.error('Lỗi duyệt đơn hàng:', err);
+    console.error('Lỗi khi đặt tour:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
