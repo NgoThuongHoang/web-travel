@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
-import { Card, Table, Button, Input, Modal, Form, Space, Typography, message, Row, Col, DatePicker, Select } from "antd";
+import React, { useState, useEffect } from "react";
+import { Card, Table, Button, Input, Modal, Form, Space, Typography, message, Row, Col } from "antd";
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import moment from 'moment';
 import '../../styles/AccountManagement.css';
 
-const { Option } = Select;
 const { Title } = Typography;
 
 const API_BASE_URL = "http://localhost:5001/api/customers";
@@ -52,6 +51,38 @@ const AccountManagement = () => {
       setTotalCustomers(0);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Hàm lấy thông tin chi tiết của một khách hàng theo ID
+  const fetchCustomerDetails = async (customerId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${customerId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      message.error("Lỗi khi tải thông tin chi tiết khách hàng!");
+      console.error("Lỗi fetchCustomerDetails:", error);
+      return null;
+    }
+  };
+
+  // Hàm xử lý khi nhấp vào icon "Chi tiết" của một khách hàng trong phần "Thông tin người tham gia tour"
+  const handleViewParticipantDetails = async (participant) => {
+    const customerDetails = await fetchCustomerDetails(participant.id);
+    if (customerDetails) {
+      setSelectedCustomer(customerDetails); // Cập nhật selectedCustomer để hiển thị trong modal
+      setShowDetailModal(true); // Mở lại modal "Chi tiết khách hàng"
     }
   };
 
@@ -155,6 +186,7 @@ const AccountManagement = () => {
       dataIndex: "phone",
       key: "phone",
       responsive: ["sm"],
+      render: (phone) => phone || "N/A",
     },
     {
       title: "Địa chỉ",
@@ -264,30 +296,58 @@ const AccountManagement = () => {
 
       {/* Modal Chi tiết khách hàng */}
       <Modal
-  title="Chi tiết khách hàng"
-  open={showDetailModal}
-  onCancel={() => setShowDetailModal(false)}
-  footer={null}
-  width={600}
->
-  {selectedCustomer && (
-    <div>
-      <p><strong>Họ và tên:</strong> {selectedCustomer.fullName}</p>
-      <p><strong>Email:</strong> {selectedCustomer.email || "N/A"}</p>
-      <p><strong>Số điện thoại:</strong> {selectedCustomer.phone}</p>
-      <p><strong>Địa chỉ:</strong> {selectedCustomer.address || "N/A"}</p>
-      <p><strong>Ngày tạo:</strong> {formatDate(selectedCustomer.created_at)}</p>
-      <p>
-        <strong>Tour đã tham gia:</strong>{" "}
-        {selectedCustomer.tours && selectedCustomer.tours.length > 0
-          ? selectedCustomer.tours
-              .map((tour) => `${tour.name} - Mã tour: ${tour.tour_code}`)
-              .join(", ")
-          : "Chưa tham gia tour"}
-      </p>
-    </div>
-  )}
-</Modal>
+        title="Chi tiết khách hàng"
+        open={showDetailModal}
+        onCancel={() => setShowDetailModal(false)}
+        footer={null}
+        width={600}
+      >
+        {selectedCustomer && (
+          <div>
+            <p><strong>Họ và tên:</strong> {selectedCustomer.fullName}</p>
+            <p><strong>Email:</strong> {selectedCustomer.email || "N/A"}</p>
+            <p><strong>Số điện thoại:</strong> {selectedCustomer.phone || "N/A"}</p>
+            <p><strong>Địa chỉ:</strong> {selectedCustomer.address || "N/A"}</p>
+            <p><strong>Ngày tạo:</strong> {formatDate(selectedCustomer.created_at)}</p>
+            <p>
+              <strong>Tour đã tham gia:</strong>{" "}
+              {selectedCustomer.tours && selectedCustomer.tours.length > 0
+                ? selectedCustomer.tours
+                    .map((tour) => `${tour.name} - Mã tour: ${tour.tour_code}`)
+                    .join(", ")
+                : "Chưa tham gia tour"}
+            </p>
+            {/* Hiển thị thông tin người đặt tour và các khách hàng trong cùng đơn đặt tour */}
+            {selectedCustomer.tours && selectedCustomer.tours.length > 0 && (
+              <div>
+                {selectedCustomer.tours.map((tour) => (
+                  <div key={tour.tour_id} style={{ marginBottom: '20px' }}>
+                    {/* Hiển thị các khách hàng đi cùng trong cùng đơn đặt tour với icon "Chi tiết" */}
+                    {tour.participants && tour.participants.length > 0 ? (
+                      <div>
+                        <p><strong>Người đi cùng:</strong></p>
+                        <ul>
+                          {tour.participants.map((participant) => (
+                            <li key={participant.id}>
+                              {participant.fullName}{" "}
+                              <EyeOutlined
+                                style={{ cursor: "pointer", color: "#1890ff" }}
+                                onClick={() => handleViewParticipantDetails(participant)}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p>Không có người đi cùng.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Modal Thêm/Sửa khách hàng */}
       <Modal
