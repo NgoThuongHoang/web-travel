@@ -21,7 +21,8 @@ const PaymentPage = ({ tourId }) => {
   const [showAgreeError, setShowAgreeError] = useState(false);
   const [showPaymentError, setShowPaymentError] = useState(false);
   const [useContactInfo, setUseContactInfo] = useState(false);
-  const [totalPrice, setTotalPrice] = useState(0); // Thêm state totalPrice
+  const [useContactPhoneAndAddress, setUseContactPhoneAndAddress] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ const PaymentPage = ({ tourId }) => {
   useEffect(() => {
     const totalTravelers = nguoiLon + treEm + emBe;
     setSingleRoomSelections(new Array(totalTravelers).fill(false));
+    setUseContactPhoneAndAddress(new Array(totalTravelers).fill(false));
   }, [nguoiLon, treEm, emBe]);
 
   useEffect(() => {
@@ -56,12 +58,29 @@ const PaymentPage = ({ tourId }) => {
     }
   }, [useContactInfo]);
 
+  useEffect(() => {
+    const totalTravelers = nguoiLon + treEm + emBe;
+    for (let i = 1; i < totalTravelers; i++) {
+      if (useContactPhoneAndAddress[i]) {
+        const contactInfo = formRef.current?.getFieldsValue(['tel', 'dia_chi']);
+        formRef.current?.setFieldsValue({
+          [`phone_traveler_${i}`]: contactInfo.tel || '',
+          [`address_traveler_${i}`]: contactInfo.dia_chi || '',
+        });
+      } else {
+        formRef.current?.setFieldsValue({
+          [`phone_traveler_${i}`]: '',
+          [`address_traveler_${i}`]: '',
+        });
+      }
+    }
+  }, [useContactPhoneAndAddress, nguoiLon, treEm, emBe]);
+
   const nguoiLonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.price || 4790000;
   const treEmPrice = tour?.prices?.find(p => p.age_group === "5-11")?.price || 3600000;
   const emBePrice = tour?.prices?.find(p => p.age_group === "Under 5")?.price || 0;
   const phongDonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.single_room_price || 2200000;
 
-  // Tính giá động
   useEffect(() => {
     const totalNguoiLon = nguoiLon * nguoiLonPrice;
     const totalTreEm = treEm * treEmPrice;
@@ -93,6 +112,20 @@ const PaymentPage = ({ tourId }) => {
             <Form.Item>
               <Checkbox checked={useContactInfo} onChange={(e) => setUseContactInfo(e.target.checked)}>
                 Sử dụng thông tin liên lạc
+              </Checkbox>
+            </Form.Item>
+          )}
+          {i !== 0 && (
+            <Form.Item>
+              <Checkbox
+                checked={useContactPhoneAndAddress[i]}
+                onChange={(e) => {
+                  const newSelections = [...useContactPhoneAndAddress];
+                  newSelections[i] = e.target.checked;
+                  setUseContactPhoneAndAddress(newSelections);
+                }}
+              >
+                Sử dụng số điện thoại và địa chỉ của người đặt tour
               </Checkbox>
             </Form.Item>
           )}
@@ -129,19 +162,27 @@ const PaymentPage = ({ tourId }) => {
             </Col>
           </Row>
           <Row gutter={16}>
-            {travelerType === 'Người lớn' && (
+            <Col span={8}>
+              <Form.Item
+                name={`phone_traveler_${i}`}
+                label="Số điện thoại"
+                rules={[{ pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' }]}
+              >
+                <Input placeholder="Nhập số điện thoại" />
+              </Form.Item>
+            </Col>
+            {i !== 0 && (
               <Col span={8}>
                 <Form.Item
-                  name={`phone_traveler_${i}`}
-                  label="Số điện thoại"
-                  rules={[{ pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' }]}
+                  name={`address_traveler_${i}`}
+                  label="Địa chỉ"
                 >
-                  <Input placeholder="Nhập số điện thoại" />
+                  <Input placeholder="Nhập địa chỉ" />
                 </Form.Item>
               </Col>
             )}
             {travelerType !== 'Em bé' && (
-              <Col span={travelerType === 'Người lớn' ? 16 : 24}>
+              <Col span={i === 0 ? 16 : 8}>
                 <Form.Item
                   name={`single_room_traveler_${i}`}
                   label={<span>Phòng đơn <Text type="secondary">(Giá: {formatPrice(phongDonPrice)})</Text></span>}
@@ -188,7 +229,24 @@ const PaymentPage = ({ tourId }) => {
 
       const formValues = formRef.current.getFieldsValue();
 
-      // Thu thập thông tin người đi cùng (bỏ qua người đặt tour - Người lớn 1)
+      // Thu thập thông tin người đặt tour (lead customer - Người lớn 1)
+      const leadCustomer = {
+        full_name: formValues.username,
+        phone: formValues.tel,
+        email: formValues.email,
+        gender: formValues.gender_traveler_0,
+        birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
+        single_room: formValues.single_room_traveler_0 || false,
+        traveler_type: 'Lead',
+      };
+
+      // Kiểm tra thông tin người đặt tour
+      if (!leadCustomer.full_name || !leadCustomer.phone || !leadCustomer.email || !leadCustomer.gender || !leadCustomer.birth_date) {
+        Modal.error({ title: 'Lỗi', content: 'Vui lòng điền đầy đủ thông tin người đặt tour!' });
+        return;
+      }
+
+      // Thu thập thông tin người đi cùng (travelers - từ Người lớn 2 trở đi)
       const travelers = [];
       for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
@@ -202,6 +260,7 @@ const PaymentPage = ({ tourId }) => {
           gender: formValues[`gender_traveler_${i}`],
           birth_date: birthDate.format('YYYY-MM-DD'),
           phone: formValues[`phone_traveler_${i}`] || null,
+          address: formValues[`address_traveler_${i}`] || null,
           single_room: formValues[`single_room_traveler_${i}`] || false,
           traveler_type: travelerType,
         });
@@ -218,19 +277,13 @@ const PaymentPage = ({ tourId }) => {
       const additionalNotes = formValues.additional_notes || '';
       const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
 
-      // Đảm bảo gender được lấy đúng từ form
-      const gender = formValues.gender_traveler_0;
-      if (!gender) {
-        Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn giới tính cho người đặt tour!' });
-        return;
-      }
-
+      // Tạo bookingData
       const bookingData = {
-        full_name: formValues.username,
-        phone: formValues.tel,
-        email: formValues.email,
-        gender: gender, // Đảm bảo gender được gửi
-        birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
+        full_name: leadCustomer.full_name,
+        phone: leadCustomer.phone,
+        email: leadCustomer.email,
+        gender: leadCustomer.gender,
+        birth_date: leadCustomer.birth_date,
         start_date: startDate.toISOString().split('T')[0],
         end_date: endDate.toISOString().split('T')[0],
         adults: nguoiLon,
@@ -241,10 +294,10 @@ const PaymentPage = ({ tourId }) => {
         special_requests: specialRequests,
         payment_method: selectedPayment,
         total_amount: totalPrice,
-        travelers,
+        travelers: travelers, // Chỉ chứa khách hàng đi cùng
       };
 
-      console.log('Booking Data:', bookingData); // Debug để kiểm tra dữ liệu gửi đi
+      console.log('Booking Data:', bookingData);
 
       const response = await fetch(`${API_BASE_URL}/${tourId}/book`, {
         method: 'POST',

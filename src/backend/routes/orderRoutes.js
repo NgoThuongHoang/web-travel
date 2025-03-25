@@ -123,7 +123,7 @@ router.put('/:orderId/confirm', ensurePool, async (req, res) => {
     }
 
     const total_booked_tickets = (order.adults || 0) + (order.children_under_5 || 0) + (order.children_5_11 || 0);
-
+    
     const tourCheck = await req.app.locals.pool.request()
       .input('tour_id', sql.Int, order.tour_id)
       .query(`
