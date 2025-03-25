@@ -649,37 +649,73 @@ router.delete('/:id', ensurePool, async (req, res) => {
 });
 
 // API đặt tour
+// API đặt tour
 router.post('/:tourId/book', ensurePool, async (req, res) => {
-  const { tourId } = req.params;
-  const { full_name, phone, email, gender, birth_date, start_date, end_date, adults, children_under_5, children_5_11, single_rooms, pickup_point, special_requests, payment_method, total_amount, travelers } = req.body;
+  const transaction = new sql.Transaction(req.app.locals.pool);
 
   try {
+    await transaction.begin();
+
+    const { tourId } = req.params;
+    const {
+      full_name,
+      phone,
+      email,
+      gender,
+      birth_date,
+      start_date,
+      end_date,
+      adults,
+      children_under_5,
+      children_5_11,
+      single_rooms,
+      pickup_point,
+      special_requests,
+      payment_method,
+      total_amount,
+      travelers,
+    } = req.body;
+
     // Kiểm tra dữ liệu đầu vào
     if (!full_name || !phone || !email || !start_date || !adults || !payment_method || !total_amount || !gender) {
-      return res.status(400).json({ error: 'Thiếu các trường bắt buộc: full_name, phone, email, start_date, adults, payment_method, total_amount, gender' });
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Thiếu các trường bắt buộc: full_name, phone, email, start_date, adults, payment_method, total_amount, gender',
+      });
     }
 
     // Kiểm tra tourId có tồn tại không
-    const tourResult = await req.app.locals.pool.request()
+    const tourResult = await transaction.request()
       .input('tour_id', sql.Int, tourId)
-      .query('SELECT * FROM [web_travel].[dbo].[tours] WHERE id = @tour_id');
+      .query('SELECT remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @tour_id');
     if (tourResult.recordset.length === 0) {
+      await transaction.rollback();
       return res.status(404).json({ error: `Tour với ID ${tourId} không tồn tại` });
     }
 
     const tour = tourResult.recordset[0];
+    const totalTickets = (adults || 0) + (children_under_5 || 0) + (children_5_11 || 0);
+
+    // Kiểm tra số vé còn lại
+    if (tour.remaining_tickets < totalTickets) {
+      await transaction.rollback();
+      return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${tour.remaining_tickets} vé.` });
+    }
 
     // Kiểm tra ngày tháng
     const parsedBirthDate = birth_date ? new Date(birth_date) : null;
     const parsedStartDate = new Date(start_date);
     const parsedEndDate = new Date(end_date);
     if (birth_date && isNaN(parsedBirthDate)) {
+      await transaction.rollback();
       return res.status(400).json({ error: 'birth_date không đúng định dạng YYYY-MM-DD' });
     }
     if (isNaN(parsedStartDate)) {
+      await transaction.rollback();
       return res.status(400).json({ error: 'start_date không đúng định dạng YYYY-MM-DD' });
     }
     if (isNaN(parsedEndDate)) {
+      await transaction.rollback();
       return res.status(400).json({ error: 'end_date không đúng định dạng YYYY-MM-DD' });
     }
 
@@ -687,44 +723,49 @@ router.post('/:tourId/book', ensurePool, async (req, res) => {
     if (travelers && Array.isArray(travelers)) {
       for (const traveler of travelers) {
         if (!traveler.full_name || !traveler.gender || !traveler.birth_date || !traveler.traveler_type) {
-          return res.status(400).json({ error: 'Mỗi traveler phải có full_name, gender, birth_date, và traveler_type' });
+          await transaction.rollback();
+          return res.status(400).json({
+            error: 'Mỗi traveler phải có full_name, gender, birth_date, và traveler_type',
+          });
         }
         const travelerBirthDate = new Date(traveler.birth_date);
         if (isNaN(travelerBirthDate)) {
-          return res.status(400).json({ error: `birth_date của traveler ${traveler.full_name} không đúng định dạng YYYY-MM-DD` });
+          await transaction.rollback();
+          return res.status(400).json({
+            error: `birth_date của traveler ${traveler.full_name} không đúng định dạng YYYY-MM-DD`,
+          });
         }
       }
     }
 
-    // Lưu thông tin người đặt tour vào bảng customers (is_lead = 1)
-    const leadCustomer = await req.app.locals.pool.request()
+    // Lưu thông tin người đặt tour vào bảng customers (khách hàng chính, traveler_type = 'Lead')
+    const leadCustomer = await transaction.request()
       .input('full_name', sql.NVarChar, full_name)
       .input('phone', sql.NVarChar, phone)
       .input('email', sql.NVarChar, email)
       .input('gender', sql.NVarChar, gender)
-      .input('birth_date', sql.Date, birth_date)
-      .input('address', sql.NVarChar, pickup_point) // Dùng pickup_point làm address
-      .input('is_lead', sql.Bit, 1) // Người đặt tour
+      .input('birth_date', sql.Date, parsedBirthDate)
+      .input('address', sql.NVarChar, pickup_point) // Dùng pickup_point làm address cho khách hàng chính
       .input('single_room', sql.Bit, single_rooms > 0 ? 1 : 0) // Giả sử người đặt tour có thể chọn phòng đơn
-      .input('traveler_type', sql.NVarChar, 'Người lớn') // Người đặt tour mặc định là Người lớn
+      .input('traveler_type', sql.NVarChar, 'Lead') // Khách hàng chính
       .query(`
-        INSERT INTO [web_travel].[dbo].[customers] (full_name, phone, email, gender, birth_date, address, is_lead, single_room, traveler_type)
+        INSERT INTO [web_travel].[dbo].[customers] (full_name, phone, email, gender, birth_date, address, single_room, traveler_type)
         OUTPUT INSERTED.id
-        VALUES (@full_name, @phone, @email, @gender, @birth_date, @address, @is_lead, @single_room, @traveler_type)
+        VALUES (@full_name, @phone, @email, @gender, @birth_date, @address, @single_room, @traveler_type)
       `);
 
     const customerId = leadCustomer.recordset[0].id;
 
     // Lưu thông tin tour vào bảng orders
-    const orderResult = await req.app.locals.pool.request()
+    const orderResult = await transaction.request()
       .input('tour_id', sql.Int, tourId)
       .input('customer_id', sql.Int, customerId)
-      .input('start_date', sql.Date, start_date)
-      .input('end_date', sql.Date, end_date)
+      .input('start_date', sql.Date, parsedStartDate)
+      .input('end_date', sql.Date, parsedEndDate)
       .input('adults', sql.Int, adults)
-      .input('children_under_5', sql.Int, children_under_5)
-      .input('children_5_11', sql.Int, children_5_11)
-      .input('single_rooms', sql.Int, single_rooms)
+      .input('children_under_5', sql.Int, children_under_5 || 0)
+      .input('children_5_11', sql.Int, children_5_11 || 0)
+      .input('single_rooms', sql.Int, single_rooms || 0)
       .input('pickup_point', sql.NVarChar, pickup_point)
       .input('special_requests', sql.NVarChar, special_requests)
       .input('payment_method', sql.NVarChar, payment_method)
@@ -738,7 +779,7 @@ router.post('/:tourId/book', ensurePool, async (req, res) => {
     const orderId = orderResult.recordset[0].id;
 
     // Cập nhật order_id cho người đặt tour trong bảng customers
-    await req.app.locals.pool.request()
+    await transaction.request()
       .input('order_id', sql.Int, orderId)
       .input('customer_id', sql.Int, customerId)
       .query(`
@@ -747,27 +788,41 @@ router.post('/:tourId/book', ensurePool, async (req, res) => {
         WHERE id = @customer_id
       `);
 
-    // Lưu thông tin người đi cùng vào bảng customers (is_lead = 0)
+    // Lưu thông tin người đi cùng vào bảng customers
     if (travelers && travelers.length > 0) {
       for (const traveler of travelers) {
-        await req.app.locals.pool.request()
+        await transaction.request()
           .input('full_name', sql.NVarChar, traveler.full_name)
           .input('gender', sql.NVarChar, traveler.gender)
-          .input('birth_date', sql.Date, traveler.birth_date)
-          .input('phone', sql.NVarChar, traveler.phone)
-          .input('is_lead', sql.Bit, 0) // Người đi cùng
+          .input('birth_date', sql.Date, new Date(traveler.birth_date))
+          .input('phone', sql.NVarChar, traveler.phone || null)
           .input('order_id', sql.Int, orderId)
           .input('single_room', sql.Bit, traveler.single_room ? 1 : 0)
           .input('traveler_type', sql.NVarChar, traveler.traveler_type)
+          .input('address', sql.NVarChar, null) // Người đi cùng không có address
           .query(`
-            INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, is_lead, order_id, single_room, traveler_type)
-            VALUES (@full_name, @gender, @birth_date, @phone, @is_lead, @order_id, @single_room, @traveler_type)
+            INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, order_id, single_room, traveler_type, address)
+            VALUES (@full_name, @gender, @birth_date, @phone, @order_id, @single_room, @traveler_type, @address)
           `);
       }
     }
 
+    // Cập nhật số vé còn lại trong bảng tours
+    await transaction.request()
+    .input('tour_id', sql.Int, tourId)
+    .input('total_tickets', sql.Int, totalTickets)
+    .query(`
+      UPDATE [web_travel].[dbo].[tours]
+      SET remaining_tickets = remaining_tickets - @total_tickets
+      WHERE id = @tour_id
+    `);
+
+    // Commit giao dịch
+    await transaction.commit();
+
     res.status(201).json({ message: 'Đặt tour thành công', orderId });
   } catch (err) {
+    await transaction.rollback();
     console.error('Lỗi khi đặt tour:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }

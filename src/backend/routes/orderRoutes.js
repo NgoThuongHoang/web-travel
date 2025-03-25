@@ -239,14 +239,13 @@ router.put('/:id', ensurePool, async (req, res) => {
         .input('birth_date', sql.Date, customer.birth_date ? new Date(customer.birth_date) : null)
         .input('phone', sql.NVarChar, customer.phone)
         .input('email', sql.NVarChar, customer.email || null)
-        .input('is_lead', sql.Bit, customer.is_lead)
         .input('order_id', sql.Int, parseInt(id))
         .input('single_room', sql.Bit, customer.single_room ? 1 : 0)
         .input('traveler_type', sql.NVarChar, customer.traveler_type)
-        .input('address', sql.NVarChar, customer.is_lead ? pickup_point : null) // Dùng pickup_point làm address cho người đặt tour
+        .input('address', sql.NVarChar)
         .query(`
-          INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, email, is_lead, order_id, single_room, traveler_type, address)
-          VALUES (@full_name, @gender, @birth_date, @phone, @email, @is_lead, @order_id, @single_room, @traveler_type, @address)
+          INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, email, order_id, single_room, traveler_type, address)
+          VALUES (@full_name, @gender, @birth_date, @phone, @email, @order_id, @single_room, @traveler_type, @address)
         `);
     }
 
