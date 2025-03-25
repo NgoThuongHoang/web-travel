@@ -21,6 +21,7 @@ const PaymentPage = ({ tourId }) => {
   const [showAgreeError, setShowAgreeError] = useState(false);
   const [showPaymentError, setShowPaymentError] = useState(false);
   const [useContactInfo, setUseContactInfo] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0); // Thêm state totalPrice
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -60,11 +61,15 @@ const PaymentPage = ({ tourId }) => {
   const emBePrice = tour?.prices?.find(p => p.age_group === "Under 5")?.price || 0;
   const phongDonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.single_room_price || 2200000;
 
-  const totalNguoiLon = nguoiLon * nguoiLonPrice;
-  const totalTreEm = treEm * treEmPrice;
-  const totalEmBe = emBe * emBePrice;
-  const totalPhongDon = singleRoomSelections.filter(Boolean).length * phongDonPrice;
-  const totalPrice = totalNguoiLon + totalTreEm + totalEmBe + totalPhongDon;
+  // Tính giá động
+  useEffect(() => {
+    const totalNguoiLon = nguoiLon * nguoiLonPrice;
+    const totalTreEm = treEm * treEmPrice;
+    const totalEmBe = emBe * emBePrice;
+    const totalPhongDon = singleRoomSelections.filter(Boolean).length * phongDonPrice;
+    const newTotalPrice = totalNguoiLon + totalTreEm + totalEmBe + totalPhongDon;
+    setTotalPrice(newTotalPrice);
+  }, [nguoiLon, treEm, emBe, singleRoomSelections, nguoiLonPrice, treEmPrice, emBePrice, phongDonPrice]);
 
   const totalTickets = nguoiLon + treEm + emBe;
 
@@ -169,23 +174,23 @@ const PaymentPage = ({ tourId }) => {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng đồng ý với Điều khoản thanh toán!' });
         return;
       } else setShowAgreeError(false);
-  
+
       if (!selectedPayment) {
         setShowPaymentError(true);
         Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn phương thức thanh toán!' });
         return;
       } else setShowPaymentError(false);
-  
+
       if (tour && totalTickets > tour.remaining_tickets) {
         Modal.error({ title: 'Lỗi', content: `Số vé đặt (${totalTickets}) vượt quá số vé còn lại (${tour.remaining_tickets})!` });
         return;
       }
-  
+
       const formValues = formRef.current.getFieldsValue();
-  
+
       // Thu thập thông tin người đi cùng (bỏ qua người đặt tour - Người lớn 1)
       const travelers = [];
-      for (let i = 1; i < totalTickets; i++) { // Bắt đầu từ i = 1 để bỏ qua Người lớn 1
+      for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
         const birthDate = formValues[`ngaysinh_traveler_${i}`];
         if (!birthDate) {
@@ -201,17 +206,30 @@ const PaymentPage = ({ tourId }) => {
           traveler_type: travelerType,
         });
       }
-  
+
       // Tính end_date dựa trên start_date và số ngày của tour
       const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
       const tourDays = tour?.days || 4;
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + tourDays);
-  
+
+      // Kết hợp notes và additional_notes
+      const notes = formValues.notes || [];
+      const additionalNotes = formValues.additional_notes || '';
+      const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
+
+      // Đảm bảo gender được lấy đúng từ form
+      const gender = formValues.gender_traveler_0;
+      if (!gender) {
+        Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn giới tính cho người đặt tour!' });
+        return;
+      }
+
       const bookingData = {
         full_name: formValues.username,
         phone: formValues.tel,
         email: formValues.email,
+        gender: gender, // Đảm bảo gender được gửi
         birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
         start_date: startDate.toISOString().split('T')[0],
         end_date: endDate.toISOString().split('T')[0],
@@ -220,25 +238,25 @@ const PaymentPage = ({ tourId }) => {
         children_5_11: treEm,
         single_rooms: singleRoomSelections.filter(Boolean).length,
         pickup_point: formValues.dia_chi,
-        special_requests: formValues.additional_notes || formValues.notes?.join(", ") || "",
+        special_requests: specialRequests,
         payment_method: selectedPayment,
         total_amount: totalPrice,
-        travelers, // Chỉ chứa người đi cùng
+        travelers,
       };
-  
-      console.log('Booking Data:', bookingData);
-  
+
+      console.log('Booking Data:', bookingData); // Debug để kiểm tra dữ liệu gửi đi
+
       const response = await fetch(`${API_BASE_URL}/${tourId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Lỗi khi đặt tour!');
       }
-  
+
       setIsModalVisible(true);
     } catch (error) {
       console.error('Lỗi khi đặt tour:', error);
@@ -412,7 +430,7 @@ const PaymentPage = ({ tourId }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Người lớn:</Text><Text strong>{`${nguoiLon} x ${formatPrice(nguoiLonPrice)}`}</Text></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Trẻ em:</Text><Text strong>{`${treEm} x ${formatPrice(treEmPrice)}`}</Text></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Em bé:</Text><Text strong>{`${emBe} x ${formatPrice(emBePrice)}`}</Text></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Phòng đơn:</Text><Text strong>{formatPrice(totalPhongDon)}</Text></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Phòng đơn:</Text><Text strong>{formatPrice(singleRoomSelections.filter(Boolean).length * phongDonPrice)}</Text></div>
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text strong>Tổng cộng:</Text><Text strong className="total-price">{formatPrice(totalPrice)}</Text></div>
             <Button type="primary" className="book-button" onClick={handleSubmit} disabled={tour?.remaining_tickets === 0}>

@@ -1,57 +1,66 @@
-"use client"
+import { useState, useEffect } from "react";
+import { Card, Table, Button, Input, Modal, Form, Space, Typography, message, Row, Col, DatePicker, Select } from "antd";
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import moment from 'moment';
+import '../../styles/AccountManagement.css';
 
-import { useState, useEffect } from "react"
-import { Card, Table, Button, Input, Modal, Form, Space, Typography, List } from "antd"
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons"
-import moment from "moment"
+const { Option } = Select;
+const { Title } = Typography;
 
-const { Title } = Typography
+const API_BASE_URL = "http://localhost:5001/api/customers";
 
-// Dữ liệu mẫu
-const INITIAL_CUSTOMERS = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn An",
-    email: "nguyenvanan@gmail.com",
-    phone: "0901234567",
-    address: "Hà Nội",
-    createdAt: "2024-01-15",
-    participatedTours: [
-      { name: "Tour Đà Nẵng", code: "DN001" },
-      { name: "Tour Hạ Long", code: "HL002" },
-    ],
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị Bình",
-    email: "tranthib@gmail.com",
-    phone: "0912345678",
-    address: "Hồ Chí Minh",
-    createdAt: "2024-01-16",
-    participatedTours: [{ name: "Tour Phú Quốc", code: "PQ003" }],
-  },
-  {
-    id: 3,
-    fullName: "Lê Văn Cường",
-    email: "levanc@gmail.com",
-    phone: "0923456789",
-    address: "Đà Nẵng",
-    createdAt: "2024-01-17",
-    participatedTours: [],
-  },
-]
+const AccountManagement = () => {
+  const [form] = Form.useForm();
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
-const CustomerManagement = () => {
-  const [form] = Form.useForm()
-  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS)
-  const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [searchText, setSearchText] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
+  // Hàm lấy danh sách khách hàng từ API
+  const fetchCustomers = async (page = 1) => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}?search=${searchText}&page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Dữ liệu khách hàng từ API:", data);
+
+      setCustomers(data.customers || []);
+      setTotalCustomers(data.total || 0);
+    } catch (error) {
+      message.error("Lỗi khi tải danh sách khách hàng!");
+      console.error("Lỗi fetchCustomers:", error);
+      setCustomers([]);
+      setTotalCustomers(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gọi API khi có thay đổi về tìm kiếm hoặc trang
+  useEffect(() => {
+    fetchCustomers(currentPage);
+  }, [searchText, currentPage]);
+
+  // Điền thông tin khách hàng vào form khi mở modal chỉnh sửa
   useEffect(() => {
     if (selectedCustomer && showEditModal) {
       form.setFieldsValue({
@@ -59,43 +68,69 @@ const CustomerManagement = () => {
         email: selectedCustomer.email,
         phone: selectedCustomer.phone,
         address: selectedCustomer.address,
-      })
+      });
     } else {
-      form.resetFields()
+      form.resetFields();
     }
-  }, [selectedCustomer, showEditModal, form])
+  }, [selectedCustomer, showEditModal, form]);
 
-  const handleFormSubmit = (values) => {
-    if (selectedCustomer) {
-      setCustomers((prevCustomers) =>
-        prevCustomers.map((customer) =>
-          customer.id === selectedCustomer.id
-            ? { ...customer, ...values, participatedTours: customer.participatedTours || [] }
-            : customer,
-        ),
-      )
-    } else {
-      const newCustomer = {
-        id: Date.now(),
-        ...values,
-        createdAt: moment().format("YYYY-MM-DD"),
-        participatedTours: [],
-      }
-      setCustomers((prevCustomers) => [...prevCustomers, newCustomer])
+  // Xử lý submit form (thêm hoặc sửa khách hàng)
+  const handleFormSubmit = async (values) => {
+    try {
+      const url = selectedCustomer ? `${API_BASE_URL}/${selectedCustomer.id}` : API_BASE_URL;
+      const method = selectedCustomer ? "PUT" : "POST";
+  
+      const customerData = {
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+      };
+  
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(customerData),
+      });
+  
+      if (!response.ok) throw new Error("Lỗi khi lưu thông tin khách hàng");
+      await fetchCustomers(currentPage);
+      setShowEditModal(false);
+      setSelectedCustomer(null);
+      message.success(selectedCustomer ? "Cập nhật khách hàng thành công!" : "Thêm khách hàng thành công!");
+    } catch (error) {
+      message.error("Lỗi khi lưu thông tin khách hàng!");
+      console.error(error);
     }
-    setShowEditModal(false)
-    setSelectedCustomer(null)
-  }
+  };
 
-  const getFilteredCustomers = () => {
-    return customers.filter(
-      (customer) =>
-        customer.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchText.toLowerCase()) ||
-        customer.phone.includes(searchText),
-    )
-  }
+  // Xử lý xóa khách hàng
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${selectedCustomer.id}`, {
+        method: "DELETE",
+      });
 
+      if (!response.ok) throw new Error("Lỗi khi xóa khách hàng");
+      await fetchCustomers(currentPage);
+      setShowDeleteModal(false);
+      setSelectedCustomer(null);
+      message.success("Xóa khách hàng thành công!");
+    } catch (error) {
+      message.error("Lỗi khi xóa khách hàng!");
+      console.error(error);
+    }
+  };
+
+  // Định dạng ngày sinh
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = moment(dateString);
+    if (!date.isValid()) return 'N/A';
+    return date.format('DD/MM/YYYY');
+  };
+
+  // Cấu hình cột cho bảng
   const columns = [
     {
       title: "STT",
@@ -112,34 +147,41 @@ const CustomerManagement = () => {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      responsive: ["md"],
+      render: (email) => email || "N/A",
     },
     {
       title: "Số điện thoại",
       dataIndex: "phone",
       key: "phone",
+      responsive: ["sm"],
     },
     {
       title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
+      responsive: ["md"],
+      render: (address) => address || "N/A",
     },
     {
       title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (createdAt) => moment(createdAt).format("DD/MM/YYYY"),
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (created_at) => formatDate(created_at),
+      responsive: ["md"],
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Space>
+        <Space direction={window.innerWidth < 768 ? "vertical" : "horizontal"}>
           <Button
             type="primary"
             icon={<EyeOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowDetailModal(true)
+              setSelectedCustomer(record);
+              setShowDetailModal(true);
             }}
           >
             Chi tiết
@@ -147,9 +189,10 @@ const CustomerManagement = () => {
           <Button
             type="default"
             icon={<EditOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowEditModal(true)
+              setSelectedCustomer(record);
+              setShowEditModal(true);
             }}
           >
             Sửa
@@ -157,9 +200,10 @@ const CustomerManagement = () => {
           <Button
             danger
             icon={<DeleteOutlined />}
+            size={window.innerWidth < 768 ? "small" : "middle"}
             onClick={() => {
-              setSelectedCustomer(record)
-              setShowDeleteModal(true)
+              setSelectedCustomer(record);
+              setShowDeleteModal(true);
             }}
           >
             Xóa
@@ -167,27 +211,30 @@ const CustomerManagement = () => {
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
-    <div className="customer-management">
-      <Card>
-        <Title level={2}>Quản lý khách hàng</Title>
+    <div className="customer-management" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Card style={{ flex: 1 }}>
+        <Title level={2}>QUẢN LÝ KHÁCH HÀNG</Title>
 
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Input
-              placeholder="Tìm kiếm theo tên, email hoặc số điện thoại"
+              placeholder="Tìm kiếm theo họ tên, email hoặc số điện thoại"
               prefix={<SearchOutlined />}
-              style={{ width: 330 }}
-              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 350 }}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setCurrentPage(1);
+              }}
             />
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => {
-                setSelectedCustomer(null)
-                setShowEditModal(true)
+                setSelectedCustomer(null);
+                setShowEditModal(true);
               }}
             >
               Thêm mới
@@ -195,122 +242,121 @@ const CustomerManagement = () => {
           </Space>
         </div>
 
+        {console.log("Danh sách khách hàng:", customers)}
         <Table
           columns={columns}
-          dataSource={getFilteredCustomers()}
+          dataSource={customers}
           rowKey="id"
+          loading={loading}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
-            total: getFilteredCustomers().length,
+            total: totalCustomers,
             onChange: (page) => setCurrentPage(page),
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} khách hàng`,
             showSizeChanger: false,
             showQuickJumper: true,
+            className: "fixed-pagination",
           }}
+          style={{ marginBottom: 60 }}
         />
       </Card>
 
-      {/* Modal Chi tiết */}
+      {/* Modal Chi tiết khách hàng */}
       <Modal
-        title="Chi tiết khách hàng"
-        visible={showDetailModal}
-        onCancel={() => setShowDetailModal(false)}
-        footer={null}
-        width={600}
-      >
-        {selectedCustomer && (
-          <div>
-            <p>
-              <strong>Họ và tên:</strong> {selectedCustomer.fullName}
-            </p>
-            <p>
-              <strong>Email:</strong> {selectedCustomer.email}
-            </p>
-            <p>
-              <strong>Số điện thoại:</strong> {selectedCustomer.phone}
-            </p>
-            <p>
-              <strong>Địa chỉ:</strong> {selectedCustomer.address}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong> {moment(selectedCustomer.createdAt).format("DD/MM/YYYY")}
-            </p>
-            <div>
-              <strong>Tour đã tham gia:</strong>
-              {selectedCustomer.participatedTours && selectedCustomer.participatedTours.length > 0 ? (
-                <List
-                  dataSource={selectedCustomer.participatedTours}
-                  renderItem={(item) => (
-                    <List.Item>
-                      <List.Item.Meta title={item.name} description={`Mã tour: ${item.code}`} />
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <p>Chưa tham gia tour nào</p>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+  title="Chi tiết khách hàng"
+  open={showDetailModal}
+  onCancel={() => setShowDetailModal(false)}
+  footer={null}
+  width={600}
+>
+  {selectedCustomer && (
+    <div>
+      <p><strong>Họ và tên:</strong> {selectedCustomer.fullName}</p>
+      <p><strong>Email:</strong> {selectedCustomer.email || "N/A"}</p>
+      <p><strong>Số điện thoại:</strong> {selectedCustomer.phone}</p>
+      <p><strong>Địa chỉ:</strong> {selectedCustomer.address || "N/A"}</p>
+      <p><strong>Ngày tạo:</strong> {formatDate(selectedCustomer.created_at)}</p>
+      <p>
+        <strong>Tour đã tham gia:</strong>{" "}
+        {selectedCustomer.tours && selectedCustomer.tours.length > 0
+          ? selectedCustomer.tours
+              .map((tour) => `${tour.name} - Mã tour: ${tour.tour_code}`)
+              .join(", ")
+          : "Chưa tham gia tour"}
+      </p>
+    </div>
+  )}
+</Modal>
 
-      {/* Modal Chỉnh sửa/Thêm mới */}
+      {/* Modal Thêm/Sửa khách hàng */}
       <Modal
         title={selectedCustomer ? "Sửa thông tin khách hàng" : "Thêm khách hàng mới"}
-        visible={showEditModal}
+        open={showEditModal}
         onOk={() => form.submit()}
         onCancel={() => {
-          setShowEditModal(false)
-          setSelectedCustomer(null)
+          setShowEditModal(false);
+          setSelectedCustomer(null);
         }}
+        width={600}
       >
         <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
-          <Form.Item name="fullName" label="Họ và tên" rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Vui lòng nhập email" },
-              { type: "email", message: "Email không hợp lệ" },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="phone"
-            label="Số điện thoại"
-            rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item name="address" label="Địa chỉ" rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}>
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="fullName"
+                label="Họ và tên"
+                rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
+              >
+                <Input placeholder="Nhập họ và tên" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[{ type: "email", message: "Email không hợp lệ" }]}
+              >
+                <Input placeholder="Nhập email" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="phone"
+                label="Số điện thoại"
+                rules={[
+                  { required: true, message: "Vui lòng nhập số điện thoại" },
+                  { pattern: /^[0-9]{10,11}$/, message: "Số điện thoại phải có 10-11 chữ số!" },
+                ]}
+              >
+                <Input placeholder="Nhập số điện thoại" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="address" label="Địa chỉ">
+                <Input placeholder="Nhập địa chỉ" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
 
-      {/* Modal Xóa */}
+      {/* Modal Xác nhận xóa */}
       <Modal
         title="Xác nhận xóa"
-        visible={showDeleteModal}
-        onOk={() => {
-          setCustomers(customers.filter((customer) => customer.id !== selectedCustomer.id))
-          setShowDeleteModal(false)
-          setSelectedCustomer(null)
-        }}
+        open={showDeleteModal}
+        onOk={handleDelete}
         onCancel={() => {
-          setShowDeleteModal(false)
-          setSelectedCustomer(null)
+          setShowDeleteModal(false);
+          setSelectedCustomer(null);
         }}
       >
         <p>Bạn có chắc chắn muốn xóa khách hàng này?</p>
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default CustomerManagement
-
+export default AccountManagement;
