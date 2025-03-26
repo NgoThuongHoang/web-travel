@@ -1,96 +1,76 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, DatePicker, Slider, Button, Checkbox, Row, Col, Typography, Divider, Card } from 'antd';
+import { Form, Input, Select, DatePicker, Slider, Button, Checkbox, Row, Col, Typography, Divider, Card, message } from 'antd';
 import { SearchOutlined, FilterOutlined, ClearOutlined } from '@ant-design/icons';
-import '../styles/TourSearchFilter.css'; // File CSS sẽ được tạo ở phần sau
+import '../styles/TourSearchFilter.css';
 import 'antd/dist/reset.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
+const API_BASE_URL = "http://localhost:5001/api/tours"; // URL API của bạn
+
 const TourSearchFilter = () => {
   const [form] = Form.useForm();
   const [searchResults, setSearchResults] = useState([]); // Lưu kết quả tìm kiếm
   const [loading, setLoading] = useState(false); // Trạng thái tải dữ liệu
+  const [priceRangeValue, setPriceRangeValue] = useState([0, 10000000]); // State để lưu giá trị Slider
 
-  // Dữ liệu giả lập danh sách tour (thay bằng API thực tế nếu có)
-  const mockTours = [
-    {
-      id: 1,
-      name: 'Miền Bắc 4N3Đ | Hà Nội – Lào Cai – Sa Pa',
-      destination: 'Hà Nội',
-      price: 4790000,
-      duration: '4 ngày 3 đêm',
-      type: 'Trong nước',
-      amenities: ['Hướng dẫn viên', 'Ăn uống'],
-      startDate: '2025-03-15',
-    },
-    {
-      id: 2,
-      name: 'Đà Nẵng – Hội An 3N2Đ',
-      destination: 'Đà Nẵng',
-      price: 3500000,
-      duration: '3 ngày 2 đêm',
-      type: 'Trong nước',
-      amenities: ['Hướng dẫn viên', 'Khách sạn 4 sao'],
-      startDate: '2025-04-10',
-    },
-    {
-      id: 3,
-      name: 'Thái Lan 5N4Đ | Bangkok – Pattaya',
-      destination: 'Thái Lan',
-      price: 8500000,
-      duration: '5 ngày 4 đêm',
-      type: 'Nước ngoài',
-      amenities: ['Hướng dẫn viên', 'Ăn uống', 'Khách sạn 5 sao'],
-      startDate: '2025-05-20',
-    },
-  ];
+  // Hàm lấy danh sách tour từ API
+  const fetchTours = async (filters = {}) => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.destination) {
+        queryParams.append('search', filters.destination); // Gửi 'search'
+      }
+      // Các tham số khác nếu cần
+      const response = await fetch(`${API_BASE_URL}?${queryParams.toString()}`);
+      if (!response.ok) throw new Error('Lỗi khi lấy danh sách tour');
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      message.error('Không thể lấy danh sách tour: ' + error.message);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Hàm xử lý tìm kiếm
   const onFinish = (values) => {
-    setLoading(true);
-    setTimeout(() => {
-      // Lọc dữ liệu dựa trên các giá trị từ form
-      const filteredTours = mockTours.filter((tour) => {
-        const matchesDestination = values.destination
-          ? tour.destination.toLowerCase().includes(values.destination.toLowerCase())
-          : true;
-        const matchesPrice = values.priceRange
-          ? tour.price >= values.priceRange[0] && tour.price <= values.priceRange[1]
-          : true;
-        const matchesType = values.tourType ? tour.type === values.tourType : true;
-        const matchesAmenities = values.amenities
-          ? values.amenities.every((amenity) => tour.amenities.includes(amenity))
-          : true;
-        const matchesDate = values.dateRange
-          ? new Date(tour.startDate) >= new Date(values.dateRange[0]) &&
-            new Date(tour.startDate) <= new Date(values.dateRange[1])
-          : true;
-
-        return (
-          matchesDestination &&
-          matchesPrice &&
-          matchesType &&
-          matchesAmenities &&
-          matchesDate
-        );
-      });
-
-      setSearchResults(filteredTours);
-      setLoading(false);
-    }, 1000); // Giả lập thời gian tải dữ liệu
+    const filters = {
+      destination: values.destination || '',
+      dateRange: values.dateRange || null,
+      tourType: values.tourType || '',
+      priceRange: values.priceRange || null,
+      amenities: values.amenities || [],
+    };
+    fetchTours(filters); // Gọi API với các tiêu chí tìm kiếm
   };
 
   // Hàm reset form
   const onReset = () => {
     form.resetFields();
-    setSearchResults([]);
+    setSearchResults([]); // Xóa kết quả tìm kiếm
+    setPriceRangeValue([0, 10000000]); // Reset giá trị Slider
   };
 
   // Hàm format giá tiền
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
+  };
+
+  // Hàm format ngày
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa có thông tin';
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+  };
+
+  // Hàm xử lý khi Slider thay đổi
+  const handlePriceRangeChange = (value) => {
+    setPriceRangeValue(value);
   };
 
   return (
@@ -148,10 +128,15 @@ const TourSearchFilter = () => {
                   min={0}
                   max={20000000}
                   step={500000}
+                  value={priceRangeValue}
+                  onChange={handlePriceRangeChange}
                   tooltip={{
                     formatter: (value) => `${value.toLocaleString()} VNĐ`,
                   }}
                 />
+                <Text>
+                  {formatPrice(priceRangeValue[0])} - {formatPrice(priceRangeValue[1])}
+                </Text>
               </Form.Item>
             </Col>
 
@@ -209,7 +194,7 @@ const TourSearchFilter = () => {
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>
                   <img
-                    src="/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg" // Thay bằng hình ảnh thực tế
+                    src={tour.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"}
                     alt={tour.name}
                     className="tour-image"
                   />
@@ -219,23 +204,32 @@ const TourSearchFilter = () => {
                     {tour.name}
                   </Title>
                   <Text className="tour-info">
-                    <strong>Điểm đến:</strong> {tour.destination}
+                    <strong>Điểm đến:</strong> {tour.departure_point}
                   </Text>
                   <br />
                   <Text className="tour-info">
-                    <strong>Thời gian:</strong> {tour.duration}
+                    <strong>Thời gian:</strong> {tour.days} ngày {tour.nights} đêm
                   </Text>
                   <br />
                   <Text className="tour-info">
-                    <strong>Ngày khởi hành:</strong> {tour.startDate}
+                    <strong>Ngày khởi hành:</strong> {formatDate(tour.start_date)}
                   </Text>
                   <br />
                   <Text className="tour-info">
-                    <strong>Tiện ích:</strong> {tour.amenities.join(', ')}
+                    <strong>Tiện ích: </strong>
+                    {tour.highlights
+                      ? Array.isArray(tour.highlights)
+                        ? tour.highlights.join(', ')
+                        : tour.highlights.split(/\s+/).filter(Boolean).join(', ')
+                      : 'Không có thông tin'}
+                  </Text>
+                  <br />
+                  <Text className="tour-info">
+                    <strong>Số vé còn lại:</strong> {tour.remaining_tickets}
                   </Text>
                   <br />
                   <Text className="tour-price">
-                    {formatPrice(tour.price)}
+                    {formatPrice(tour.prices?.find(p => p.age_group === "Adult")?.price || 0)}
                   </Text>
                   <Button type="primary" className="book-now-button">
                     Đặt ngay
@@ -246,7 +240,7 @@ const TourSearchFilter = () => {
           ))
         ) : (
           <Text type="secondary">
-            {loading ? 'Đang tìm kiếm...' : 'Không có tour nào phù hợp. Vui lòng thử lại với bộ lọc khác.'}
+            {loading ? 'Đang tìm kiếm...' : 'Vui lòng nhập tiêu chí và nhấn Tìm kiếm để xem kết quả.'}
           </Text>
         )}
       </div>

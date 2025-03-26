@@ -60,20 +60,51 @@ router.get('/', ensurePool, async (req, res) => {
     `;
     const params = {};
 
+    // Khởi tạo điều kiện WHERE
+    let whereClauses = [];
+
+    // Xử lý tìm kiếm theo tên tour
     if (search) {
-      query += ` WHERE (t.name LIKE @search OR t.tour_code LIKE @search)`;
-      params.search = `%${search}%`;
+      // Tách chuỗi tìm kiếm thành các từ khóa
+      const searchTerms = search.trim().split(/\s+/);
+      let searchConditions = [];
+
+      if (searchTerms.length > 1) {
+        // Nếu có nhiều từ, tìm kiếm từng từ riêng lẻ trong name
+        searchTerms.forEach((term, index) => {
+          searchConditions.push(`t.name LIKE '%' + @search${index} + '%'`);
+          params[`search${index}`] = term;
+        });
+      } else {
+        // Nếu chỉ có 1 từ, tìm kiếm trực tiếp trong name
+        searchConditions.push(`t.name LIKE '%' + @search + '%'`);
+        params.search = searchTerms[0];
+      }
+
+      whereClauses.push(`(${searchConditions.join(' AND ')})`);
     }
 
+    // Lọc theo status
     if (status && (status === 'active' || status === 'pending')) {
-      query += search ? ` AND t.status = @status` : ` WHERE t.status = @status`;
+      whereClauses.push(`t.status = @status`);
       params.status = status;
     }
 
-    const tourResult = await req.app.locals.pool.request()
-      .input('search', sql.NVarChar, params.search)
-      .input('status', sql.NVarChar, params.status)
-      .query(query);
+    // Kết hợp các điều kiện WHERE
+    if (whereClauses.length > 0) {
+      query += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
+
+    console.log('Query:', query); // Log query để kiểm tra
+    console.log('Params:', params); // Log params để kiểm tra
+
+    const request = new sql.Request(req.app.locals.pool);
+    // Thêm các tham số tìm kiếm vào request
+    Object.keys(params).forEach(key => {
+      request.input(key, sql.NVarChar, params[key]);
+    });
+
+    const tourResult = await request.query(query);
 
     const imageResult = await req.app.locals.pool.request().query(`
       SELECT id, tour_id, image_url, caption
@@ -124,7 +155,10 @@ router.get('/', ensurePool, async (req, res) => {
       }
     });
 
-    res.json(Object.values(tours));
+    const result = Object.values(tours);
+    console.log('Tours found:', result); // Log kết quả để kiểm tra
+
+    res.json(result);
   } catch (err) {
     console.error('Lỗi lấy danh sách tour:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
