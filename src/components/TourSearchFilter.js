@@ -215,12 +215,27 @@
                     </Text>
                     <br />
                     <Text className="tour-info">
-                      <strong>Tiện ích: </strong>
-                      {tour.highlights
-                        ? Array.isArray(tour.highlights)
-                          ? tour.highlights.join(', ')
-                          : tour.highlights.split(/\s+/).filter(Boolean).join(', ')
-                        : 'Không có thông tin'}
+                      <strong>Điểm nổi bật: </strong>
+                      {tour.highlights ? (
+                        Array.isArray(tour.highlights) ? (
+                          <ul style={{ margin: 0}}>
+                            {tour.highlights.map((highlight, index) => (
+                              <li key={index}>{highlight}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <ul style={{ margin: 0, paddingLeft: 20 }}>
+                            {tour.highlights
+                              .split(/\s+/)
+                              .filter(Boolean)
+                              .map((highlight, index) => (
+                                <li key={index}>{highlight}</li>
+                              ))}
+                          </ul>
+                        )
+                      ) : (
+                        'Không có thông tin'
+                      )}
                     </Text>
                     <br />
                     <Text className="tour-info">

@@ -236,7 +236,7 @@ const PaymentPage = ({ tourId }) => {
         email: formValues.email,
         gender: formValues.gender_traveler_0,
         birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
-        single_room: formValues.single_room_traveler_0 || false,
+        single_room: formValues.single_room_traveler_0 || false, // Lưu single_room của Lead
         traveler_type: 'Lead',
       };
   
@@ -246,11 +246,14 @@ const PaymentPage = ({ tourId }) => {
         return;
       }
   
-      // Thu thập thông tin tất cả hành khách (bao gồm cả người đặt tour)
+      // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       const travelers = [];
-      
-      // Thêm người đặt tour (lead customer) vào mảng travelers
-      travelers.push({
+  
+      // Thu thập thông tin tất cả hành khách để tính single_rooms (bao gồm cả Lead)
+      const allTravelersForSingleRoom = [];
+  
+      // Thêm Lead vào allTravelersForSingleRoom để tính single_rooms
+      allTravelersForSingleRoom.push({
         full_name: leadCustomer.full_name,
         gender: leadCustomer.gender,
         birth_date: leadCustomer.birth_date,
@@ -260,7 +263,7 @@ const PaymentPage = ({ tourId }) => {
         traveler_type: leadCustomer.traveler_type,
       });
   
-      // Thêm thông tin người đi cùng (từ Người lớn 2 trở đi)
+      // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
         const birthDate = formValues[`ngaysinh_traveler_${i}`];
@@ -268,7 +271,7 @@ const PaymentPage = ({ tourId }) => {
           Modal.error({ title: 'Lỗi', content: `Ngày sinh của ${travelerType} ${i} không hợp lệ!` });
           return;
         }
-        travelers.push({
+        const traveler = {
           full_name: formValues[`username_traveler_${i}`],
           gender: formValues[`gender_traveler_${i}`],
           birth_date: birthDate.format('YYYY-MM-DD'),
@@ -276,7 +279,9 @@ const PaymentPage = ({ tourId }) => {
           address: formValues[`address_traveler_${i}`] || null,
           single_room: formValues[`single_room_traveler_${i}`] || false,
           traveler_type: travelerType,
-        });
+        };
+        travelers.push(traveler); // Chỉ thêm người đi cùng vào travelers
+        allTravelersForSingleRoom.push(traveler); // Thêm vào allTravelersForSingleRoom để tính single_rooms
       }
   
       // Tính end_date dựa trên start_date và số ngày của tour
@@ -290,6 +295,9 @@ const PaymentPage = ({ tourId }) => {
       const additionalNotes = formValues.additional_notes || '';
       const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
   
+      // Tính tổng số phòng đơn từ allTravelersForSingleRoom (bao gồm cả Lead)
+      const totalSingleRooms = allTravelersForSingleRoom.filter(traveler => traveler.single_room).length;
+  
       // Tạo bookingData
       const bookingData = {
         full_name: leadCustomer.full_name,
@@ -302,12 +310,13 @@ const PaymentPage = ({ tourId }) => {
         adults: nguoiLon,
         children_under_5: emBe,
         children_5_11: treEm,
-        single_rooms: singleRoomSelections.filter(Boolean).length, // Tổng số phòng đơn vẫn được tính đúng
+        single_rooms: totalSingleRooms, // Tổng số phòng đơn (bao gồm cả Lead)
+        lead_single_room: leadCustomer.single_room, // Thêm trường lead_single_room để lưu vào DB
         pickup_point: formValues.dia_chi,
         special_requests: specialRequests,
         payment_method: selectedPayment,
         total_amount: totalPrice,
-        travelers: travelers, // Bao gồm cả lead customer và người đi cùng
+        travelers: travelers, // Chỉ bao gồm người đi cùng
       };
   
       console.log('Booking Data:', bookingData);

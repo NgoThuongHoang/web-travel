@@ -216,6 +216,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     status: tour?.status || "active",
     star_rating: tour?.star_rating || 3,
     region: tour?.region || "",
+    total_tickets: tour?.total_tickets || 0, // Thêm total_tickets vào initialValues
   };
 
   const onFinish = (values) => {
@@ -243,7 +244,8 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         single_room_price: price.single_room_price ? parseFloat(price.single_room_price) : null,
         description: price.description || "",
       })),
-      region: values.region || "Không xác định", 
+      region: values.region || "Không xác định",
+      total_tickets: parseInt(values.total_tickets) || 0, // Thêm total_tickets vào data
     };
     console.log("Data gửi từ TourEditForm:", data); // Thêm log để kiểm tra
     setPreviewData(data);
@@ -481,6 +483,18 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 rules={[{ required: true, message: "Vui lòng nhập đánh giá sao" }]}
               >
                 <InputNumber min={1} max={5} placeholder="Nhập số sao (1-5)" style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          {/* Thêm trường nhập total_tickets */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Số vé hiện có"
+                name="total_tickets"
+                rules={[{ required: true, message: "Vui lòng nhập số vé hiện có" }]}
+              >
+                <InputNumber min={0} placeholder="Nhập số vé hiện có" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
@@ -780,6 +794,13 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 <Col span={12}>
                   <Text>
                     <span role="img" aria-label="money">💰</span> Giá người lớn: {previewData.prices.find(p => p.age_group === "Adult")?.price || "Liên hệ"} VNĐ
+                  </Text>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Text>
+                    <span role="img" aria-label="ticket">🎫</span> Số vé hiện có: {previewData.total_tickets || "0"} {/* Thêm hiển thị total_tickets */}
                   </Text>
                 </Col>
               </Row>

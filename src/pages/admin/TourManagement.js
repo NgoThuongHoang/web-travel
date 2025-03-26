@@ -181,6 +181,7 @@ const TourManagement = () => {
 
   const handleSubmit = async (tourData) => {
     try {
+      const totalTickets = parseInt(tourData.total_tickets) || 0; // Đảm bảo total_tickets là số nguyên
       const tourPayload = {
         name: tourData.title || "Tour không có tiêu đề",
         days: parseInt(tourData.days) || 1,
@@ -200,10 +201,12 @@ const TourManagement = () => {
             caption: image.caption || null,
           })),
         region: tourData.region || "Không xác định",
+        total_tickets: totalTickets, // Sử dụng giá trị đã parse
+        remaining_tickets: totalTickets, // Đảm bảo remaining_tickets bằng total_tickets
       };
-
-      console.log("tourPayload:", tourPayload);
-
+  
+      console.log("tourPayload:", tourPayload); // Log để kiểm tra
+  
       let tourResponse;
       if (selectedTour) {
         tourResponse = await fetch(`${API_BASE_URL}/${selectedTour.id}`, {
@@ -222,12 +225,12 @@ const TourManagement = () => {
           body: JSON.stringify(tourPayload),
         });
       }
-
+  
       if (!tourResponse.ok) {
         const errorData = await tourResponse.json();
         throw new Error(errorData.error || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour: ${tourResponse.status} - Không có thông tin lỗi chi tiết`);
       }
-
+  
       message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
       await fetchTours();
     } catch (error) {
@@ -273,6 +276,12 @@ const TourManagement = () => {
       title: "Thời gian",
       key: "duration",
       render: (_, record) => `${record.days} NGÀY ${record.nights} ĐÊM`,
+    },
+    {
+      title: "Số vé hiện có", // Thêm cột mới
+      dataIndex: "total_tickets",
+      key: "total_tickets",
+      render: (text) => text || "0",
     },
     {
       title: "Trạng thái",
@@ -427,6 +436,9 @@ const TourManagement = () => {
             </p>
             <p>
               <strong>Trạng thái:</strong> {selectedTour.status === "pending" ? "Đang chờ" : "Hoạt động"}
+            </p>
+            <p>
+              <strong>Số vé hiện có:</strong> {selectedTour.total_tickets || "0"} {/* Thêm hiển thị total_tickets */}
             </p>
             <p>
               <strong>Giá tour:</strong>
