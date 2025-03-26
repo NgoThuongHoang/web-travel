@@ -215,20 +215,20 @@ const PaymentPage = ({ tourId }) => {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng đồng ý với Điều khoản thanh toán!' });
         return;
       } else setShowAgreeError(false);
-
+  
       if (!selectedPayment) {
         setShowPaymentError(true);
         Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn phương thức thanh toán!' });
         return;
       } else setShowPaymentError(false);
-
+  
       if (tour && totalTickets > tour.remaining_tickets) {
         Modal.error({ title: 'Lỗi', content: `Số vé đặt (${totalTickets}) vượt quá số vé còn lại (${tour.remaining_tickets})!` });
         return;
       }
-
+  
       const formValues = formRef.current.getFieldsValue();
-
+  
       // Thu thập thông tin người đặt tour (lead customer - Người lớn 1)
       const leadCustomer = {
         full_name: formValues.username,
@@ -239,15 +239,28 @@ const PaymentPage = ({ tourId }) => {
         single_room: formValues.single_room_traveler_0 || false,
         traveler_type: 'Lead',
       };
-
+  
       // Kiểm tra thông tin người đặt tour
       if (!leadCustomer.full_name || !leadCustomer.phone || !leadCustomer.email || !leadCustomer.gender || !leadCustomer.birth_date) {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng điền đầy đủ thông tin người đặt tour!' });
         return;
       }
-
-      // Thu thập thông tin người đi cùng (travelers - từ Người lớn 2 trở đi)
+  
+      // Thu thập thông tin tất cả hành khách (bao gồm cả người đặt tour)
       const travelers = [];
+      
+      // Thêm người đặt tour (lead customer) vào mảng travelers
+      travelers.push({
+        full_name: leadCustomer.full_name,
+        gender: leadCustomer.gender,
+        birth_date: leadCustomer.birth_date,
+        phone: leadCustomer.phone,
+        address: formValues.dia_chi || null,
+        single_room: leadCustomer.single_room,
+        traveler_type: leadCustomer.traveler_type,
+      });
+  
+      // Thêm thông tin người đi cùng (từ Người lớn 2 trở đi)
       for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
         const birthDate = formValues[`ngaysinh_traveler_${i}`];
@@ -265,18 +278,18 @@ const PaymentPage = ({ tourId }) => {
           traveler_type: travelerType,
         });
       }
-
+  
       // Tính end_date dựa trên start_date và số ngày của tour
       const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
       const tourDays = tour?.days || 4;
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + tourDays);
-
+  
       // Kết hợp notes và additional_notes
       const notes = formValues.notes || [];
       const additionalNotes = formValues.additional_notes || '';
       const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
-
+  
       // Tạo bookingData
       const bookingData = {
         full_name: leadCustomer.full_name,
@@ -289,27 +302,27 @@ const PaymentPage = ({ tourId }) => {
         adults: nguoiLon,
         children_under_5: emBe,
         children_5_11: treEm,
-        single_rooms: singleRoomSelections.filter(Boolean).length,
+        single_rooms: singleRoomSelections.filter(Boolean).length, // Tổng số phòng đơn vẫn được tính đúng
         pickup_point: formValues.dia_chi,
         special_requests: specialRequests,
         payment_method: selectedPayment,
         total_amount: totalPrice,
-        travelers: travelers, // Chỉ chứa khách hàng đi cùng
+        travelers: travelers, // Bao gồm cả lead customer và người đi cùng
       };
-
+  
       console.log('Booking Data:', bookingData);
-
+  
       const response = await fetch(`${API_BASE_URL}/${tourId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Lỗi khi đặt tour!');
       }
-
+  
       setIsModalVisible(true);
     } catch (error) {
       console.error('Lỗi khi đặt tour:', error);

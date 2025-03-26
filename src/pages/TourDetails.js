@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import {
   Layout,
   Typography,
@@ -13,6 +14,7 @@ import {
   Divider,
   Table,
   Avatar,
+  Spin,
 } from "antd";
 import {
   CalendarOutlined,
@@ -22,6 +24,10 @@ import {
   StarOutlined,
   LeftOutlined,
   RightOutlined,
+  SunOutlined,
+  CoffeeOutlined,
+  CloudOutlined,
+  MoonOutlined,
 } from "@ant-design/icons";
 import '../styles/TourDetailPage.css';
 
@@ -29,115 +35,250 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
+const mockViewedTours = [
+  {
+    id: 1,
+    name: "Tour Hà Nội - Sapa",
+    image: "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg",
+    price: "2.500.000 VND",
+    rating: 4.5,
+  },
+  {
+    id: 2,
+    name: "Tour Đà Nẵng - Hội An",
+    image: "/images/images_tour/anh_tour_viet_nam/hoi-an.jpg",
+    price: "3.000.000 VND",
+    rating: 4.7,
+  },
+];
+
+const mockRelatedTours = [
+  {
+    id: 1,
+    name: "Tour Nha Trang - Đà Lạt",
+    image: "/images/images_tour/anh_tour_viet_nam/nha-trang-dalat.jpg",
+    price: "2.800.000 VND",
+    rating: 4.6,
+  },
+  {
+    id: 2,
+    name: "Tour Phú Quốc",
+    image: "/images/images_tour/anh_tour_viet_nam/phu-quoc.jpg",
+    price: "4.500.000 VND",
+    rating: 4.8,
+  },
+];
+
 const TourDetail = () => {
+  const { id } = useParams();
   const [activeTab, setActiveTab] = useState("1");
   const [tourData, setTourData] = useState(null);
+  const [itineraryDetails, setItineraryDetails] = useState([]);
+  const [viewedTours, setViewedTours] = useState([]);
+  const [relatedTours, setRelatedTours] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState([]);
   const carouselRef = useRef(null);
 
-  // Gọi API để lấy dữ liệu tour
   useEffect(() => {
-    const fetchTourData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Giả lập gọi API (thay thế bằng API thật của bạn)
-        const response = await fetch("/api/tours/3"); // Ví dụ: API endpoint cho tour có id=3
-        const data = await response.json();
-        setTourData(data);
-      } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu tour:", error);
+        setError(null);
+        setImageLoadErrors([]);
+
+        // Lấy dữ liệu tour
+        const tourResponse = await fetch(`http://localhost:5001/api/tours/${id}`);
+        if (!tourResponse.ok) {
+          throw new Error("Không thể lấy dữ liệu tour");
+        }
+        const tourData = await tourResponse.json();
+        console.log("Dữ liệu từ API:", tourData);
+
+        // Parse highlights nếu là chuỗi
+        if (tourData.highlights && typeof tourData.highlights === "string") {
+          try {
+            tourData.highlights = JSON.parse(tourData.highlights);
+          } catch (err) {
+            console.error("Lỗi parse highlights:", err);
+            tourData.highlights = [];
+          }
+        }
+        setTourData(tourData);
+
+        // Lấy dữ liệu lịch trình
+        try {
+          const itineraryResponse = await fetch(`http://localhost:5001/api/tours/${id}/itineraries`);
+          if (!itineraryResponse.ok) {
+            throw new Error("Không thể lấy dữ liệu lịch trình");
+          }
+          const itineraryData = await itineraryResponse.json();
+          const parsedItineraryData = itineraryData.map(item => {
+            let detailsObject = { Sáng: "", Trưa: "", Chiều: "", Tối: "" };
+
+            if (item.details && typeof item.details === "string") {
+              try {
+                const detailsArray = JSON.parse(item.details);
+                if (Array.isArray(detailsArray)) {
+                  detailsArray.forEach(detail => {
+                    if (typeof detail === "string") {
+                      if (detail.startsWith("Sáng:")) {
+                        detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                      } else if (detail.startsWith("Trưa:")) {
+                        detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                      } else if (detail.startsWith("Chiều:")) {
+                        detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                      } else if (detail.startsWith("Tối:")) {
+                        detailsObject.Tối = detail.replace("Tối:", "").trim();
+                      }
+                    }
+                  });
+                }
+              } catch (err) {
+                console.error("Lỗi parse details:", err);
+                return { ...item, details: detailsObject };
+              }
+            } else if (Array.isArray(item.details)) {
+              item.details.forEach(detail => {
+                if (typeof detail === "string") {
+                  if (detail.startsWith("Sáng:")) {
+                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                  } else if (detail.startsWith("Trưa:")) {
+                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                  } else if (detail.startsWith("Chiều:")) {
+                    detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                  } else if (detail.startsWith("Tối:")) {
+                    detailsObject.Tối = detail.replace("Tối:", "").trim();
+                  }
+                }
+              });
+            }
+
+            return { ...item, details: detailsObject };
+          });
+          setItineraryDetails(parsedItineraryData);
+        } catch (err) {
+          console.warn("Không thể lấy dữ liệu lịch trình:", err.message);
+          setItineraryDetails([]);
+        }
+
+        // Lấy dữ liệu tour đã xem
+        try {
+          const viewedToursResponse = await fetch("http://localhost:5001/api/tours/viewed");
+          if (!viewedToursResponse.ok) {
+            throw new Error("Không thể lấy dữ liệu tour đã xem");
+          }
+          const viewedToursData = await viewedToursResponse.json();
+          setViewedTours(viewedToursData);
+        } catch (err) {
+          console.warn("Không thể lấy dữ liệu tour đã xem, sử dụng dữ liệu ảo:", err.message);
+          setViewedTours(mockViewedTours);
+        }
+
+        // Lấy dữ liệu tour liên quan
+        try {
+          const relatedToursResponse = await fetch("http://localhost:5001/api/tours/related");
+          if (!relatedToursResponse.ok) {
+            throw new Error("Không thể lấy dữ liệu tour liên quan");
+          }
+          const relatedToursData = await relatedToursResponse.json();
+          setRelatedTours(relatedToursData);
+        } catch (err) {
+          console.warn("Không thể lấy dữ liệu tour liên quan, sử dụng dữ liệu ảo:", err.message);
+          setRelatedTours(mockRelatedTours);
+        }
+
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu:", err);
+        setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTourData();
-  }, []);
+    fetchData();
+  }, [id]);
 
-  // Dữ liệu giả lập (dùng tạm nếu chưa có API thật)
-  const mockData = {
-    tour: {
-      id: 3,
-      name: "Tour Phan Thiết - Mũi Né",
-      start_date: "2025-05-15",
-      status: "active",
-      days: 3,
-      nights: 2,
-      transportation: "XE KHÁCH",
-      departure_point: "TP HCM",
-      tour_code: "PTMN789",
-      star_rating: 3,
-      highlights: [
-        "Khám phá đồi cát bay Mũi Né",
-        "Tham quan Làng Chài Mũi Né",
-        "Thư giãn tại bãi biển Phan Thiết"
-      ],
-      itinerary: [
-        { day: "NGÀY 1", title: "TP.HCM - PHAN THIẾT" },
-        { day: "NGÀY 2", title: "PHAN THIẾT - MŨI NÉ - ĐỒI CÁT BAY" },
-        { day: "NGÀY 3", title: "MŨI NÉ - TP.HCM" }
-      ]
-    },
-    images: [
-      { id: 3, tour_id: 3, image_url: "images/images_tour/anh_tour_viet_nam/bau-trang-3808-8465.jpeg", caption: "Bàu Trắng - Mũi Né" },
-      { id: 4, tour_id: 3, image_url: "images/images_tour/anh_tour_viet_nam/phan-thiet.jpg", caption: "Cảnh đẹp Phan Thiết" },
-      { id: 5, tour_id: 3, image_url: "images/images_tour/anh_tour_viet_nam/mui-ne.jpeg", caption: "Làng chài Mũi Né" },
-      { id: 6, tour_id: 3, image_url: "images/images_tour/anh_tour_viet_nam/bai-bien-dep-o-mui-ne-phan-thiet_grande.jpeg", caption: "Bãi biển đẹp ở Mũi Né - Phan Thiết" }
-    ],
-    itineraryDetails: [
-      { id: 8, tour_id: 3, day: 1, title: "TP.HCM - PHAN THIẾT", details: ["Sáng: Khởi hành từ TP.HCM đến Phan Thiết bằng xe khách", "Chiều: Nhận phòng khách sạn, nghỉ ngơi và tự do tắm biển tại bãi biển Phan Thiết"] },
-      { id: 9, tour_id: 3, day: 2, title: "PHAN THIẾT - MŨI NÉ - ĐỒI CÁT BAY", details: ["Sáng: Tham quan Làng Chài Mũi Né, khám phá cuộc sống ngư dân", "Trưa: Ăn trưa với hải sản tươi sống tại Mũi Né", "Chiều: Khám phá Đồi Cát Bay, trải nghiệm trượt cát"] },
-      { id: 10, tour_id: 3, day: 3, title: "MŨI NÉ - TP.HCM", details: ["Sáng: Tự do tắm biển và mua sắm đặc sản tại chợ Phan Thiết", "Chiều: Khởi hành về TP.HCM, kết thúc tour"] }
-    ],
-    viewedTours: [
-      { id: 1, name: "Tour Hà Nội - Sapa", image: "images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg", price: "2.500.000 VND", rating: 4.5 },
-      { id: 2, name: "Tour Đà Nẵng - Hội An", image: "images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg", price: "3.000.000 VND", rating: 4.7 }
-    ],
-    relatedTours: [
-      { id: 1, name: "Tour Nha Trang - Đà Lạt", image: "images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg", price: "2.800.000 VND", rating: 4.6 },
-      { id: 2, name: "Tour Phú Quốc", image: "images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg", price: "4.500.000 VND", rating: 4.8 }
-    ]
-  };
+  if (loading) {
+    return <Spin tip="Đang tải dữ liệu..." />;
+  }
 
-  // Sử dụng dữ liệu từ API hoặc dữ liệu giả lập
-  const data = tourData || mockData;
+  if (error) {
+    return <div>{error}</div>;
+  }
 
-  // Dữ liệu tour
+  if (!tourData) {
+    return <div>Không tìm thấy dữ liệu tour.</div>;
+  }
+
   const tourInfo = {
-    title: data.tour.name,
-    duration: `${data.tour.days} NGÀY ${data.tour.nights} ĐÊM`,
-    departureDate: data.tour.start_date,
-    transportation: data.tour.transportation,
-    departurePoint: data.tour.departure_point,
-    tourCode: data.tour.tour_code,
-    highlights: data.tour.highlights,
+    title: tourData.name || "Không có tiêu đề",
+    duration: tourData.days && tourData.nights
+      ? `${tourData.days} NGÀY ${tourData.nights} ĐÊM`
+      : "Không xác định",
+    departureDate: tourData.start_date
+      ? new Date(tourData.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : "Không xác định",
+    transportation: tourData.transportation || "Không xác định",
+    departurePoint: tourData.departure_point || "Không xác định",
+    tourCode: tourData.tour_code || "Không có mã tour",
+    highlights: Array.isArray(tourData.highlights) ? tourData.highlights : [],
   };
 
-  // Dữ liệu ảnh
-  const tourImages = data.images.map((img) => img.image_url);
+  const tourImages = tourData.images && Array.isArray(tourData.images)
+    ? tourData.images
+        .map((img) => {
+          let imageUrl = img.image_url;
+          if (imageUrl.startsWith('http://localhost:5001')) {
+            imageUrl = imageUrl.replace('http://localhost:5001', '');
+          }
+          return imageUrl;
+        })
+        .filter(Boolean)
+        .slice(0, 10)
+    : [];
 
-  // Dữ liệu lịch trình (kết hợp itinerary và itineraryDetails)
-  const itinerary = data.tour.itinerary.map((day, index) => {
-    const details = data.itineraryDetails.find((item) => item.day === (index + 1)) || { details: [] };
-    return {
-      day: day.day,
-      content: `
-        <p><strong>${day.title}</strong></p>
-        ${details.details.map((detail) => `<p>${detail}</p>`).join("")}
-      `,
-    };
-  });
+  // Chuẩn bị dữ liệu lịch trình
+  const itinerary = itineraryDetails.map((day, index) => ({
+    day: `NGÀY ${day.day_number}`,
+    title: day.title || "Không có tiêu đề",
+    details: day.details || { Sáng: "", Trưa: "", Chiều: "", Tối: "" },
+  }));
 
-  // Dữ liệu bảng giá (giữ nguyên như code gốc)
-  const priceInclusions = [
-    "Vận chuyển: Xe tham quan (16, 29, 35, 45 chỗ tùy theo số lượng) đón - tiễn và phục vụ theo chương trình.",
-    "Khách sạn 3 sao tại các điểm đến",
-    "Ăn uống: 04 bữa sáng tại khách sạn, 08 bữa ăn chính.",
-    "Vé tham quan các điểm du lịch theo chương trình.",
-    "Hướng dẫn viên tiếng Việt nhiệt tình, chu đáo",
-    "Bảo hiểm du lịch (mức đền bù tối đa 20.000.000đ/trường hợp)",
-    "Quà tặng: Nón du lịch, nước suối",
+  const priceColumns = [
+    { title: "Nhóm tuổi", dataIndex: "age_group", key: "age_group" },
+    { title: "Giá", dataIndex: "price", key: "price" },
+    { title: "Phụ thu phòng đơn", dataIndex: "single_room_price", key: "single_room_price" },
+    { title: "Mô tả", dataIndex: "description", key: "description" },
   ];
+
+  const priceData = tourData.prices && Array.isArray(tourData.prices)
+    ? tourData.prices.map((price, index) => {
+        const ageGroupMap = {
+          "Under 5": "Dưới 5 tuổi",
+          "5-11": "Từ 5 - 11 tuổi",
+          "Adult": "Người lớn",
+        };
+        const ageGroup = price.age_group ? price.age_group.trim() : "Không xác định";
+        const displayAgeGroup = ageGroupMap[ageGroup] || ageGroup;
+
+        let displayPrice;
+        if (displayAgeGroup === "Dưới 5 tuổi" && parseFloat(price.price) === 0) {
+          displayPrice = "Miễn phí";
+        } else {
+          displayPrice = price.price != null ? `${parseFloat(price.price).toLocaleString('vi-VN')} VND` : "Liên hệ";
+        }
+
+        return {
+          key: index + 1,
+          age_group: displayAgeGroup,
+          price: displayPrice,
+          single_room_price: price.single_room_price != null ? `${parseFloat(price.single_room_price).toLocaleString('vi-VN')} VND` : "Không có",
+          description: price.description || "Không có mô tả",
+        };
+      })
+    : [];
 
   const priceExclusions = [
     "Tiền tip cho HDV và lái xe",
@@ -146,28 +287,17 @@ const TourDetail = () => {
     "Thuế VAT",
   ];
 
-  const priceColumns = [
-    { title: "Dịch vụ", dataIndex: "service", key: "service" },
-    { title: "Chi tiết", dataIndex: "detail", key: "detail" },
-  ];
-
-  const priceData = priceInclusions.map((item, index) => ({
-    key: index + 1,
-    service: `Dịch vụ ${index + 1}`,
-    detail: item,
-  }));
-
   const exclusionData = priceExclusions.map((item, index) => ({
     key: index + 1,
     service: `Dịch vụ ${index + 1}`,
     detail: item,
   }));
 
-  // Dữ liệu tour đã xem và tour liên quan
-  const viewedTours = data.viewedTours;
-  const relatedTours = data.relatedTours;
+  const exclusionColumns = [
+    { title: "Dịch vụ", dataIndex: "service", key: "service" },
+    { title: "Chi tiết", dataIndex: "detail", key: "detail" },
+  ];
 
-  // Quy định hủy tour (giữ nguyên như code gốc)
   const cancellationPolicy = (
     <div style={{ lineHeight: "1.8" }}>
       <Title level={4}>Quy định thanh toán, hủy vé</Title>
@@ -224,174 +354,292 @@ const TourDetail = () => {
     carouselRef.current.prev();
   };
 
-  if (loading) {
-    return <div>Đang tải dữ liệu...</div>;
-  }
-
   return (
-    <Layout className="tour-detail-page">
-      <Header className="tour-header">
-        <Title level={2}>{tourInfo.title}</Title>
-      </Header>
-      <Content className="tour-content">
-        <Row gutter={[32, 32]}>
-          <Col xs={24} lg={16}>
-            <div className="carousel-container">
-              <Carousel autoplay ref={carouselRef}>
-                {tourImages.map((image, index) => (
-                  <div key={index}>
-                    <img
-                      src={image || "/placeholder.svg"}
-                      alt={`Ảnh tour ${index + 1}`}
-                      style={{ width: "100%", height: "auto" }}
-                    />
+    <>
+      {/* Breadcrumb */}
+      <div className="breadCrumbs">
+        <div className="center">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <a className="text-decoration-none" href="/"><span>Trang chủ</span></a>
+            </li>
+            <li className="breadcrumb-item active">
+              <span>Thông tin chuyến đi</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <Layout className="tour-detail-page">
+        <Header className="tour-header">
+          <Title level={2}>{tourInfo.title}</Title>
+        </Header>
+        <Content className="tour-content">
+          <Row gutter={[32, 32]}>
+            <Col xs={24} lg={16}>
+              <div className="carousel-container">
+                {tourImages.length > 0 ? (
+                  <>
+                    <Carousel autoplay ref={carouselRef}>
+                      {tourImages.map((image, index) => (
+                        <div key={index}>
+                          <img
+                            src={image}
+                            alt={`Ảnh tour ${index + 1}`}
+                            style={{ width: "100%", height: "auto" }}
+                            onError={(e) => {
+                              console.error(`Failed to load image: ${image}`);
+                              setImageLoadErrors((prev) => [...prev, image]);
+                              e.target.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </Carousel>
+                    <div className="carousel-arrow prev-arrow" onClick={prev}>
+                      <LeftOutlined />
+                    </div>
+                    <div className="carousel-arrow next-arrow" onClick={next}>
+                      <RightOutlined />
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "20px" }}>
+                    <Text>Không có ảnh cho tour này.</Text>
                   </div>
-                ))}
-              </Carousel>
-              <div className="carousel-arrow prev-arrow" onClick={prev}>
-                <LeftOutlined />
+                )}
+                {imageLoadErrors.length > 0 && (
+                  <div style={{ textAlign: "center", padding: "10px", color: "red" }}>
+                    <Text>Có {imageLoadErrors.length} ảnh không tải được. Vui lòng kiểm tra đường dẫn ảnh hoặc server.</Text>
+                    <ul>
+                      {imageLoadErrors.slice(0, 5).map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                      {imageLoadErrors.length > 5 && <li>...và {imageLoadErrors.length - 5} ảnh khác</li>}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <div className="carousel-arrow next-arrow" onClick={next}>
-                <RightOutlined />
-              </div>
-            </div>
 
-            <Card className="tour-info-card">
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
-                  <Text>
-                    <CalendarOutlined /> Thời gian: {tourInfo.duration}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Text>
-                    <ClockCircleOutlined /> Khởi hành: {tourInfo.departureDate}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Text>
-                    <TeamOutlined /> Phương tiện: {tourInfo.transportation}
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Text>
-                    <EnvironmentOutlined /> Điểm khởi hành: {tourInfo.departurePoint}
-                  </Text>
-                </Col>
-              </Row>
-            </Card>
+              <Card className="tour-info-card">
+                <Row gutter={[16, 16]}>
+                  <Col span={12}>
+                    <Text>
+                      <CalendarOutlined /> Thời gian: {tourInfo.duration}
+                    </Text>
+                  </Col>
+                  <Col span={12}>
+                    <Text>
+                      <ClockCircleOutlined /> Khởi hành: {tourInfo.departureDate}
+                    </Text>
+                  </Col>
+                  <Col span={12}>
+                    <Text>
+                      <TeamOutlined /> Phương tiện: {tourInfo.transportation}
+                    </Text>
+                  </Col>
+                  <Col span={12}>
+                    <Text>
+                      <EnvironmentOutlined /> Điểm khởi hành: {tourInfo.departurePoint}
+                    </Text>
+                  </Col>
+                </Row>
+              </Card>
 
-            <Tabs defaultActiveKey="1" onChange={setActiveTab} className="tour-tabs">
-              <TabPane tab="Lịch trình" key="1">
-                <Timeline>
-                  {itinerary.map((day, index) => (
-                    <Timeline.Item key={index}>
-                      <Title level={4}>{day.day}</Title>
-                      <div dangerouslySetInnerHTML={{ __html: day.content }} />
-                    </Timeline.Item>
-                  ))}
-                </Timeline>
-              </TabPane>
-              <TabPane tab="Bảng giá" key="2">
-                <Card title="Giá tour bao gồm">
-                  <Table columns={priceColumns} dataSource={priceData} pagination={false} bordered />
-                </Card>
-                <Card title="Giá tour không bao gồm" style={{ marginTop: 16 }}>
-                  <Table columns={priceColumns} dataSource={exclusionData} pagination={false} bordered />
-                </Card>
-              </TabPane>
-              <TabPane tab="Ngày khởi hành" key="3">
-                <p>Ngày khởi hành: {tourInfo.departureDate}</p>
-              </TabPane>
-              <TabPane tab="Quy định" key="4">
-                {cancellationPolicy}
-              </TabPane>
-              <TabPane tab="Bình luận" key="5">
-                <p>Phần bình luận Facebook sẽ được tích hợp ở đây.</p>
-              </TabPane>
-            </Tabs>
-          </Col>
+              <Tabs defaultActiveKey="1" onChange={setActiveTab} className="tour-tabs">
+                <TabPane tab="Lịch trình" key="1">
+                  {itinerary.length > 0 ? (
+                    <Timeline>
+                      {itinerary.map((day, index) => (
+                        <Timeline.Item key={index}>
+                          <Title level={4}>
+                            {day.day}: {day.title.toUpperCase()}
+                          </Title>
+                          {day.details && (
+                            <div style={{ lineHeight: "1.8" }}>
+                              {day.details.Sáng && (
+                                <div style={{ marginBottom: 12 }}>
+                                  <Text strong>
+                                    <SunOutlined style={{ marginRight: 8, color: "#fadb14" }} />
+                                    Buổi sáng:
+                                  </Text>
+                                  <br />
+                                  <Text style={{ marginLeft: 24 }}>{day.details.Sáng}</Text>
+                                </div>
+                              )}
+                              {day.details.Trưa && (
+                                <div style={{ marginBottom: 12 }}>
+                                  <Text strong>
+                                    <CoffeeOutlined style={{ marginRight: 8, color: "#d46b08" }} />
+                                    Buổi trưa:
+                                  </Text>
+                                  <br />
+                                  <Text style={{ marginLeft: 24 }}>{day.details.Trưa}</Text>
+                                </div>
+                              )}
+                              {day.details.Chiều && (
+                                <div style={{ marginBottom: 12 }}>
+                                  <Text strong>
+                                    <CloudOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+                                    Buổi chiều:
+                                  </Text>
+                                  <br />
+                                  <Text style={{ marginLeft: 24 }}>{day.details.Chiều}</Text>
+                                </div>
+                              )}
+                              {day.details.Tối && (
+                                <div style={{ marginBottom: 12 }}>
+                                  <Text strong>
+                                    <MoonOutlined style={{ marginRight: 8, color: "#722ed1" }} />
+                                    Buổi tối:
+                                  </Text>
+                                  <br />
+                                  <Text style={{ marginLeft: 24 }}>{day.details.Tối}</Text>
+                                </div>
+                              )}
+                              {!day.details.Sáng && !day.details.Trưa && !day.details.Chiều && !day.details.Tối && (
+                                <Text>Không có chi tiết lịch trình cho ngày này.</Text>
+                              )}
+                            </div>
+                          )}
+                        </Timeline.Item>
+                      ))}
+                    </Timeline>
+                  ) : (
+                    <Text>Không có lịch trình chi tiết cho tour này.</Text>
+                  )}
+                </TabPane>
 
-          <Col xs={24} lg={8}>
-            <Card className="booking-card">
-              <Title level={3}>Giá tour: Liên hệ</Title>
-              <Button
-                type="default"
-                size="large"
-                block
-                style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}
-              >
-                Gửi yêu cầu tư vấn
-              </Button>
-              <Divider />
-              <Title level={4}>Điểm nổi bật:</Title>
-              <List
-                dataSource={tourInfo.highlights}
-                renderItem={(item) => <List.Item>{item}</List.Item>}
-              />
-              <Divider />
-              <Button
-                type="default"
-                size="large"
-                block
-                style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00", textDecoration: "none" }}
-                href="/thanh-toan"
-              >
-                Đặt tour
-              </Button>
-              <Divider />
-            </Card>
+                <TabPane tab="Bảng giá" key="2">
+                  <Card title="Giá tour">
+                    {priceData.length > 0 ? (
+                      <Table
+                        columns={priceColumns}
+                        dataSource={priceData.filter(p => p.age_group !== "Không xác định")}
+                        pagination={false}
+                        bordered
+                      />
+                    ) : (
+                      <Text>Giá tour: Liên hệ</Text>
+                    )}
+                  </Card>
+                  <Card title="Giá tour không bao gồm" style={{ marginTop: 16 }}>
+                    <Table columns={exclusionColumns} dataSource={exclusionData} pagination={false} bordered />
+                  </Card>
+                </TabPane>
 
-            <Card title="Tours đã xem" style={{ marginTop: 16 }}>
-              <List
-                dataSource={viewedTours}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={<Avatar src={item.image} />}
-                      title={<a href="#" className="viewed-tour-link">{item.name}</a>}
+                <TabPane tab="Ngày khởi hành" key="3">
+                  <p>Ngày khởi hành: {tourInfo.departureDate}</p>
+                </TabPane>
+
+                <TabPane tab="Quy định" key="4">
+                  {cancellationPolicy}
+                </TabPane>
+
+                <TabPane tab="Bình luận" key="5">
+                  <p>Phần bình luận Facebook sẽ được tích hợp ở đây.</p>
+                </TabPane>
+              </Tabs>
+            </Col>
+
+            <Col xs={24} lg={8}>
+              <Card className="booking-card">
+                <Title level={3} className="tour-price-title">
+                  Giá tour: <span className="tour-price-value">
+                    {priceData.length > 0 ? (
+                      (() => {
+                        const adultPrice = priceData.find(p => p.age_group === "Người lớn");
+                        return adultPrice ? adultPrice.price : "Liên hệ";
+                      })()
+                    ) : "Liên hệ"}
+                  </span>
+                </Title>
+                <Button
+                  type="default"
+                  size="large"
+                  block
+                  style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}
+                >
+                  Gửi yêu cầu tư vấn
+                </Button>
+                <Divider />
+                <Title level={4} className="highlights-title">Điểm nổi bật:</Title>
+                <List
+                  dataSource={tourInfo.highlights}
+                  renderItem={(item) => <List.Item>{item}</List.Item>}
+                />
+                <Divider />
+                <Button
+                  type="default"
+                  size="large"
+                  block
+                  style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00", textDecoration: "none" }}
+                  href={`/thanh-toan?tourId=${tourData.id}`} // Truyền tourId qua query string
+                >
+                  Đặt tour
+                </Button>
+                <Divider />
+              </Card>
+
+              <Card title="Tours đã xem" style={{ marginTop: 16 }}>
+                {viewedTours.length > 0 ? (
+                  <List
+                    dataSource={viewedTours}
+                    renderItem={(item) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          avatar={<Avatar src={item.image || "/placeholder.svg"} />}
+                          title={<a href="#" className="viewed-tour-link">{item.name}</a>}
+                          description={
+                            <>
+                              <Text strong>{item.price || "Liên hệ"}</Text>
+                              <br />
+                              <Text>
+                                <StarOutlined /> {item.rating || "Chưa có đánh giá"}
+                              </Text>
+                            </>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <Text>Chưa có tour nào được xem.</Text>
+                )}
+              </Card>
+            </Col>
+          </Row>
+          <Title level={3} style={{ marginTop: 12 }}>Tours liên quan</Title>
+          {relatedTours.length > 0 ? (
+            <Row gutter={[16, 16]}>
+              {relatedTours.map((tour) => (
+                <Col xs={24} sm={12} md={8} lg={6} key={tour.id}>
+                  <Card
+                    className="related-tour-card"
+                    cover={<img alt={tour.name} src={tour.image || "/placeholder.svg"} />}
+                  >
+                    <Card.Meta
+                      title={<a href="#" className="related-tour-link">{tour.name}</a>}
                       description={
                         <>
-                          <Text strong>{item.price}</Text>
+                          <Text strong>{tour.price || "Liên hệ"}</Text>
                           <br />
                           <Text>
-                            <StarOutlined /> {item.rating}
+                            <StarOutlined /> {tour.rating || "Chưa có đánh giá"}
                           </Text>
                         </>
                       }
                     />
-                  </List.Item>
-                )}
-              />
-            </Card>
-          </Col>
-        </Row>
-        <Title level={3} style={{ marginTop: 12 }}>Tours liên quan</Title>
-        <Row gutter={[16, 16]}>
-          {relatedTours.map((tour) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={tour.id}>
-              <Card
-                className="related-tour-card"
-                cover={<img alt={tour.name} src={tour.image} />}
-              >
-                <Card.Meta
-                  title={<a href="#" className="related-tour-link">{tour.name}</a>}
-                  description={
-                    <>
-                      <Text strong>{tour.price}</Text>
-                      <br />
-                      <Text>
-                        <StarOutlined /> {tour.rating}
-                      </Text>
-                    </>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Content>
-    </Layout>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <Text>Không có tour liên quan.</Text>
+          )}
+        </Content>
+      </Layout>
+    </>
   );
 };
 

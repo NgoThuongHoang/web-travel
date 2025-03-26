@@ -54,7 +54,7 @@ function Layout() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/tours" element={<Tours />} />
-                    <Route path="/tours/:id" element={<TourDetails />} />
+                    <Route path="/chi-tiet-tour/:id" element={<TourDetails />} />
                     <Route path="/toursDetail/" element={<TourDetailPage />} />
                     <Route path="/toursDetail1/" element={<TourDetailPage1 />} />
                     {/* Truyền tourId vào PaymentPage */}
