@@ -284,6 +284,12 @@ const TourManagement = () => {
       render: (text) => text || "0",
     },
     {
+      title: "Số vé còn lại",
+      dataIndex: "remaining_tickets",
+      key: "remaining_tickets",
+      render: (text) => text || "0",
+    },
+    {
       title: "Trạng thái",
       dataIndex: "displayStatus",
       key: "status",
@@ -439,6 +445,9 @@ const TourManagement = () => {
             </p>
             <p>
               <strong>Số vé hiện có:</strong> {selectedTour.total_tickets || "0"} {/* Thêm hiển thị total_tickets */}
+            </p>
+            <p>
+              <strong>Số vé còn lại:</strong> {selectedTour.remaining_tickets || "0"}
             </p>
             <p>
               <strong>Giá tour:</strong>
