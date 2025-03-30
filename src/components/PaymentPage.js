@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Radio, Checkbox, DatePicker, Select, Typography, Col, Row, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, MinusOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import moment from 'moment';
 import '../styles/PaymentPage.css';
 import 'antd/dist/reset.css';
 
@@ -94,9 +95,11 @@ const PaymentPage = ({ tourId }) => {
 
   const formatPrice = (price) => price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
   const formatDate = (dateString) => {
-    if (!dateString) return "Chưa có thông tin";
-    const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getFullYear()}`;
+    console.log('formatDate input:', dateString); // Debug log
+    if (!dateString || typeof dateString !== 'string') return 'N/A';
+    const date = moment(dateString);
+    if (!date || !date.isValid()) return 'N/A';
+    return date.format('DD/MM/YYYY');
   };
 
   const renderTravelerFields = () => {

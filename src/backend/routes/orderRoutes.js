@@ -41,7 +41,7 @@ router.get('/', ensurePool, async (req, res) => {
     // Lấy thông tin khách hàng (người đặt tour và người đi cùng) từ bảng customers
     for (let order of orders) {
       // Lấy thông tin khách hàng chính (lead customer) dựa trên customer_id từ bảng orders
-      const leadCustomerResult = await req.app.locals.pool.request()
+      let leadCustomerResult = await req.app.locals.pool.request()
         .input('customer_id', sql.Int, order.customer_id)
         .query(`
           SELECT 
@@ -56,7 +56,39 @@ router.get('/', ensurePool, async (req, res) => {
           WHERE c.id = @customer_id
         `);
 
-      const leadCustomer = leadCustomerResult.recordset[0];
+      let leadCustomer = leadCustomerResult.recordset[0];
+      if (!leadCustomer) {
+        // Nếu không tìm thấy lead customer, lấy khách hàng đầu tiên có traveler_type = 'Lead'
+        const fallbackCustomerResult = await req.app.locals.pool.request()
+          .input('order_id', sql.Int, order.id)
+          .query(`
+            SELECT 
+              c.id,
+              c.full_name,
+              c.phone,
+              c.email,
+              c.gender,
+              c.birth_date,
+              c.address
+            FROM [web_travel].[dbo].[customers] c
+            WHERE c.order_id = @order_id AND c.traveler_type = 'Lead'
+          `);
+
+        leadCustomer = fallbackCustomerResult.recordset[0];
+        if (leadCustomer) {
+          // Cập nhật customer_id trong bảng orders
+          await req.app.locals.pool.request()
+            .input('order_id', sql.Int, order.id)
+            .input('customer_id', sql.Int, leadCustomer.id)
+            .query(`
+              UPDATE [web_travel].[dbo].[orders]
+              SET customer_id = @customer_id
+              WHERE id = @order_id
+            `);
+          order.customer_id = leadCustomer.id;
+        }
+      }
+
       if (leadCustomer) {
         order.full_name = leadCustomer.full_name;
         order.phone = leadCustomer.phone;
@@ -64,7 +96,7 @@ router.get('/', ensurePool, async (req, res) => {
         order.gender = leadCustomer.gender;
         order.birth_date = leadCustomer.birth_date;
       } else {
-        // Nếu không tìm thấy lead customer, gán giá trị mặc định
+        // Nếu vẫn không tìm thấy, gán giá trị mặc định
         order.full_name = 'N/A';
         order.phone = 'N/A';
         order.email = 'N/A';
@@ -260,7 +292,6 @@ router.put('/:orderId/cancel', ensurePool, async (req, res) => {
 // API cập nhật đơn hàng
 router.put('/:id', ensurePool, async (req, res) => {
   const transaction = new sql.Transaction(req.app.locals.pool);
-
   try {
     await transaction.begin();
 
@@ -283,7 +314,7 @@ router.put('/:id', ensurePool, async (req, res) => {
       total_amount,
       status,
       tour_id,
-      customers // Danh sách khách hàng (bao gồm người đặt tour và người đi cùng)
+      customers
     } = req.body;
 
     // Kiểm tra đơn hàng tồn tại
@@ -301,7 +332,6 @@ router.put('/:id', ensurePool, async (req, res) => {
     }
 
     const order = orderCheck.recordset[0];
-    const customerId = order.customer_id;
     const oldTotalTickets = (order.adults || 0) + (order.children_under_5 || 0) + (order.children_5_11 || 0);
     const newTotalTickets = (adults || 0) + (children_under_5 || 0) + (children_5_11 || 0);
 
@@ -321,48 +351,38 @@ router.put('/:id', ensurePool, async (req, res) => {
 
     const remainingTickets = tourCheck.recordset[0].remaining_tickets;
 
-    // Nếu đơn hàng đã được xác nhận và số vé thay đổi, cần cập nhật remaining_tickets
-    if (order.status === 'confirmed') {
-      let ticketDifference = newTotalTickets - oldTotalTickets;
+    // Logic cập nhật remaining_tickets chỉ thực hiện 1 lần
+    let ticketAdjustment = 0; // Số vé cần điều chỉnh (cộng hoặc trừ)
 
-      // Nếu số vé tăng, kiểm tra xem có đủ vé không
-      if (ticketDifference > 0 && remainingTickets < ticketDifference) {
-        await transaction.rollback();
-        return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remainingTickets} vé.` });
+    if (status === 'confirmed') {
+      if (order.status === 'confirmed') {
+        // Trường hợp 1: Đơn hàng đã confirmed, và vẫn confirmed sau khi cập nhật
+        ticketAdjustment = newTotalTickets - oldTotalTickets; // Tính sự thay đổi số vé
+        if (ticketAdjustment > 0 && remainingTickets < ticketAdjustment) {
+          await transaction.rollback();
+          return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remainingTickets} vé.` });
+        }
+      } else {
+        // Trường hợp 2: Đơn hàng từ pending/cancelled chuyển sang confirmed
+        ticketAdjustment = newTotalTickets; // Trừ toàn bộ số vé mới
+        if (remainingTickets < ticketAdjustment) {
+          await transaction.rollback();
+          return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remainingTickets} vé.` });
+        }
       }
+    } else if (order.status === 'confirmed') {
+      // Trường hợp 3: Đơn hàng từ confirmed chuyển sang pending/cancelled
+      ticketAdjustment = -oldTotalTickets; // Hoàn lại số vé cũ
+    }
 
-      // Cập nhật remaining_tickets
+    // Cập nhật remaining_tickets (chỉ 1 lần)
+    if (ticketAdjustment !== 0) {
       await transaction.request()
         .input('tour_id', sql.Int, parseInt(tour_id))
-        .input('ticket_difference', sql.Int, ticketDifference)
+        .input('ticket_adjustment', sql.Int, ticketAdjustment)
         .query(`
           UPDATE [web_travel].[dbo].[tours]
-          SET remaining_tickets = remaining_tickets - @ticket_difference
-          WHERE id = @tour_id
-        `);
-    } else if (status === 'confirmed' && order.status !== 'confirmed') {
-      // Nếu trạng thái thay đổi từ pending sang confirmed, trừ vé
-      if (remainingTickets < newTotalTickets) {
-        await transaction.rollback();
-        return res.status(400).json({ error: `Không đủ vé! Chỉ còn ${remainingTickets} vé.` });
-      }
-
-      await transaction.request()
-        .input('tour_id', sql.Int, parseInt(tour_id))
-        .input('total_tickets', sql.Int, newTotalTickets)
-        .query(`
-          UPDATE [web_travel].[dbo].[tours]
-          SET remaining_tickets = remaining_tickets - @total_tickets
-          WHERE id = @tour_id
-        `);
-    } else if (status !== 'confirmed' && order.status === 'confirmed') {
-      // Nếu trạng thái thay đổi từ confirmed sang pending/cancelled, hoàn lại vé
-      await transaction.request()
-        .input('tour_id', sql.Int, parseInt(tour_id))
-        .input('total_tickets', sql.Int, oldTotalTickets)
-        .query(`
-          UPDATE [web_travel].[dbo].[tours]
-          SET remaining_tickets = remaining_tickets + @total_tickets
+          SET remaining_tickets = remaining_tickets - @ticket_adjustment
           WHERE id = @tour_id
         `);
     }
@@ -375,8 +395,39 @@ router.put('/:id', ensurePool, async (req, res) => {
         WHERE order_id = @order_id
       `);
 
-    // Thêm lại danh sách khách hàng mới (bao gồm cả người đặt tour và người đi cùng)
-    for (const customer of customers) {
+    // Thêm khách hàng chính (Lead)
+    const leadCustomer = {
+      full_name,
+      phone,
+      email,
+      gender,
+      birth_date,
+      address: pickup_point,
+      single_room: false,
+      traveler_type: 'Lead',
+    };
+
+    const leadCustomerResult = await transaction.request()
+      .input('full_name', sql.NVarChar, leadCustomer.full_name)
+      .input('gender', sql.NVarChar, leadCustomer.gender)
+      .input('birth_date', sql.Date, leadCustomer.birth_date ? new Date(leadCustomer.birth_date) : null)
+      .input('phone', sql.NVarChar, leadCustomer.phone || null)
+      .input('email', sql.NVarChar, leadCustomer.email || null)
+      .input('order_id', sql.Int, parseInt(id))
+      .input('tour_id', sql.Int, parseInt(tour_id))
+      .input('single_room', sql.Bit, leadCustomer.single_room ? 1 : 0)
+      .input('traveler_type', sql.NVarChar, leadCustomer.traveler_type)
+      .input('address', sql.NVarChar, leadCustomer.address || null)
+      .query(`
+        INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, email, order_id, tour_id, single_room, traveler_type, address)
+        OUTPUT INSERTED.id
+        VALUES (@full_name, @gender, @birth_date, @phone, @email, @order_id, @tour_id, @single_room, @traveler_type, @address)
+      `);
+
+    const newCustomerId = leadCustomerResult.recordset[0].id;
+
+    // Thêm danh sách người đi cùng
+    for (const customer of customers || []) {
       await transaction.request()
         .input('full_name', sql.NVarChar, customer.full_name)
         .input('gender', sql.NVarChar, customer.gender)
@@ -386,7 +437,7 @@ router.put('/:id', ensurePool, async (req, res) => {
         .input('order_id', sql.Int, parseInt(id))
         .input('tour_id', sql.Int, parseInt(tour_id))
         .input('single_room', sql.Bit, customer.single_room ? 1 : 0)
-        .input('traveler_type', sql.NVarChar, customer.traveler_type)
+        .input('traveler_type', sql.NVarChar, customer.traveler_type || 'Người lớn')
         .input('address', sql.NVarChar, customer.address || null)
         .query(`
           INSERT INTO [web_travel].[dbo].[customers] (full_name, gender, birth_date, phone, email, order_id, tour_id, single_room, traveler_type, address)
@@ -394,10 +445,11 @@ router.put('/:id', ensurePool, async (req, res) => {
         `);
     }
 
-    // Cập nhật thông tin đơn hàng trong bảng orders
+    // Cập nhật đơn hàng
     await transaction.request()
       .input('id', sql.Int, parseInt(id))
       .input('tour_id', sql.Int, parseInt(tour_id))
+      .input('customer_id', sql.Int, newCustomerId)
       .input('start_date', sql.Date, start_date ? new Date(start_date) : null)
       .input('end_date', sql.Date, end_date ? new Date(end_date) : null)
       .input('adults', sql.Int, adults || 0)
@@ -411,7 +463,7 @@ router.put('/:id', ensurePool, async (req, res) => {
       .input('status', sql.NVarChar, status)
       .query(`
         UPDATE [web_travel].[dbo].[orders]
-        SET tour_id = @tour_id, start_date = @start_date, end_date = @end_date, 
+        SET tour_id = @tour_id, customer_id = @customer_id, start_date = @start_date, end_date = @end_date, 
             adults = @adults, children_under_5 = @children_under_5, children_5_11 = @children_5_11, 
             single_rooms = @single_rooms, pickup_point = @pickup_point, 
             special_requests = @special_requests, payment_method = @payment_method, 
@@ -420,7 +472,6 @@ router.put('/:id', ensurePool, async (req, res) => {
       `);
 
     await transaction.commit();
-
     res.status(200).json({ message: 'Cập nhật đơn hàng thành công!' });
   } catch (err) {
     await transaction.rollback();

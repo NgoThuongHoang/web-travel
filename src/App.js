@@ -8,7 +8,6 @@ import TourDetails from './pages/TourDetails';
 import About from './pages/About';
 import News from './pages/News';
 import Contact from './pages/Contact';
-import TourDetailPage from './pages/TourDetailPage';
 import PaymentPage from './components/PaymentPage';
 import Login from './pages/Login';
 import Admin from './pages/admin/Admin';
@@ -24,7 +23,6 @@ import TourEditPage from './pages/admin/TourEditPage';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'antd/dist/reset.css';
 import BackToTop from './components/BackToTop';
-import TourDetailPage1 from './pages/TourDetailPage1';
 
 function Layout() {
     const location = useLocation();
@@ -55,8 +53,6 @@ function Layout() {
                     <Route path="/" element={<Home />} />
                     <Route path="/tours" element={<Tours />} />
                     <Route path="/chi-tiet-tour/:id" element={<TourDetails />} />
-                    <Route path="/toursDetail/" element={<TourDetailPage />} />
-                    <Route path="/toursDetail1/" element={<TourDetailPage1 />} />
                     {/* Truyền tourId vào PaymentPage */}
                     <Route path="/thanh-toan" element={<PaymentPage tourId={tourId} />} />
                     <Route path="/ve-chung-toi" element={<About />} />
