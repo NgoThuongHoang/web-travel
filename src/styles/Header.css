@@ -123,8 +123,120 @@
     width: 100%;
   }
   
+  /* Style cho kết quả tìm kiếm ngang */
+.tour-results-horizontal {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: thin;
+}
+
+.tour-results-horizontal::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tour-results-horizontal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.tour-results-horizontal::-webkit-scrollbar-thumb {
+  background: #ff7b00;
+  border-radius: 3px;
+}
+
+.tour-results-horizontal::-webkit-scrollbar-thumb:hover {
+  background: #e67300;
+}
+
+.tour-card-horizontal {
+  min-width: 280px;
+  margin: 0;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.tour-card-horizontal:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+  .tour-name-link:hover {
+    color: #ff7b00 !important;
+    transition: color 0.3s ease;
+  }
+
+  .tour-results {
+    margin-top: 20px;
+  }
+
+  .tour-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .tour-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+
+  /* Thêm vào Header.css */
+.tour-name-link {
+  transition: color 0.2s;
+}
+
+.tour-name-link:hover {
+  color: #ff7b00 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff7b00;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e67300;
+}
+
+/* Style cho ảnh tour */
+.tour-image {
+  transition: transform 0.3s ease;
+}
+
+.tour-image:hover {
+  transform: scale(1.02);
+}
+
+/* Style cho tên tour */
+.tour-name-link {
+  transition: color 0.2s ease;
+}
+
+.tour-name-link:hover {
+  color: #ff7b00 !important;
+}
+
+/* Style cho card tour */
+.ant-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+    
   /* Responsive Adjustments */
-  
+
   /* Desktop lớn (trên 1200px) */
   @media (min-width: 1200px) {
     .navbar-nav .dropdown-menu {
@@ -396,5 +508,13 @@
   
     .input-group-append .btn {
       padding: 4px 8px;
+    }
+
+    .ant-card-body {
+      padding: 12px;
+    }
+    
+    .tour-info {
+      font-size: 14px;
     }
   }

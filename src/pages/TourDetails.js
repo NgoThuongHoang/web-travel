@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Thêm useNavigate
 import {
   Layout,
   Typography,
@@ -15,6 +15,7 @@ import {
   Table,
   Avatar,
   Spin,
+  message,
 } from "antd";
 import {
   CalendarOutlined,
@@ -35,42 +36,9 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
-const mockViewedTours = [
-  {
-    id: 1,
-    name: "Tour Hà Nội - Sapa",
-    image: "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg",
-    price: "2.500.000 VND",
-    rating: 4.5,
-  },
-  {
-    id: 2,
-    name: "Tour Đà Nẵng - Hội An",
-    image: "/images/images_tour/anh_tour_viet_nam/hoi-an.jpg",
-    price: "3.000.000 VND",
-    rating: 4.7,
-  },
-];
-
-const mockRelatedTours = [
-  {
-    id: 1,
-    name: "Tour Nha Trang - Đà Lạt",
-    image: "/images/images_tour/anh_tour_viet_nam/nha-trang-dalat.jpg",
-    price: "2.800.000 VND",
-    rating: 4.6,
-  },
-  {
-    id: 2,
-    name: "Tour Phú Quốc",
-    image: "/images/images_tour/anh_tour_viet_nam/phu-quoc.jpg",
-    price: "4.500.000 VND",
-    rating: 4.8,
-  },
-];
-
 const TourDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate(); // Sử dụng useNavigate để điều hướng
   const [activeTab, setActiveTab] = useState("1");
   const [tourData, setTourData] = useState(null);
   const [itineraryDetails, setItineraryDetails] = useState([]);
@@ -81,22 +49,84 @@ const TourDetail = () => {
   const [imageLoadErrors, setImageLoadErrors] = useState([]);
   const carouselRef = useRef(null);
 
+  // Hàm lưu tour vào lịch sử xem
+  const saveViewedTour = (tourId) => {
+    try {
+      const viewedTours = JSON.parse(localStorage.getItem('viewedTours') || '[]');
+      if (!viewedTours.includes(tourId)) {
+        const newViewedTours = [tourId, ...viewedTours].slice(0, 5);
+        localStorage.setItem('viewedTours', JSON.stringify(newViewedTours));
+      }
+    } catch (err) {
+      console.error('Lỗi khi lưu lịch sử xem tour:', err);
+    }
+  };
+
+  // Hàm lấy danh sách tour đã xem
+  const fetchViewedTours = async () => {
+    try {
+      const viewedTourIds = JSON.parse(localStorage.getItem('viewedTours') || '[]');
+      const filteredIds = viewedTourIds
+        .filter(tourId => tourId !== id && !isNaN(tourId))
+        .map(id => parseInt(id));
+
+      if (filteredIds.length === 0) {
+        setViewedTours([]);
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5001/api/tours`);
+      if (!response.ok) throw new Error('Không thể lấy dữ liệu tour');
+      const allTours = await response.json();
+
+      const viewedToursData = allTours.filter(tour => 
+        filteredIds.includes(tour.id)
+      );
+      setViewedTours(viewedToursData);
+    } catch (err) {
+      console.error('Lỗi khi lấy tour đã xem:', err);
+      setViewedTours([]);
+    }
+  };
+
+  // Hàm lấy tour liên quan dựa trên region
+  const fetchRelatedTours = async (currentTourRegion) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/tours`);
+      if (!response.ok) throw new Error('Không thể lấy dữ liệu tour');
+      
+      const allTours = await response.json();
+      
+      const relatedToursData = allTours.filter(tour => 
+        tour.region === currentTourRegion && tour.id !== parseInt(id)
+      );
+      
+      setRelatedTours(relatedToursData.slice(0, 4));
+    } catch (err) {
+      console.error('Lỗi khi lấy tour liên quan:', err);
+      setRelatedTours([]);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setTourData(null);
+        setItineraryDetails([]);
+        setViewedTours([]);
+        setRelatedTours([]);
         setImageLoadErrors([]);
 
-        // Lấy dữ liệu tour
         const tourResponse = await fetch(`http://localhost:5001/api/tours/${id}`);
         if (!tourResponse.ok) {
           throw new Error("Không thể lấy dữ liệu tour");
         }
         const tourData = await tourResponse.json();
-        console.log("Dữ liệu từ API:", tourData);
-
-        // Parse highlights nếu là chuỗi
+        
+        saveViewedTour(id);
+        
         if (tourData.highlights && typeof tourData.highlights === "string") {
           try {
             tourData.highlights = JSON.parse(tourData.highlights);
@@ -107,7 +137,6 @@ const TourDetail = () => {
         }
         setTourData(tourData);
 
-        // Lấy dữ liệu lịch trình
         try {
           const itineraryResponse = await fetch(`http://localhost:5001/api/tours/${id}/itineraries`);
           if (!itineraryResponse.ok) {
@@ -116,45 +145,23 @@ const TourDetail = () => {
           const itineraryData = await itineraryResponse.json();
           const parsedItineraryData = itineraryData.map(item => {
             let detailsObject = { Sáng: "", Trưa: "", Chiều: "", Tối: "" };
-
             if (item.details && typeof item.details === "string") {
               try {
                 const detailsArray = JSON.parse(item.details);
                 if (Array.isArray(detailsArray)) {
                   detailsArray.forEach(detail => {
                     if (typeof detail === "string") {
-                      if (detail.startsWith("Sáng:")) {
-                        detailsObject.Sáng = detail.replace("Sáng:", "").trim();
-                      } else if (detail.startsWith("Trưa:")) {
-                        detailsObject.Trưa = detail.replace("Trưa:", "").trim();
-                      } else if (detail.startsWith("Chiều:")) {
-                        detailsObject.Chiều = detail.replace("Chiều:", "").trim();
-                      } else if (detail.startsWith("Tối:")) {
-                        detailsObject.Tối = detail.replace("Tối:", "").trim();
-                      }
+                      if (detail.startsWith("Sáng:")) detailsObject.Sáng = detail.replace("Sáng:", "").trim();
+                      else if (detail.startsWith("Trưa:")) detailsObject.Trưa = detail.replace("Trưa:", "").trim();
+                      else if (detail.startsWith("Chiều:")) detailsObject.Chiều = detail.replace("Chiều:", "").trim();
+                      else if (detail.startsWith("Tối:")) detailsObject.Tối = detail.replace("Tối:", "").trim();
                     }
                   });
                 }
               } catch (err) {
                 console.error("Lỗi parse details:", err);
-                return { ...item, details: detailsObject };
               }
-            } else if (Array.isArray(item.details)) {
-              item.details.forEach(detail => {
-                if (typeof detail === "string") {
-                  if (detail.startsWith("Sáng:")) {
-                    detailsObject.Sáng = detail.replace("Sáng:", "").trim();
-                  } else if (detail.startsWith("Trưa:")) {
-                    detailsObject.Trưa = detail.replace("Trưa:", "").trim();
-                  } else if (detail.startsWith("Chiều:")) {
-                    detailsObject.Chiều = detail.replace("Chiều:", "").trim();
-                  } else if (detail.startsWith("Tối:")) {
-                    detailsObject.Tối = detail.replace("Tối:", "").trim();
-                  }
-                }
-              });
             }
-
             return { ...item, details: detailsObject };
           });
           setItineraryDetails(parsedItineraryData);
@@ -163,31 +170,8 @@ const TourDetail = () => {
           setItineraryDetails([]);
         }
 
-        // Lấy dữ liệu tour đã xem
-        try {
-          const viewedToursResponse = await fetch("http://localhost:5001/api/tours/viewed");
-          if (!viewedToursResponse.ok) {
-            throw new Error("Không thể lấy dữ liệu tour đã xem");
-          }
-          const viewedToursData = await viewedToursResponse.json();
-          setViewedTours(viewedToursData);
-        } catch (err) {
-          console.warn("Không thể lấy dữ liệu tour đã xem, sử dụng dữ liệu ảo:", err.message);
-          setViewedTours(mockViewedTours);
-        }
-
-        // Lấy dữ liệu tour liên quan
-        try {
-          const relatedToursResponse = await fetch("http://localhost:5001/api/tours/related");
-          if (!relatedToursResponse.ok) {
-            throw new Error("Không thể lấy dữ liệu tour liên quan");
-          }
-          const relatedToursData = await relatedToursResponse.json();
-          setRelatedTours(relatedToursData);
-        } catch (err) {
-          console.warn("Không thể lấy dữ liệu tour liên quan, sử dụng dữ liệu ảo:", err.message);
-          setRelatedTours(mockRelatedTours);
-        }
+        await fetchViewedTours();
+        await fetchRelatedTours(tourData.region);
 
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu:", err);
@@ -200,26 +184,14 @@ const TourDetail = () => {
     fetchData();
   }, [id]);
 
-  if (loading) {
-    return <Spin tip="Đang tải dữ liệu..." />;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
-
-  if (!tourData) {
-    return <div>Không tìm thấy dữ liệu tour.</div>;
-  }
+  if (loading) return <Spin tip="Đang tải dữ liệu..." />;
+  if (error) return <div>{error}</div>;
+  if (!tourData) return <div>Không tìm thấy dữ liệu tour.</div>;
 
   const tourInfo = {
     title: tourData.name || "Không có tiêu đề",
-    duration: tourData.days && tourData.nights
-      ? `${tourData.days} NGÀY ${tourData.nights} ĐÊM`
-      : "Không xác định",
-    departureDate: tourData.start_date
-      ? new Date(tourData.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      : "Không xác định",
+    duration: tourData.days && tourData.nights ? `${tourData.days} NGÀY ${tourData.nights} ĐÊM` : "Không xác định",
+    departureDate: tourData.start_date ? new Date(tourData.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Không xác định",
     transportation: tourData.transportation || "Không xác định",
     departurePoint: tourData.departure_point || "Không xác định",
     tourCode: tourData.tour_code || "Không có mã tour",
@@ -228,19 +200,9 @@ const TourDetail = () => {
   };
 
   const tourImages = tourData.images && Array.isArray(tourData.images)
-    ? tourData.images
-        .map((img) => {
-          let imageUrl = img.image_url;
-          if (imageUrl.startsWith('http://localhost:5001')) {
-            imageUrl = imageUrl.replace('http://localhost:5001', '');
-          }
-          return imageUrl;
-        })
-        .filter(Boolean)
-        .slice(0, 10)
+    ? tourData.images.map(img => img.image_url.replace('http://localhost:5001', '')).filter(Boolean).slice(0, 10)
     : [];
 
-  // Chuẩn bị dữ liệu lịch trình
   const itinerary = itineraryDetails.map((day, index) => ({
     day: `NGÀY ${day.day_number}`,
     title: day.title || "Không có tiêu đề",
@@ -256,21 +218,12 @@ const TourDetail = () => {
 
   const priceData = tourData.prices && Array.isArray(tourData.prices)
     ? tourData.prices.map((price, index) => {
-        const ageGroupMap = {
-          "Under 5": "Dưới 5 tuổi",
-          "5-11": "Từ 5 - 11 tuổi",
-          "Adult": "Người lớn",
-        };
+        const ageGroupMap = { "Under 5": "Dưới 5 tuổi", "5-11": "Từ 5 - 11 tuổi", "Adult": "Người lớn" };
         const ageGroup = price.age_group ? price.age_group.trim() : "Không xác định";
         const displayAgeGroup = ageGroupMap[ageGroup] || ageGroup;
-
-        let displayPrice;
-        if (displayAgeGroup === "Dưới 5 tuổi" && parseFloat(price.price) === 0) {
-          displayPrice = "Miễn phí";
-        } else {
-          displayPrice = price.price != null ? `${parseFloat(price.price).toLocaleString('vi-VN')} VND` : "Liên hệ";
-        }
-
+        const displayPrice = displayAgeGroup === "Dưới 5 tuổi" && parseFloat(price.price) === 0
+          ? "Miễn phí"
+          : price.price != null ? `${parseFloat(price.price).toLocaleString('vi-VN')} VND` : "Liên hệ";
         return {
           key: index + 1,
           age_group: displayAgeGroup,
@@ -347,17 +300,16 @@ const TourDetail = () => {
     </div>
   );
 
-  const next = () => {
-    carouselRef.current.next();
-  };
+  const next = () => carouselRef.current.next();
+  const prev = () => carouselRef.current.prev();
 
-  const prev = () => {
-    carouselRef.current.prev();
+  // Hàm điều hướng đến trang chi tiết tour
+  const handleTourClick = (tourId) => {
+    navigate(`/chi-tiet-tour/${tourId}`);
   };
 
   return (
     <>
-      {/* Breadcrumb */}
       <div className="breadCrumbs">
         <div className="center">
           <ol className="breadcrumb">
@@ -389,7 +341,6 @@ const TourDetail = () => {
                             alt={`Ảnh tour ${index + 1}`}
                             style={{ width: "100%", height: "auto" }}
                             onError={(e) => {
-                              console.error(`Failed to load image: ${image}`);
                               setImageLoadErrors((prev) => [...prev, image]);
                               e.target.src = "/placeholder.svg";
                             }}
@@ -397,12 +348,8 @@ const TourDetail = () => {
                         </div>
                       ))}
                     </Carousel>
-                    <div className="carousel-arrow prev-arrow" onClick={prev}>
-                      <LeftOutlined />
-                    </div>
-                    <div className="carousel-arrow next-arrow" onClick={next}>
-                      <RightOutlined />
-                    </div>
+                    <div className="carousel-arrow prev-arrow" onClick={prev}><LeftOutlined /></div>
+                    <div className="carousel-arrow next-arrow" onClick={next}><RightOutlined /></div>
                   </>
                 ) : (
                   <div style={{ textAlign: "center", padding: "20px" }}>
@@ -411,39 +358,17 @@ const TourDetail = () => {
                 )}
                 {imageLoadErrors.length > 0 && (
                   <div style={{ textAlign: "center", padding: "10px", color: "red" }}>
-                    <Text>Có {imageLoadErrors.length} ảnh không tải được. Vui lòng kiểm tra đường dẫn ảnh hoặc server.</Text>
-                    <ul>
-                      {imageLoadErrors.slice(0, 5).map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                      {imageLoadErrors.length > 5 && <li>...và {imageLoadErrors.length - 5} ảnh khác</li>}
-                    </ul>
+                    <Text>Có {imageLoadErrors.length} ảnh không tải được.</Text>
                   </div>
                 )}
               </div>
 
               <Card className="tour-info-card">
                 <Row gutter={[16, 16]}>
-                  <Col span={12}>
-                    <Text>
-                      <CalendarOutlined /> Thời gian: {tourInfo.duration}
-                    </Text>
-                  </Col>
-                  <Col span={12}>
-                    <Text>
-                      <ClockCircleOutlined /> Khởi hành: {tourInfo.departureDate}
-                    </Text>
-                  </Col>
-                  <Col span={12}>
-                    <Text>
-                      <TeamOutlined /> Phương tiện: {tourInfo.transportation}
-                    </Text>
-                  </Col>
-                  <Col span={12}>
-                    <Text>
-                      <EnvironmentOutlined /> Điểm khởi hành: {tourInfo.departurePoint}
-                    </Text>
-                  </Col>
+                  <Col span={12}><Text><CalendarOutlined /> Thời gian: {tourInfo.duration}</Text></Col>
+                  <Col span={12}><Text><ClockCircleOutlined /> Khởi hành: {tourInfo.departureDate}</Text></Col>
+                  <Col span={12}><Text><TeamOutlined /> Phương tiện: {tourInfo.transportation}</Text></Col>
+                  <Col span={12}><Text><EnvironmentOutlined /> Điểm khởi hành: {tourInfo.departurePoint}</Text></Col>
                 </Row>
               </Card>
 
@@ -453,53 +378,32 @@ const TourDetail = () => {
                     <Timeline>
                       {itinerary.map((day, index) => (
                         <Timeline.Item key={index}>
-                          <Title level={4}>
-                            {day.day}: {day.title.toUpperCase()}
-                          </Title>
+                          <Title level={4}>{day.day}: {day.title.toUpperCase()}</Title>
                           {day.details && (
                             <div style={{ lineHeight: "1.8" }}>
                               {day.details.Sáng && (
                                 <div style={{ marginBottom: 12 }}>
-                                  <Text strong>
-                                    <SunOutlined style={{ marginRight: 8, color: "#fadb14" }} />
-                                    Buổi sáng:
-                                  </Text>
-                                  <br />
-                                  <Text style={{ marginLeft: 24 }}>{day.details.Sáng}</Text>
+                                  <Text strong><SunOutlined style={{ marginRight: 8, color: "#fadb14" }} />Buổi sáng:</Text>
+                                  <br /><Text style={{ marginLeft: 24 }}>{day.details.Sáng}</Text>
                                 </div>
                               )}
                               {day.details.Trưa && (
                                 <div style={{ marginBottom: 12 }}>
-                                  <Text strong>
-                                    <CoffeeOutlined style={{ marginRight: 8, color: "#d46b08" }} />
-                                    Buổi trưa:
-                                  </Text>
-                                  <br />
-                                  <Text style={{ marginLeft: 24 }}>{day.details.Trưa}</Text>
+                                  <Text strong><CoffeeOutlined style={{ marginRight: 8, color: "#d46b08" }} />Buổi trưa:</Text>
+                                  <br /><Text style={{ marginLeft: 24 }}>{day.details.Trưa}</Text>
                                 </div>
                               )}
                               {day.details.Chiều && (
                                 <div style={{ marginBottom: 12 }}>
-                                  <Text strong>
-                                    <CloudOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-                                    Buổi chiều:
-                                  </Text>
-                                  <br />
-                                  <Text style={{ marginLeft: 24 }}>{day.details.Chiều}</Text>
+                                  <Text strong><CloudOutlined style={{ marginRight: 8, color: "#1890ff" }} />Buổi chiều:</Text>
+                                  <br /><Text style={{ marginLeft: 24 }}>{day.details.Chiều}</Text>
                                 </div>
                               )}
                               {day.details.Tối && (
                                 <div style={{ marginBottom: 12 }}>
-                                  <Text strong>
-                                    <MoonOutlined style={{ marginRight: 8, color: "#722ed1" }} />
-                                    Buổi tối:
-                                  </Text>
-                                  <br />
-                                  <Text style={{ marginLeft: 24 }}>{day.details.Tối}</Text>
+                                  <Text strong><MoonOutlined style={{ marginRight: 8, color: "#722ed1" }} />Buổi tối:</Text>
+                                  <br /><Text style={{ marginLeft: 24 }}>{day.details.Tối}</Text>
                                 </div>
-                              )}
-                              {!day.details.Sáng && !day.details.Trưa && !day.details.Chiều && !day.details.Tối && (
-                                <Text>Không có chi tiết lịch trình cho ngày này.</Text>
                               )}
                             </div>
                           )}
@@ -510,16 +414,10 @@ const TourDetail = () => {
                     <Text>Không có lịch trình chi tiết cho tour này.</Text>
                   )}
                 </TabPane>
-
                 <TabPane tab="Bảng giá" key="2">
                   <Card title="Giá tour">
                     {priceData.length > 0 ? (
-                      <Table
-                        columns={priceColumns}
-                        dataSource={priceData.filter(p => p.age_group !== "Không xác định")}
-                        pagination={false}
-                        bordered
-                      />
+                      <Table columns={priceColumns} dataSource={priceData} pagination={false} bordered />
                     ) : (
                       <Text>Giá tour: Liên hệ</Text>
                     )}
@@ -528,18 +426,11 @@ const TourDetail = () => {
                     <Table columns={exclusionColumns} dataSource={exclusionData} pagination={false} bordered />
                   </Card>
                 </TabPane>
-
                 <TabPane tab="Ngày khởi hành" key="3">
                   <p>Ngày khởi hành: {tourInfo.departureDate}</p>
                 </TabPane>
-
-                <TabPane tab="Quy định" key="4">
-                  {cancellationPolicy}
-                </TabPane>
-
-                <TabPane tab="Gợi ý chuyến đi" key="5">
-                  {tourInfo.suggestions}
-                </TabPane>
+                <TabPane tab="Quy định" key="4">{cancellationPolicy}</TabPane>
+                <TabPane tab="Gợi ý chuyến đi" key="5">{tourInfo.suggestions}</TabPane>
               </Tabs>
             </Col>
 
@@ -548,38 +439,26 @@ const TourDetail = () => {
                 <Title level={3} className="tour-price-title">
                   Giá tour: <span className="tour-price-value">
                     {priceData.length > 0 ? (
-                      (() => {
-                        const adultPrice = priceData.find(p => p.age_group === "Người lớn");
-                        return adultPrice ? adultPrice.price : "Liên hệ";
-                      })()
+                      priceData.find(p => p.age_group === "Người lớn")?.price || "Liên hệ"
                     ) : "Liên hệ"}
                   </span>
                 </Title>
+                <Button type="default" size="large" block style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}>
+                  Gửi yêu cầu tư vấn
+                </Button>
+                <Divider />
+                <Title level={4} className="highlights-title">Điểm nổi bật:</Title>
+                <List dataSource={tourInfo.highlights} renderItem={(item) => <List.Item>{item}</List.Item>} />
+                <Divider />
                 <Button
                   type="default"
                   size="large"
                   block
                   style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}
-                >
-                  Gửi yêu cầu tư vấn
-                </Button>
-                <Divider />
-                <Title level={4} className="highlights-title">Điểm nổi bật:</Title>
-                <List
-                  dataSource={tourInfo.highlights}
-                  renderItem={(item) => <List.Item>{item}</List.Item>}
-                />
-                <Divider />
-                <Button
-                  type="default"
-                  size="large"
-                  block
-                  style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00", textDecoration: "none" }}
-                  href={`/thanh-toan?tourId=${tourData.id}`} // Truyền tourId qua query string
+                  onClick={() => navigate(`/thanh-toan?tourId=${tourData.id}`)} // Sử dụng navigate thay vì href
                 >
                   Đặt tour
                 </Button>
-                <Divider />
               </Card>
 
               <Card title="Tours đã xem" style={{ marginTop: 16 }}>
@@ -587,17 +466,19 @@ const TourDetail = () => {
                   <List
                     dataSource={viewedTours}
                     renderItem={(item) => (
-                      <List.Item>
+                      <List.Item onClick={() => handleTourClick(item.id)} style={{ cursor: "pointer" }}>
                         <List.Item.Meta
-                          avatar={<Avatar src={item.image || "/placeholder.svg"} />}
-                          title={<a href="#" className="viewed-tour-link">{item.name}</a>}
+                          avatar={<Avatar src={item.images?.[0]?.image_url || "/placeholder.svg"} />}
+                          title={<span>{item.name}</span>} // Thay <a> bằng <span> và dùng onClick
                           description={
                             <>
-                              <Text strong>{item.price || "Liên hệ"}</Text>
-                              <br />
-                              <Text>
-                                <StarOutlined /> {item.rating || "Chưa có đánh giá"}
+                              <Text strong>
+                                {item.prices?.find(p => p.age_group === "Adult")?.price 
+                                  ? `${parseFloat(item.prices.find(p => p.age_group === "Adult").price).toLocaleString('vi-VN')} VND` 
+                                  : "Liên hệ"}
                               </Text>
+                              <br />
+                              <Text><StarOutlined /> {item.star_rating || "Chưa có đánh giá"}</Text>
                             </>
                           }
                         />
@@ -605,38 +486,52 @@ const TourDetail = () => {
                     )}
                   />
                 ) : (
-                  <Text>Chưa có tour nào được xem.</Text>
+                  <Text>Bạn chưa xem tour nào gần đây.</Text>
                 )}
               </Card>
             </Col>
           </Row>
-          <Title level={3} style={{ marginTop: 12 }}>Tours liên quan</Title>
-          {relatedTours.length > 0 ? (
-            <Row gutter={[16, 16]}>
-              {relatedTours.map((tour) => (
-                <Col xs={24} sm={12} md={8} lg={6} key={tour.id}>
-                  <Card
-                    className="related-tour-card"
-                    cover={<img alt={tour.name} src={tour.image || "/placeholder.svg"} />}
-                  >
-                    <Card.Meta
-                      title={<a href="#" className="related-tour-link">{tour.name}</a>}
-                      description={
-                        <>
-                          <Text strong>{tour.price || "Liên hệ"}</Text>
-                          <br />
-                          <Text>
-                            <StarOutlined /> {tour.rating || "Chưa có đánh giá"}
-                          </Text>
-                        </>
+
+          {relatedTours.length > 0 && (
+            <div className="related-tours-section">
+              <Divider />
+              <Title level={3} style={{ textAlign: 'center', margin: '24px 0' }}>TOUR LIÊN QUAN</Title>
+              <Row gutter={[16, 16]} justify="center">
+                {relatedTours.map((tour) => (
+                  <Col xs={24} sm={12} md={8} lg={6} key={tour.id}>
+                    <Card
+                      hoverable
+                      cover={
+                        <img 
+                          alt={tour.name} 
+                          src={tour.images?.[0]?.image_url || "/placeholder.svg"} 
+                          style={{ height: '180px', objectFit: 'cover' }}
+                          onError={(e) => { e.target.src = "/placeholder.svg"; }}
+                        />
                       }
-                    />
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <Text>Không có tour liên quan.</Text>
+                      onClick={() => handleTourClick(tour.id)} // Sử dụng navigate thay vì window.location.href
+                    >
+                      <Card.Meta
+                        title={<Text strong ellipsis={{ tooltip: tour.name }}>{tour.name}</Text>}
+                        description={
+                          <>
+                            <Text strong style={{ color: '#ff8c00' }}>
+                              {tour.prices?.find(p => p.age_group === "Adult")?.price 
+                                ? `${parseFloat(tour.prices.find(p => p.age_group === "Adult").price).toLocaleString('vi-VN')} VND` 
+                                : "Liên hệ"}
+                            </Text>
+                            <br />
+                            <Text><EnvironmentOutlined /> {tour.region || "Không xác định"}</Text>
+                            <br />
+                            <Text><StarOutlined style={{ color: '#faad14' }} /> {tour.star_rating || "Chưa có đánh giá"}</Text>
+                          </>
+                        }
+                      />
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </div>
           )}
         </Content>
       </Layout>
