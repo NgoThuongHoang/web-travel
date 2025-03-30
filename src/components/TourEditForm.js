@@ -168,14 +168,14 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     } else {
       setFileList([]);
     }
-
+  
     if (tour?.prices && Array.isArray(tour.prices)) {
       const formattedPrices = [
         { age_group: "Under 5", price: 0, single_room_price: null, description: "Miễn phí cho trẻ dưới 5 tuổi" },
         { age_group: "5-11", price: "", single_room_price: "", description: "" },
         { age_group: "Adult", price: "", single_room_price: "", description: "" },
       ];
-
+  
       tour.prices.forEach((price) => {
         const index = formattedPrices.findIndex((p) => p.age_group === price.age_group);
         if (index !== -1) {
@@ -189,14 +189,31 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
       });
       setPrices(formattedPrices);
     }
-
+  
     if (tour?.highlights && Array.isArray(tour.highlights)) {
       setHighlights(tour.highlights);
     } else {
       setHighlights([]);
     }
-
-    form.resetFields();
+  
+    // Thay vì chỉ resetFields, chúng ta set giá trị cụ thể
+    form.setFieldsValue({
+      title: tour?.name || "",
+      tour_code: tour?.tour_code || "",
+      days: tour?.days || "",
+      nights: tour?.nights || "",
+      departureDate: tour?.start_date
+        ? new Date(tour.start_date).toISOString().split("T")[0]
+        : "",
+      transportation: tour?.transportation || "",
+      departurePoint: tour?.departure_point || "",
+      status: tour?.status || "active",
+      star_rating: tour?.star_rating || 3,
+      region: tour?.region || "",
+      country: tour?.country || "", // Thêm country
+      suggestions: tour?.suggestions || "", // Thêm suggestions
+      total_tickets: tour?.total_tickets || 0,
+    });
   }, [tour, form]);
 
   // Định dạng start_date thành yyyy-MM-dd để phù hợp với Input type="date"
@@ -216,6 +233,8 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     status: tour?.status || "active",
     star_rating: tour?.star_rating || 3,
     region: tour?.region || "",
+    country: tour?.country || "", // Thêm country
+    suggestions: tour?.suggestions || "", // Thêm suggestions
     total_tickets: tour?.total_tickets || 0, // Thêm total_tickets vào initialValues
   };
 
@@ -245,6 +264,8 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         description: price.description || "",
       })),
       region: values.region || "Không xác định",
+      country: values.country || "Không xác định", // Thêm country
+      suggestions: values.suggestions || "", // Thêm suggestions
       total_tickets: parseInt(values.total_tickets) || 0, // Thêm total_tickets vào data
     };
     console.log("Data gửi từ TourEditForm:", data); // Thêm log để kiểm tra
@@ -401,6 +422,24 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 </Select>
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Quốc gia"
+                name="country"
+              >
+                <Input placeholder="Nhập quốc gia" />
+              </Form.Item>
+            </Col>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  label="Gợi ý"
+                  name="suggestions"
+                >
+                  <TextArea placeholder="Nhập gợi ý cho tour" rows={3} />
+                </Form.Item>
+              </Col>
+            </Row>
             <Col span={12}>
               <Form.Item label="Thời gian">
                 <Row gutter={8}>
@@ -764,12 +803,24 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 </Col>
                 <Col span={12}>
                   <Text>
+                    <EnvironmentOutlined /> Quốc gia: {previewData.country || "Không xác định"}
+                  </Text>
+                </Col>
+                <Col span={12}>
+                  <Text>
                     <CalendarOutlined /> Thời gian: {previewData.days} NGÀY {previewData.nights} ĐÊM
                   </Text>
                 </Col>
                 <Col span={12}>
                   <Text>
                     <ClockCircleOutlined /> Khởi hành: {formatDate(previewData.departureDate)}
+                  </Text>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Text>
+                    <span role="img" aria-label="suggestion">💡</span> Gợi ý: {previewData.suggestions || "Không có gợi ý"}
                   </Text>
                 </Col>
               </Row>

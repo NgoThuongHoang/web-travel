@@ -135,6 +135,8 @@ router.get("/", ensurePool, async (req, res) => {
                         ? JSON.parse(row.highlights)
                         : [],
                     region: row.region,
+                    country: row.country, 
+                    suggestions: row.suggestions, 
                     total_tickets: row.total_tickets,
                     remaining_tickets: row.remaining_tickets,
                     prices: [],
@@ -213,6 +215,8 @@ router.get("/:id", ensurePool, async (req, res) => {
             total_tickets: tourResult.recordset[0].total_tickets,
             remaining_tickets: tourResult.recordset[0].remaining_tickets,
             region: tourResult.recordset[0].region,
+            country: tourResult.recordset[0].country, 
+            suggestions: tourResult.recordset[0].suggestions, 
             prices: [],
             images: [],
         };
@@ -283,6 +287,8 @@ router.post("/", ensurePool, async (req, res) => {
             prices,
             images,
             region = "Không xác định",
+            country, // Thêm country
+            suggestions, // Thêm suggestions
             total_tickets, // Thêm total_tickets vào body
         } = req.body;
 
@@ -351,16 +357,18 @@ router.post("/", ensurePool, async (req, res) => {
                 JSON.stringify(highlights)
             )
             .input("region", sql.NVarChar, region)
+            .input("country", sql.NVarChar, country || null) // Thêm country
+            .input("suggestions", sql.NVarChar, suggestions || null) // Thêm suggestions
             .input("total_tickets", sql.Int, total_tickets) // Thêm total_tickets
             .input("remaining_tickets", sql.Int, total_tickets) // Khởi tạo remaining_tickets bằng total_tickets
             .query(`
         INSERT INTO [web_travel].[dbo].[tours] (
           name, start_date, status, days, nights, transportation, departure_point, 
-          tour_code, star_rating, highlights, region, total_tickets, remaining_tickets
+          tour_code, star_rating, highlights, region, country, suggestions, total_tickets, remaining_tickets
         )
         VALUES (
           @name, @start_date, @status, @days, @nights, @transportation, @departure_point, 
-          @tour_code, @star_rating, @highlights, @region, @total_tickets, @remaining_tickets
+          @tour_code, @star_rating, @highlights, @region, @country, @suggestions, @total_tickets, @remaining_tickets
         );
         SELECT SCOPE_IDENTITY() as id;
       `);
@@ -450,6 +458,8 @@ router.put("/:id", ensurePool, async (req, res) => {
             prices,
             images,
             region = "Không xác định",
+            country, // Thêm country
+            suggestions, // Thêm suggestions
             total_tickets, // Thêm total_tickets vào body
         } = req.body;
 
@@ -517,12 +527,14 @@ router.put("/:id", ensurePool, async (req, res) => {
                 JSON.stringify(highlights)
             )
             .input("region", sql.NVarChar, region)
+            .input("country", sql.NVarChar, country || null) // Thêm country
+            .input("suggestions", sql.NVarChar, suggestions || null) // Thêm suggestions
             .input("total_tickets", sql.Int, total_tickets)
             .input("remaining_tickets", sql.Int, newRemainingTickets).query(`
         UPDATE [web_travel].[dbo].[tours]
         SET name = @name, start_date = @start_date, status = @status, days = @days, nights = @nights,
             transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating,
-            highlights = @highlights, region = @region, total_tickets = @total_tickets, remaining_tickets = @remaining_tickets
+            highlights = @highlights, region = @region, country = @country, suggestions = @suggestions, total_tickets = @total_tickets, remaining_tickets = @remaining_tickets
         WHERE id = @id
       `);
 
@@ -1034,6 +1046,8 @@ router.get("/:tourId", ensurePool, async (req, res) => {
             star_rating: tour.star_rating,
             highlights: tour.highlights ? JSON.parse(tour.highlights) : [],
             region: tour.region,
+            country: tour.country, // Thêm country
+            suggestions: tour.suggestions, // Thêm suggestions
             total_tickets: tour.total_tickets,
             remaining_tickets: tour.remaining_tickets,
             prices: pricesResult.recordset,

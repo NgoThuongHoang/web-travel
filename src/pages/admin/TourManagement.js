@@ -71,6 +71,8 @@ const TourManagement = () => {
             images: tour.images || [],
             price: adultPrice,
             displayStatus: tour.status === "pending" ? "Đang chờ" : "Hoạt động",
+            country: tour.country || "Không xác định", // Thêm country
+            suggestions: tour.suggestions || "", // Thêm suggestions
           };
         });
         setTours(parsedData);
@@ -201,6 +203,8 @@ const TourManagement = () => {
             caption: image.caption || null,
           })),
         region: tourData.region || "Không xác định",
+        country: tourData.country || "Không xác định", // Thêm country
+        suggestions: tourData.suggestions || "", // Thêm suggestions
         total_tickets: totalTickets, // Sử dụng giá trị đã parse
         remaining_tickets: totalTickets, // Đảm bảo remaining_tickets bằng total_tickets
       };
@@ -425,6 +429,8 @@ const TourManagement = () => {
             <p>
               <strong>Khu vực:</strong> {selectedTour.region || "Không xác định"}
             </p>
+            <p><strong>Quốc gia:</strong> {selectedTour.country || "Không xác định"}</p>
+            <p><strong>Gợi ý:</strong> {selectedTour.suggestions || "Không có gợi ý"}</p>
             <p>
               <strong>Thời gian:</strong> {selectedTour.days} NGÀY {selectedTour.nights} ĐÊM
             </p>

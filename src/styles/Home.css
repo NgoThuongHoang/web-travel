@@ -1,0 +1,355 @@
+/* Reset mặc định */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* CSS cơ bản cho toàn trang */
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.center {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.title-main {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.title-main p {
+  font-size: 16px;
+  color: #888;
+}
+
+.title-main h2 {
+  font-size: 28px;
+  color: #333;
+  margin-top: 10px;
+}
+
+/* Slideshow */
+.slideshow {
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+.swiper-slide img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+/* Intro */
+#intro {
+  margin-bottom: 40px;
+}
+
+.intro-container {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.intro-left {
+  flex: 1;
+}
+
+.intro-left img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.intro-right {
+  flex: 1;
+}
+
+.intro-name {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.intro-info {
+  font-size: 16px;
+  color: #555;
+}
+
+/* Country */
+#country {
+  margin-bottom: 40px;
+}
+
+/* Tour */
+.tour {
+  margin-bottom: 40px;
+}
+
+.product-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between; /* Canh chỉnh các thẻ để tránh khoảng trống */
+
+}
+
+.product-item {
+  flex: 1 1 calc(30% - 10px); /* Làm thẻ to hơn */
+  max-width: 340px; /* Tăng kích thước tối đa */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s;
+  padding: 10px; /* Giảm padding nếu cần */
+}
+
+.product-item:hover {
+  transform: scale(1.05);
+}
+
+.product-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-desc {
+  padding: 15px;
+}
+
+.product-item-name {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.product-name {
+  margin: 0;
+}
+
+.tour-name-link {
+  font-size: 19px;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.tour-name-link:hover {
+  color: #f28c38 !important;
+}
+
+.product-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #555;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.product-info2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-new {
+  font-size: 23px;
+  font-weight: bold;
+  color: #ff4d4f !important;
+}
+
+/* Responsive Design */
+
+/* Màn hình lớn (Desktop, > 1200px) */
+@media (min-width: 1200px) {
+  .center {
+      max-width: 1200px;
+  }
+
+  .swiper-slide img {
+      height: 500px;
+  }
+
+  .product-item {
+    flex: 1 1 calc(32% - 10px);
+    min-width: 250px;
+    max-width: 360px;
+  }
+}
+
+/* Màn hình vừa (Tablet, 768px - 1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .center {
+      max-width: 740px;
+  }
+
+  .swiper-slide img {
+      height: 400px;
+  }
+
+  .intro-container {
+      flex-direction: column;
+      gap: 20px;
+  }
+
+  .intro-left, .intro-right {
+      flex: 1 1 100%;
+      text-align: center;
+  }
+
+  .intro-left img {
+      max-width: 400px;
+      margin: 0 auto;
+  }
+
+  .product-item {
+    flex: 1 1 calc(48% - 10px);
+  }
+
+  .product-image {
+      height: 180px;
+  }
+
+  .tour-name-link {
+      font-size: 14px;
+  }
+
+  .price-new {
+      font-size: 14px;
+  }
+}
+
+/* Màn hình nhỏ (Mobile, 576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .center {
+      max-width: 540px;
+  }
+
+  .swiper-slide img {
+      height: 300px;
+  }
+
+  .intro-container {
+      flex-direction: column;
+      gap: 15px;
+  }
+
+  .intro-left, .intro-right {
+      flex: 1 1 100%;
+      text-align: center;
+  }
+
+  .intro-left img {
+      max-width: 300px;
+      margin: 0 auto;
+  }
+
+  .intro-name {
+      font-size: 20px;
+  }
+
+  .intro-info {
+      font-size: 14px;
+  }
+
+  .country-grid {
+      grid-template-columns: repeat(2, 1fr);
+  }
+
+  .country-items img {
+      height: 100px;
+  }
+
+  .country-items span {
+      font-size: 14px;
+  }
+
+  .product-item {
+    flex: 1 1 100%;
+  }
+
+  .product-image {
+      height: 150px;
+  }
+
+  .tour-name-link {
+      font-size: 13px;
+  }
+
+  .product-item-name, .product-info, .price-new {
+      font-size: 12px;
+  }
+}
+
+/* Màn hình rất nhỏ (Mobile nhỏ, < 576px) */
+@media (max-width: 575px) {
+  .center {
+      padding: 0 10px;
+  }
+
+  .title-main h2 {
+      font-size: 22px;
+  }
+
+  .title-main p {
+      font-size: 14px;
+  }
+
+  .swiper-slide img {
+      height: 200px;
+  }
+
+  .intro-container {
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  .intro-left, .intro-right {
+      flex: 1 1 100%;
+      text-align: center;
+  }
+
+  .intro-left img {
+      max-width: 200px;
+      margin: 0 auto;
+  }
+
+  .intro-name {
+      font-size: 18px;
+  }
+
+  .intro-info {
+      font-size: 13px;
+  }
+
+  .product-item {
+      flex: 1 1 100%;
+  }
+
+  .product-image {
+      height: 200px;
+  }
+
+  .tour-name-link {
+      font-size: 14px;
+  }
+
+  .product-item-name, .product-info, .price-new {
+      font-size: 12px;
+  }
+}
