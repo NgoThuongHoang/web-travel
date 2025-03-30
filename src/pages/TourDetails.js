@@ -224,6 +224,7 @@ const TourDetail = () => {
     departurePoint: tourData.departure_point || "Không xác định",
     tourCode: tourData.tour_code || "Không có mã tour",
     highlights: Array.isArray(tourData.highlights) ? tourData.highlights : [],
+    suggestions: tourData.suggestions || [],
   };
 
   const tourImages = tourData.images && Array.isArray(tourData.images)
@@ -536,8 +537,8 @@ const TourDetail = () => {
                   {cancellationPolicy}
                 </TabPane>
 
-                <TabPane tab="Bình luận" key="5">
-                  <p>Phần bình luận Facebook sẽ được tích hợp ở đây.</p>
+                <TabPane tab="Gợi ý chuyến đi" key="5">
+                  {tourInfo.suggestions}
                 </TabPane>
               </Tabs>
             </Col>
