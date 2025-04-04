@@ -279,7 +279,18 @@ const TourManagement = () => {
     {
       title: "Thời gian",
       key: "duration",
-      render: (_, record) => `${record.days} NGÀY ${record.nights} ĐÊM`,
+      width: 150, // Đặt độ rộng cố định cho cột
+      render: (_, record) => (
+        <div 
+          style={{
+            whiteSpace: 'nowrap', // Ngăn không cho text xuống dòng
+            overflow: 'hidden', // Ẩn phần text vượt quá kích thước
+            textOverflow: 'ellipsis', // Hiển thị dấu ... khi text quá dài
+          }}
+        >
+          {`${record.days} NGÀY ${record.nights} ĐÊM`}
+        </div>
+      ),
     },
     {
       title: "Số vé hiện có", // Thêm cột mới
@@ -300,11 +311,14 @@ const TourManagement = () => {
       render: (text, record) => (
         <span
           style={{
-            padding: "4px 12px",
+            padding: "6px 12px",
             borderRadius: "16px",
             backgroundColor: record.status === "active" ? "#52c41a" : "#fadb14", // Xanh cho active, vàng cho pending
             color: record.status === "active" ? "#fff" : "#000",
             fontWeight: "500",
+            display: "inline-block",
+            minWidth: "100px",
+            textAlign: "center"
           }}
         >
           {text}

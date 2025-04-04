@@ -310,7 +310,9 @@ const TourDetail = () => {
 
   return (
     <>
-      <div className="breadCrumbs">
+
+    <div className="container">
+    <div className="breadCrumbs">
         <div className="center">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">
@@ -443,7 +445,7 @@ const TourDetail = () => {
                     ) : "Liên hệ"}
                   </span>
                 </Title>
-                <Button type="default" size="large" block style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}>
+                <Button onClick={() => window.open(`https://zalo.me/0392226424`, '_blank')} type="default" size="large" block style={{ background: "#ff8c00", color: "#fff", borderColor: "#ff8c00" }}>
                   Gửi yêu cầu tư vấn
                 </Button>
                 <Divider />
@@ -535,6 +537,8 @@ const TourDetail = () => {
           )}
         </Content>
       </Layout>
+    </div>
+
     </>
   );
 };
