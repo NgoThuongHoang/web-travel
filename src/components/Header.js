@@ -179,7 +179,7 @@ const Header = () => {
                 className="navbar navbar-expand-lg navbar-light bg-light"
                 style={{ top: 0, width: "100%", zIndex: 1000, position: "sticky" }}
             >
-                <div className="container">
+                <div className="container" style={{ padding: "0px" }}>
                     <a className="navbar-brand logo" href="/">
                         <img
                             onError={(e) => {
@@ -383,6 +383,15 @@ const Header = () => {
                                     title="Liên hệ"
                                 >
                                     LIÊN HỆ
+                                </a>
+                            </li>
+                            <li className="nav-item">
+                                <a
+                                    className="nav-link"
+                                    href="/tour-info-page"
+                                    title="Tra cứu"
+                                >
+                                    TRA CỨU
                                 </a>
                             </li>
                             <li className="nav-item">

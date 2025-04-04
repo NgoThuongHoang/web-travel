@@ -61,7 +61,7 @@
   .navbar-nav .dropdown .dropdown-menu {
     position: absolute;
     left: 50%;
-    transform: translateX(-35%);
+    transform: translateX(-25%);
     min-width: 300px;
     background-color: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
