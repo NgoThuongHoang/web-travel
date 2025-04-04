@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../features/auth/authSlice";
@@ -11,15 +11,29 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPasswordAlert, setShowForgotPasswordAlert] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // Load thông tin đăng nhập từ localStorage khi component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("savedEmail");
+    const savedPassword = localStorage.getItem("savedPassword");
+    const savedRememberMe = localStorage.getItem("rememberMe") === "true";
+
+    if (savedRememberMe && savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5001/api/accounts/login", { // Sửa URL API
+      const response = await fetch("http://localhost:5001/api/accounts/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -27,7 +41,6 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      // Kiểm tra nếu response không phải JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text();
@@ -41,12 +54,10 @@ const Login = () => {
         throw new Error(data.error || "Đăng nhập thất bại!");
       }
 
-      // Kiểm tra trạng thái tài khoản
       if (data.status !== "Hoạt động") {
         throw new Error("Tài khoản không hoạt động!");
       }
 
-      // Lưu thông tin user và role vào Redux
       dispatch(login({
         user: {
           id: data.id,
@@ -57,7 +68,17 @@ const Login = () => {
         role: data.role,
       }));
 
-      // Chuyển hướng dựa trên vai trò
+      // Lưu thông tin vào localStorage nếu "Remember me" được chọn
+      if (rememberMe) {
+        localStorage.setItem("savedEmail", email);
+        localStorage.setItem("savedPassword", password);
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("savedEmail");
+        localStorage.removeItem("savedPassword");
+        localStorage.setItem("rememberMe", "false");
+      }
+
       if (data.role === "Admin" || data.role === "User") {
         navigate("/admin");
       } else {
@@ -167,11 +188,13 @@ const Login = () => {
               <input
                 type="checkbox"
                 className="form-check-input"
-                id="ensurePool"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
               />
               <label
                 className="form-check-label text-white"
-                htmlFor="ensurePool"
+                htmlFor="rememberMe"
               >
                 Remember me
               </label>
