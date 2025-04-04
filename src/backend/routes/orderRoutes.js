@@ -14,7 +14,6 @@ const ensurePool = (req, res, next) => {
 // API lấy danh sách orders
 router.get('/', ensurePool, async (req, res) => {
   try {
-    // Lấy tất cả đơn hàng từ bảng orders
     const ordersResult = await req.app.locals.pool.request()
       .query(`
         SELECT 
@@ -32,15 +31,16 @@ router.get('/', ensurePool, async (req, res) => {
           o.payment_method,
           o.total_amount,
           o.status,
-          o.created_at AS order_date
+          o.created_at AS order_date,
+          t.tour_code,
+          t.name AS tour_name
         FROM [web_travel].[dbo].[orders] o
+        LEFT JOIN [web_travel].[dbo].[tours] t ON o.tour_id = t.id
       `);
 
     const orders = ordersResult.recordset;
 
-    // Lấy thông tin khách hàng (người đặt tour và người đi cùng) từ bảng customers
     for (let order of orders) {
-      // Lấy thông tin khách hàng chính (lead customer) dựa trên customer_id từ bảng orders
       let leadCustomerResult = await req.app.locals.pool.request()
         .input('customer_id', sql.Int, order.customer_id)
         .query(`
@@ -58,7 +58,6 @@ router.get('/', ensurePool, async (req, res) => {
 
       let leadCustomer = leadCustomerResult.recordset[0];
       if (!leadCustomer) {
-        // Nếu không tìm thấy lead customer, lấy khách hàng đầu tiên có traveler_type = 'Lead'
         const fallbackCustomerResult = await req.app.locals.pool.request()
           .input('order_id', sql.Int, order.id)
           .query(`
@@ -76,7 +75,6 @@ router.get('/', ensurePool, async (req, res) => {
 
         leadCustomer = fallbackCustomerResult.recordset[0];
         if (leadCustomer) {
-          // Cập nhật customer_id trong bảng orders
           await req.app.locals.pool.request()
             .input('order_id', sql.Int, order.id)
             .input('customer_id', sql.Int, leadCustomer.id)
@@ -96,7 +94,6 @@ router.get('/', ensurePool, async (req, res) => {
         order.gender = leadCustomer.gender;
         order.birth_date = leadCustomer.birth_date;
       } else {
-        // Nếu vẫn không tìm thấy, gán giá trị mặc định
         order.full_name = 'N/A';
         order.phone = 'N/A';
         order.email = 'N/A';
@@ -104,7 +101,6 @@ router.get('/', ensurePool, async (req, res) => {
         order.birth_date = null;
       }
 
-      // Lấy tất cả khách hàng liên quan đến đơn hàng (bao gồm cả lead customer và người đi cùng)
       const customersResult = await req.app.locals.pool.request()
         .input('order_id', sql.Int, order.id)
         .query(`
@@ -128,6 +124,129 @@ router.get('/', ensurePool, async (req, res) => {
     res.status(200).json(orders);
   } catch (err) {
     console.error('Lỗi khi lấy danh sách đơn hàng:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// API lấy chi tiết một đơn hàng theo ID
+router.get('/:id', ensurePool, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const orderResult = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(id))
+      .query(`
+        SELECT 
+          o.id,
+          o.tour_id,
+          o.customer_id,
+          o.start_date,
+          o.end_date,
+          o.adults,
+          o.children_under_5,
+          o.children_5_11,
+          o.single_rooms,
+          o.pickup_point,
+          o.special_requests,
+          o.payment_method,
+          o.total_amount,
+          o.status,
+          o.created_at AS order_date,
+          t.tour_code,
+          t.name AS tour_name
+        FROM [web_travel].[dbo].[orders] o
+        LEFT JOIN [web_travel].[dbo].[tours] t ON o.tour_id = t.id
+        WHERE o.id = @order_id
+      `);
+
+    if (orderResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Đơn hàng không tồn tại!' });
+    }
+
+    const order = orderResult.recordset[0];
+
+    let leadCustomerResult = await req.app.locals.pool.request()
+      .input('customer_id', sql.Int, order.customer_id)
+      .query(`
+        SELECT 
+          c.id,
+          c.full_name,
+          c.phone,
+          c.email,
+          c.gender,
+          c.birth_date,
+          c.address
+        FROM [web_travel].[dbo].[customers] c
+        WHERE c.id = @customer_id
+      `);
+
+    let leadCustomer = leadCustomerResult.recordset[0];
+    if (!leadCustomer) {
+      const fallbackCustomerResult = await req.app.locals.pool.request()
+        .input('order_id', sql.Int, order.id)
+        .query(`
+          SELECT 
+            c.id,
+            c.full_name,
+            c.phone,
+            c.email,
+            c.gender,
+            c.birth_date,
+            c.address
+          FROM [web_travel].[dbo].[customers] c
+          WHERE c.order_id = @order_id AND c.traveler_type = 'Lead'
+        `);
+
+      leadCustomer = fallbackCustomerResult.recordset[0];
+      if (leadCustomer) {
+        await req.app.locals.pool.request()
+          .input('order_id', sql.Int, order.id)
+          .input('customer_id', sql.Int, leadCustomer.id)
+          .query(`
+            UPDATE [web_travel].[dbo].[orders]
+            SET customer_id = @customer_id
+            WHERE id = @order_id
+          `);
+        order.customer_id = leadCustomer.id;
+      }
+    }
+
+    if (leadCustomer) {
+      order.full_name = leadCustomer.full_name;
+      order.phone = leadCustomer.phone;
+      order.email = leadCustomer.email || '';
+      order.gender = leadCustomer.gender;
+      order.birth_date = leadCustomer.birth_date;
+    } else {
+      order.full_name = 'N/A';
+      order.phone = 'N/A';
+      order.email = 'N/A';
+      order.gender = 'N/A';
+      order.birth_date = null;
+    }
+
+    const customersResult = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, order.id)
+      .query(`
+        SELECT 
+          c.id,
+          c.full_name,
+          c.phone,
+          c.email,
+          c.gender,
+          c.birth_date,
+          c.address,
+          c.single_room,
+          c.traveler_type
+        FROM [web_travel].[dbo].[customers] c
+        WHERE c.order_id = @order_id
+      `);
+
+    order.customers = customersResult.recordset || [];
+
+    res.status(200).json(order);
+  } catch (err) {
+    console.error('Lỗi khi lấy chi tiết đơn hàng:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });

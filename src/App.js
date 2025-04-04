@@ -23,6 +23,7 @@ import TourEditPage from './pages/admin/TourEditPage';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'antd/dist/reset.css';
 import BackToTop from './components/BackToTop';
+import TourInfoPage from './pages/TourInfoPage';
 
 function Layout() {
     const location = useLocation();
@@ -58,6 +59,7 @@ function Layout() {
                     <Route path="/ve-chung-toi" element={<About />} />
                     <Route path="/tin-tuc" element={<News />} />
                     <Route path="/lien-he" element={<Contact />} />
+                    <Route path="/tour-info-page" element={<TourInfoPage/>} />  
                     <Route path="/dang-nhap" element={<Login />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/admin/quan-ly-tour" element={<TourManagement />} />
