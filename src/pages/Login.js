@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation  } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { login } from "../features/auth/authSlice";
+import { loginUser } from '../features/auth/authSlice';
+import { useAuth } from '../contexts/AuthContext';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/Login.css";
 
@@ -12,7 +13,11 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPasswordAlert, setShowForgotPasswordAlert] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login: contextLogin } = useAuth();
   const dispatch = useDispatch();
 
   // Load thông tin đăng nhập từ localStorage khi component mount
@@ -31,66 +36,44 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5001/api/accounts/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text();
-        console.error("Response không phải JSON:", text);
-        throw new Error("Server trả về dữ liệu không phải JSON. Kiểm tra API!");
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Đăng nhập thất bại!");
-      }
-
-      if (data.status !== "Hoạt động") {
-        throw new Error("Tài khoản không hoạt động!");
-      }
-
-      dispatch(login({
-        user: {
-          id: data.id,
-          username: data.username,
-          email: data.email,
-          fullName: data.fullName,
-        },
-        role: data.role,
+      const result = await dispatch(loginUser({ 
+        email, 
+        password 
       }));
 
-      // Lưu thông tin vào localStorage nếu "Remember me" được chọn
-      if (rememberMe) {
-        localStorage.setItem("savedEmail", email);
-        localStorage.setItem("savedPassword", password);
-        localStorage.setItem("rememberMe", "true");
-      } else {
-        localStorage.removeItem("savedEmail");
-        localStorage.removeItem("savedPassword");
-        localStorage.setItem("rememberMe", "false");
-      }
+      if (loginUser.fulfilled.match(result)) {
+        const { user, role } = result.payload;
+        contextLogin(user, role);
 
-      if (data.role === "Admin" || data.role === "User") {
-        navigate("/admin");
+        if (rememberMe) {
+          localStorage.setItem("savedEmail", email);
+          localStorage.setItem("savedPassword", password);
+          localStorage.setItem("rememberMe", "true");
+        } else {
+          localStorage.removeItem("savedEmail");
+          localStorage.removeItem("savedPassword");
+          localStorage.setItem("rememberMe", "false");
+        }
+
+        // Chuyển hướng về trang admin hoặc trang trước đó (nếu có)
+        const from = location.state?.from?.pathname || "/admin";
+        navigate(from);
       } else {
-        throw new Error("Vai trò không hợp lệ!");
+        throw new Error(result.payload || "Đăng nhập thất bại");
       }
     } catch (err) {
       setError(err.message);
       console.error("Lỗi đăng nhập:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleForgotPasswordClick = () => {
+  const handleForgotPasswordClick = (e) => {
+    e.preventDefault();
     setShowForgotPasswordAlert(true);
     setTimeout(() => setShowForgotPasswordAlert(false), 5000);
   };
@@ -202,16 +185,24 @@ const Login = () => {
             <a
               href="#"
               className="text-white text-decoration-none"
-              onClick={(e) => {
-                e.preventDefault();
-                handleForgotPasswordClick();
-              }}
+              onClick={handleForgotPasswordClick}
             >
               Forgot password?
             </a>
           </div>
-          <button type="submit" className="btn btn-light w-100 py-2">
-            Log In
+          <button 
+            type="submit" 
+            className="btn btn-light w-100 py-2"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Loading...
+              </>
+            ) : (
+              "Log In"
+            )}
           </button>
         </form>
       </div>

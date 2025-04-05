@@ -1,25 +1,21 @@
 import React from 'react';
 import { Layout, Typography, Space, Button } from 'antd';
-import { HomeOutlined } from '@ant-design/icons'; // Thêm icon HomeOutlined
+import { HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout, resetLogout } from '../features/auth/authSlice';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
 
 const AdminHeader = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { user, logout } = useAuth();
 
-  const user = useSelector((state) => state.auth.user);
-  const userName = user?.fullName || 'Người dùng';
+  const userName = user?.fullName || 'Quản trị viên';
 
   const handleLogout = () => {
-    console.log('Đăng xuất, chuyển về /');
-    dispatch(logout()); // Gọi action logout để cập nhật state
-    navigate('/', { replace: true }); // Chuyển hướng về trang chủ ngay lập tức
-    dispatch(resetLogout()); // Reset trạng thái isLoggingOut
+    logout(); // Sử dụng hàm logout từ AuthContext
+    navigate('/dang-nhap', { replace: true });
   };
 
   const handleTitleClick = () => {
@@ -27,7 +23,7 @@ const AdminHeader = () => {
   };
 
   const handleHomeClick = () => {
-    navigate('/'); // Chuyển hướng về trang chủ
+    navigate('/');
   };
 
   return (
@@ -59,10 +55,10 @@ const AdminHeader = () => {
           transition: 'all 0.3s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#F5A252'; // Hover sáng hơn
+          e.currentTarget.style.color = '#F5A252';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#fff'; // Trở lại màu trắng
+          e.currentTarget.style.color = '#fff';
         }}
       />
 
