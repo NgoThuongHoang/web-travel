@@ -68,6 +68,11 @@
     border-radius: 4px;
     padding: 10px;
   }
+
+  .navbar-nav .dropdown .dropdown-menu2{
+    transform: translateX(-45%);
+
+  }
   
   .navbar-nav .dropdown .dropdown-menu.show {
     display: block;
@@ -106,7 +111,7 @@
   
   .tour-column img {
     width: 100%;
-    height: auto;
+    height: 150px;
     border-radius: 4px;
   }
   

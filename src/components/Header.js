@@ -35,12 +35,12 @@ const Header = () => {
     const [loading, setLoading] = useState(false);
     const [priceRangeValue, setPriceRangeValue] = useState([0, 10000000]);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [domesticDropdownOpen, setDomesticDropdownOpen] = useState(false);
+    const [internationalDropdownOpen, setInternationalDropdownOpen] = useState(false);
     const searchRef = useRef(null);
-    const location = useLocation(); // Thêm hook location
+    const location = useLocation();
     const [form] = Form.useForm();
 
-    // Thêm useEffect để đóng form khi chuyển trang
     useEffect(() => {
         setShowSearch(false);
     }, [location]);
@@ -48,7 +48,6 @@ const Header = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
-                // Kiểm tra không phải là nút search
                 const searchButton = document.querySelector(".fa-search");
                 if (!searchButton || !searchButton.contains(event.target)) {
                     setShowSearch(false);
@@ -62,7 +61,6 @@ const Header = () => {
         };
     }, []);
 
-    // Thêm hàm xử lý khi click vào tour
     const handleTourClick = () => {
         setShowSearch(false);
     };
@@ -142,11 +140,20 @@ const Header = () => {
 
     const toggleMenu = () => {
         setMenuOpen(!menuOpen);
-        if (menuOpen) setDropdownOpen(false);
+        if (menuOpen) {
+            setDomesticDropdownOpen(false);
+            setInternationalDropdownOpen(false);
+        }
     };
 
-    const toggleDropdown = () => {
-        setDropdownOpen(!dropdownOpen);
+    const toggleDomesticDropdown = () => {
+        setDomesticDropdownOpen(!domesticDropdownOpen);
+        setInternationalDropdownOpen(false);
+    };
+
+    const toggleInternationalDropdown = () => {
+        setInternationalDropdownOpen(!internationalDropdownOpen);
+        setDomesticDropdownOpen(false);
     };
 
     const toggleSearch = () => {
@@ -160,7 +167,6 @@ const Header = () => {
 
     return (
         <>
-            {/* Overlay khi search hiển thị */}
             {showSearch && (
                 <div
                     style={{
@@ -224,19 +230,19 @@ const Header = () => {
                                 <a
                                     className="nav-link dropdown-toggle"
                                     href="#"
-                                    id="navbarDropdown"
+                                    id="navbarDropdownDomestic"
                                     role="button"
-                                    onClick={toggleDropdown}
+                                    onClick={toggleDomesticDropdown}
                                     aria-haspopup="true"
-                                    aria-expanded={dropdownOpen}
+                                    aria-expanded={domesticDropdownOpen}
                                 >
                                     TOUR TRONG NƯỚC
                                 </a>
                                 <div
                                     className={`dropdown-menu ${
-                                        dropdownOpen ? "show" : ""
+                                        domesticDropdownOpen ? "show" : ""
                                     }`}
-                                    aria-labelledby="navbarDropdown"
+                                    aria-labelledby="navbarDropdownDomestic"
                                 >
                                     <div className="tour-container">
                                         <div className="tour-row">
@@ -349,14 +355,82 @@ const Header = () => {
                                     </div>
                                 </div>
                             </li>
-                            <li className="nav-item">
+                            <li className="nav-item dropdown">
                                 <a
-                                    className="nav-link"
-                                    href="/tour-ngoai-nuoc"
-                                    title="Tour ngoài nước"
+                                    className="nav-link dropdown-toggle"
+                                    href="#"
+                                    id="navbarDropdownInternational"
+                                    role="button"
+                                    onClick={toggleInternationalDropdown}
+                                    aria-haspopup="true"
+                                    aria-expanded={internationalDropdownOpen}
                                 >
                                     TOUR NGOÀI NƯỚC
                                 </a>
+                                <div
+                                    className={`dropdown-menu dropdown-menu2 ${internationalDropdownOpen ? "show" : ""}`}
+                                    aria-labelledby="navbarDropdownInternational"
+                                >
+                                    <div className="tour-container">
+                                        <div className="tour-row">
+                                            <div className="tour-column">
+                                            <img
+                                                src="./images/tour-ngoai-nuoc.jpg"
+                                                alt="Tour ngoài nước"
+                                                className="tour-image"
+                                            />
+                                            </div>
+                                            <div className="tour-column">
+                                            <h5 className="tour-title">CHÂU Á</h5>
+                                            <a className="dropdown-item" href="/tour-thai-lan">
+                                                TOUR THÁI LAN
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-singapore">
+                                                TOUR SINGAPORE
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-nhat-ban">
+                                                TOUR NHẬT BẢN
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-han-quoc">
+                                                TOUR HÀN QUỐC
+                                            </a>
+                                            </div>
+                                            <div className="tour-column">
+                                            <h5 className="tour-title">CHÂU ÂU</h5>
+                                            <a className="dropdown-item" href="/tour-phap">
+                                                TOUR PHÁP
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-duc">
+                                                TOUR ĐỨC
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-y">
+                                                TOUR Ý
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-anh">
+                                                TOUR ANH
+                                            </a>
+                                            </div>
+                                            <div className="tour-column">
+                                            <h5 className="tour-title">CHÂU MỸ</h5>
+                                            <a className="dropdown-item" href="/tour-my">
+                                                TOUR MỸ
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-canada">
+                                                TOUR CANADA
+                                            </a>
+                                            </div>
+                                            <div className="tour-column">
+                                            <h5 className="tour-title">CHÂU ÚC</h5>
+                                            <a className="dropdown-item" href="/tour-uc">
+                                                TOUR ÚC
+                                            </a>
+                                            <a className="dropdown-item" href="/tour-new-zealand">
+                                                TOUR NEW ZEALAND
+                                            </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </li>
                             <li className="nav-item">
                                 <a
@@ -419,7 +493,6 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Ô tìm kiếm */}
                 {showSearch && (
                     <div
                         ref={searchRef}
@@ -577,85 +650,84 @@ const Header = () => {
                             </Row>
                         </Form>
 
-                        {/* Kết quả tìm kiếm */}
                         {searchResults.length > 0 && (
                             <div style={{ marginTop: "20px" }}>
-                            <Divider>Kết quả tìm kiếm ({searchResults.length})</Divider>
-                            <div 
-                                style={{ 
-                                display: "flex",
-                                gap: "20px",
-                                overflowX: "auto",
-                                padding: "10px 0",
-                                scrollbarWidth: "thin"
-                                }}
-                            >
-                                {searchResults.map((tour) => (
-                                <Card 
-                                    key={tour.id}
-                                    hoverable 
+                                <Divider>Kết quả tìm kiếm ({searchResults.length})</Divider>
+                                <div 
                                     style={{ 
-                                    minWidth: "280px",
-                                    margin: "0",
-                                    flexShrink: 0
+                                        display: "flex",
+                                        gap: "20px",
+                                        overflowX: "auto",
+                                        padding: "10px 0",
+                                        scrollbarWidth: "thin"
                                     }}
                                 >
-                                    <img
-                                    src={tour.images?.[0]?.image_url || "/default-tour-image.jpg"}
-                                    alt={tour.name}
-                                    style={{ 
-                                        width: "100%", 
-                                        height: "150px", 
-                                        objectFit: "cover", 
-                                        marginBottom: "12px" 
-                                    }}
-                                    />
-                                    <Link 
-                                    to={`/chi-tiet-tour/${tour.id}`}
-                                    onClick={handleTourClick} // Thêm onClick
-                                    style={{
-                                        color: "#333",
-                                        fontWeight: "bold",
-                                        fontSize: "16px",
-                                        marginBottom: "8px",
-                                        display: "block",
-                                        textDecoration: "none"
-                                    }}
-                                    className="tour-name-link"
-                                    >
-                                    {tour.name}
-                                    </Link>
-                                    <Text style={{ display: "block", marginBottom: "4px" }}>
-                                    <strong>Điểm đến:</strong> {tour.departure_point}
-                                    </Text>
-                                    <Text style={{ display: "block", marginBottom: "4px" }}>
-                                    <strong>Thời gian:</strong> {tour.days} ngày {tour.nights} đêm
-                                    </Text>
-                                    <Text style={{ display: "block", marginBottom: "4px" }}>
-                                    <strong>Ngày khởi hành:</strong> {formatDate(tour.start_date)}
-                                    </Text>
-                                    <Text style={{ 
-                                    display: "block", 
-                                    marginBottom: "12px", 
-                                    color: "#ff7b00", 
-                                    fontWeight: "bold" 
-                                    }}>
-                                    {formatPrice(tour.prices?.find(p => p.age_group === "Adult")?.price || 0)}
-                                    </Text>
-                                    <Button 
-                                    type="primary" 
-                                    style={{ 
-                                        backgroundColor: "#ff7b00", 
-                                        borderColor: "#ff7b00",
-                                        width: "100%"
-                                    }}
-                                    onClick={handleTourClick} // Thêm onClick
-                                    >
-                                    Xem chi tiết
-                                    </Button>
-                                </Card>
-                                ))}
-                            </div>
+                                    {searchResults.map((tour) => (
+                                        <Card 
+                                            key={tour.id}
+                                            hoverable 
+                                            style={{ 
+                                                minWidth: "280px",
+                                                margin: "0",
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            <img
+                                                src={tour.images?.[0]?.image_url || "/default-tour-image.jpg"}
+                                                alt={tour.name}
+                                                style={{ 
+                                                    width: "100%", 
+                                                    height: "150px", 
+                                                    objectFit: "cover", 
+                                                    marginBottom: "12px" 
+                                                }}
+                                            />
+                                            <Link 
+                                                to={`/chi-tiet-tour/${tour.id}`}
+                                                onClick={handleTourClick}
+                                                style={{
+                                                    color: "#333",
+                                                    fontWeight: "bold",
+                                                    fontSize: "16px",
+                                                    marginBottom: "8px",
+                                                    display: "block",
+                                                    textDecoration: "none"
+                                                }}
+                                                className="tour-name-link"
+                                            >
+                                                {tour.name}
+                                            </Link>
+                                            <Text style={{ display: "block", marginBottom: "4px" }}>
+                                                <strong>Điểm đến:</strong> {tour.departure_point}
+                                            </Text>
+                                            <Text style={{ display: "block", marginBottom: "4px" }}>
+                                                <strong>Thời gian:</strong> {tour.days} ngày {tour.nights} đêm
+                                            </Text>
+                                            <Text style={{ display: "block", marginBottom: "4px" }}>
+                                                <strong>Ngày khởi hành:</strong> {formatDate(tour.start_date)}
+                                            </Text>
+                                            <Text style={{ 
+                                                display: "block", 
+                                                marginBottom: "12px", 
+                                                color: "#ff7b00", 
+                                                fontWeight: "bold" 
+                                            }}>
+                                                {formatPrice(tour.prices?.find(p => p.age_group === "Adult")?.price || 0)}
+                                            </Text>
+                                            <Button 
+                                                type="primary" 
+                                                style={{ 
+                                                    backgroundColor: "#ff7b00", 
+                                                    borderColor: "#ff7b00",
+                                                    width: "100%"
+                                                }}
+                                                onClick={handleTourClick}
+                                            >
+                                                Xem chi tiết
+                                            </Button>
+                                        </Card>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
