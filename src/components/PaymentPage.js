@@ -94,12 +94,23 @@ const PaymentPage = ({ tourId }) => {
   const totalTickets = nguoiLon + treEm + emBe;
 
   const formatPrice = (price) => price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
-  const formatDate = (dateString) => {
-    console.log('formatDate input:', dateString); // Debug log
-    if (!dateString || typeof dateString !== 'string') return 'N/A';
-    const date = moment(dateString);
-    if (!date || !date.isValid()) return 'N/A';
-    return date.format('DD/MM/YYYY');
+
+  // Hàm formatDate được sửa để tránh trả về "N/A"
+  const formatDate = (date) => {
+    // Nếu date không tồn tại hoặc không hợp lệ, trả về một giá trị mặc định
+    if (!date || isNaN(new Date(date).getTime())) {
+      return moment("2025-03-15").format('DD/MM/YYYY'); // Giá trị mặc định nếu không có ngày
+    }
+    return moment(date).format('DD/MM/YYYY');
+  };
+
+  // Hàm tính ngày kết thúc dựa trên ngày khởi hành và số ngày
+  const calculateEndDate = (startDate, days) => {
+    const start = startDate ? new Date(startDate) : new Date("2025-03-15"); // Giá trị mặc định nếu không có startDate
+    const tourDays = days || 4; // Giá trị mặc định nếu không có days
+    const endDate = new Date(start);
+    endDate.setDate(start.getDate() + tourDays); // Cộng số ngày
+    return endDate;
   };
 
   const renderTravelerFields = () => {
@@ -218,20 +229,20 @@ const PaymentPage = ({ tourId }) => {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng đồng ý với Điều khoản thanh toán!' });
         return;
       } else setShowAgreeError(false);
-  
+
       if (!selectedPayment) {
         setShowPaymentError(true);
         Modal.error({ title: 'Lỗi', content: 'Vui lòng chọn phương thức thanh toán!' });
         return;
       } else setShowPaymentError(false);
-  
+
       if (tour && totalTickets > tour.remaining_tickets) {
         Modal.error({ title: 'Lỗi', content: `Số vé đặt (${totalTickets}) vượt quá số vé còn lại (${tour.remaining_tickets})!` });
         return;
       }
-  
+
       const formValues = formRef.current.getFieldsValue();
-  
+
       // Thu thập thông tin người đặt tour (lead customer - Người lớn 1)
       const leadCustomer = {
         full_name: formValues.username,
@@ -239,22 +250,20 @@ const PaymentPage = ({ tourId }) => {
         email: formValues.email,
         gender: formValues.gender_traveler_0,
         birth_date: formValues.ngaysinh_traveler_0 ? formValues.ngaysinh_traveler_0.format('YYYY-MM-DD') : null,
-        single_room: formValues.single_room_traveler_0 || false, // Lưu single_room của Lead
+        single_room: formValues.single_room_traveler_0 || false,
         traveler_type: 'Lead',
       };
-  
+
       // Kiểm tra thông tin người đặt tour
       if (!leadCustomer.full_name || !leadCustomer.phone || !leadCustomer.email || !leadCustomer.gender || !leadCustomer.birth_date) {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng điền đầy đủ thông tin người đặt tour!' });
         return;
       }
-  
+
       // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       const travelers = [];
-  
-      // Thu thập thông tin tất cả hành khách để tính single_rooms (bao gồm cả Lead)
       const allTravelersForSingleRoom = [];
-  
+
       // Thêm Lead vào allTravelersForSingleRoom để tính single_rooms
       allTravelersForSingleRoom.push({
         full_name: leadCustomer.full_name,
@@ -265,7 +274,7 @@ const PaymentPage = ({ tourId }) => {
         single_room: leadCustomer.single_room,
         traveler_type: leadCustomer.traveler_type,
       });
-  
+
       // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
@@ -283,24 +292,23 @@ const PaymentPage = ({ tourId }) => {
           single_room: formValues[`single_room_traveler_${i}`] || false,
           traveler_type: travelerType,
         };
-        travelers.push(traveler); // Chỉ thêm người đi cùng vào travelers
-        allTravelersForSingleRoom.push(traveler); // Thêm vào allTravelersForSingleRoom để tính single_rooms
+        travelers.push(traveler);
+        allTravelersForSingleRoom.push(traveler);
       }
-  
+
       // Tính end_date dựa trên start_date và số ngày của tour
       const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
       const tourDays = tour?.days || 4;
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + tourDays);
-  
+      const endDate = calculateEndDate(startDate, tourDays);
+
       // Kết hợp notes và additional_notes
       const notes = formValues.notes || [];
       const additionalNotes = formValues.additional_notes || '';
       const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
-  
+
       // Tính tổng số phòng đơn từ allTravelersForSingleRoom (bao gồm cả Lead)
       const totalSingleRooms = allTravelersForSingleRoom.filter(traveler => traveler.single_room).length;
-  
+
       // Tạo bookingData
       const bookingData = {
         full_name: leadCustomer.full_name,
@@ -313,28 +321,28 @@ const PaymentPage = ({ tourId }) => {
         adults: nguoiLon,
         children_under_5: emBe,
         children_5_11: treEm,
-        single_rooms: totalSingleRooms, // Tổng số phòng đơn (bao gồm cả Lead)
-        lead_single_room: leadCustomer.single_room, // Thêm trường lead_single_room để lưu vào DB
+        single_rooms: totalSingleRooms,
+        lead_single_room: leadCustomer.single_room,
         pickup_point: formValues.dia_chi,
         special_requests: specialRequests,
         payment_method: selectedPayment,
         total_amount: totalPrice,
-        travelers: travelers, // Chỉ bao gồm người đi cùng
+        travelers: travelers,
       };
-  
+
       console.log('Booking Data:', bookingData);
-  
+
       const response = await fetch(`${API_BASE_URL}/${tourId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Lỗi khi đặt tour!');
       }
-  
+
       setIsModalVisible(true);
     } catch (error) {
       console.error('Lỗi khi đặt tour:', error);
@@ -353,6 +361,10 @@ const PaymentPage = ({ tourId }) => {
   };
 
   if (!tour) return <div>Đang tải thông tin tour...</div>;
+
+  // Tính ngày kết thúc để hiển thị trong giao diện
+  const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
+  const endDate = calculateEndDate(startDate, tour?.days);
 
   return (
     <div>
@@ -502,7 +514,9 @@ const PaymentPage = ({ tourId }) => {
             <img src={tour?.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"} alt="Tour Image" className="tour-image" />
             <Text style={{ display: 'block', marginBottom: '10px' }}><a href="#" style={{ marginRight: '5px' }}>#️⃣</a> Mã tour: {tour?.tour_code || "HNLCSP4N3D"}</Text>
             <Title level={4}>{tour?.name || "MIỀN BẮC 4N3Đ | HÀ NỘI – LÀO CAI – SA PA"}</Title>
-            <Text style={{ display: 'block', marginBottom: '10px' }}>{formatDate(tour?.start_date) || "15-03-2025"} → {formatDate(new Date(new Date(tour?.start_date).getTime() + tour?.days * 24 * 60 * 60 * 1000)) || "19-03-2025"}</Text>
+            <Text style={{ display: 'block', marginBottom: '10px' }}>
+              {formatDate(startDate)} → {formatDate(endDate)}
+            </Text>
             <Text style={{ display: 'block', marginBottom: '10px', color: 'red' }}>Số vé còn lại: {tour?.remaining_tickets !== undefined ? tour.remaining_tickets : 'Đang tải...'}</Text>
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Người lớn:</Text><Text strong>{`${nguoiLon} x ${formatPrice(nguoiLonPrice)}`}</Text></div>
