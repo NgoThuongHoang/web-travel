@@ -55,7 +55,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
 // API lấy danh sách tour
 router.get("/", ensurePool, async (req, res) => {
     try {
-        const { search, status } = req.query;
+        const { search, status, country, region } = req.query;
 
         let query = `
       SELECT t.*, tp.age_group, tp.price, tp.single_room_price, tp.description
@@ -69,12 +69,10 @@ router.get("/", ensurePool, async (req, res) => {
 
         // Xử lý tìm kiếm theo tên tour
         if (search) {
-            // Tách chuỗi tìm kiếm thành các từ khóa
             const searchTerms = search.trim().split(/\s+/);
             let searchConditions = [];
 
             if (searchTerms.length > 1) {
-                // Nếu có nhiều từ, tìm kiếm từng từ riêng lẻ trong name
                 searchTerms.forEach((term, index) => {
                     searchConditions.push(
                         `t.name LIKE '%' + @search${index} + '%'`
@@ -82,7 +80,6 @@ router.get("/", ensurePool, async (req, res) => {
                     params[`search${index}`] = term;
                 });
             } else {
-                // Nếu chỉ có 1 từ, tìm kiếm trực tiếp trong name
                 searchConditions.push(`t.name LIKE '%' + @search + '%'`);
                 params.search = searchTerms[0];
             }
@@ -94,6 +91,18 @@ router.get("/", ensurePool, async (req, res) => {
         if (status && (status === "active" || status === "pending")) {
             whereClauses.push(`t.status = @status`);
             params.status = status;
+        }
+
+        // Lọc theo country
+        if (country) {
+            whereClauses.push(`t.country = @country`);
+            params.country = country;
+        }
+
+        // Lọc theo region
+        if (region) {
+            whereClauses.push(`t.region = @region`);
+            params.region = region;
         }
 
         // Kết hợp các điều kiện WHERE
@@ -135,8 +144,8 @@ router.get("/", ensurePool, async (req, res) => {
                         ? JSON.parse(row.highlights)
                         : [],
                     region: row.region,
-                    country: row.country, 
-                    suggestions: row.suggestions, 
+                    country: row.country,
+                    suggestions: row.suggestions,
                     total_tickets: row.total_tickets,
                     remaining_tickets: row.remaining_tickets,
                     prices: [],

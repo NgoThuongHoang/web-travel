@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Import Link từ react-router-dom
+import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/swiper-bundle.css';
@@ -8,34 +8,83 @@ import TourSearchFilter from '../components/TourSearchFilter';
 
 function Home() {
     const [domesticTours, setDomesticTours] = useState([]);
-    const [loading, setLoading] = useState(true); // Thêm trạng thái loading
-    const [error, setError] = useState(null);
+    const [asiaTours, setAsiaTours] = useState([]);
+    const [europeTours, setEuropeTours] = useState([]);
+    const [loadingDomestic, setLoadingDomestic] = useState(true);
+    const [loadingAsia, setLoadingAsia] = useState(true);
+    const [loadingEurope, setLoadingEurope] = useState(true);
+    const [errorDomestic, setErrorDomestic] = useState(null);
+    const [errorAsia, setErrorAsia] = useState(null);
+    const [errorEurope, setErrorEurope] = useState(null);
 
-    // Hàm fetch dữ liệu tour từ API
+    // Biến gộp các region nước ngoài
+    const foreignRegions = ["Châu Á", "Châu Âu"];
+
+    // Fetch tour trong nước (country = Vietnam)
     useEffect(() => {
         const fetchDomesticTours = async () => {
             try {
-                setLoading(true); // Bắt đầu loading
-                const response = await fetch('http://localhost:5001/api/tours?region=Vietnam');
+                setLoadingDomestic(true);
+                const response = await fetch('http://localhost:5001/api/tours?country=Vietnam');
                 if (!response.ok) {
-                    throw new Error('Không thể tải dữ liệu tour');
+                    throw new Error('Không thể tải dữ liệu tour trong nước');
                 }
                 const data = await response.json();
                 setDomesticTours(data);
             } catch (err) {
-                setError(err.message);
+                setErrorDomestic(err.message);
             } finally {
-                setLoading(false); // Kết thúc loading
+                setLoadingDomestic(false);
             }
         };
         fetchDomesticTours();
+    }, []);
+
+    // Fetch tour Châu Á
+    useEffect(() => {
+        const fetchAsiaTours = async () => {
+            try {
+                setLoadingAsia(true);
+                const response = await fetch('http://localhost:5001/api/tours?region=Châu Á');
+                if (!response.ok) {
+                    throw new Error('Không thể tải dữ liệu tour Châu Á');
+                }
+                const data = await response.json();
+                setAsiaTours(data);
+            } catch (err) {
+                setErrorAsia(err.message);
+            } finally {
+                setLoadingAsia(false);
+            }
+        };
+        fetchAsiaTours();
+    }, []);
+
+    // Fetch tour Châu Âu
+    useEffect(() => {
+        const fetchEuropeTours = async () => {
+            try {
+                setLoadingEurope(true);
+                const response = await fetch('http://localhost:5001/api/tours?region=Châu Âu');
+                if (!response.ok) {
+                    throw new Error('Không thể tải dữ liệu tour Châu Âu');
+                }
+                const data = await response.json();
+                setEuropeTours(data);
+            } catch (err) {
+                setErrorEurope(err.message);
+            } finally {
+                setLoadingEurope(false);
+            }
+        };
+        fetchEuropeTours();
     }, []);
 
     // Hàm render tour item
     const renderTourItem = (tour) => {
         const firstImage = tour.images && tour.images.length > 0 
             ? tour.images[0].image_url 
-            : 'images/noimage.png';
+            : '/images/noimage.png';
         
         const duration = `${tour.days || 0} NGÀY ${tour.nights ? tour.nights + ' ĐÊM' : ''}`;
         const startDate = tour.start_date 
@@ -46,7 +95,6 @@ function Home() {
             }) 
             : 'Chưa xác định';
 
-        // Lấy giá tour người lớn (Adult)
         const adultPrice = tour.prices && tour.prices.length > 0 
             ? tour.prices.find(price => price.age_group === 'Adult') 
             : null;
@@ -55,8 +103,12 @@ function Home() {
             ? `${adultPrice.price.toLocaleString('vi-VN')} VNĐ` 
             : 'Liên hệ';
 
-        // Lấy region từ tour, mặc định là 'VIỆT NAM' nếu không có
-        const regionName = tour.region ? tour.region.toUpperCase() : 'VIỆT NAM';
+        // Hiển thị region hoặc country
+        const regionName = tour.country === 'Vietnam' 
+            ? 'VIỆT NAM' 
+            : foreignRegions.includes(tour.region) 
+                ? tour.region.toUpperCase() 
+                : 'NƯỚC NGOÀI';
 
         return (
             <div className="product-item" key={tour.id}>
@@ -66,7 +118,7 @@ function Home() {
                             className="img-fluid zoom-image" 
                             src={firstImage} 
                             alt={tour.name || 'Tour không tên'}
-                            onError={(e) => { e.target.src = 'images/noimage.png'; }}
+                            onError={(e) => { e.target.src = '/images/noimage.png'; }}
                             style={{ 
                                 width: '100%', 
                                 height: '200px',
@@ -106,7 +158,7 @@ function Home() {
 
     return (
         <div>
-            {/* Slideshow */}
+            {/* Slideshow (giữ nguyên) */}
             <div className="slideshow">
                 <Swiper
                     spaceBetween={0}
@@ -117,18 +169,18 @@ function Home() {
                     modules={[Autoplay, Navigation, Pagination]}
                 >
                     <SwiperSlide>
-                        <img src="./images/demo2.jpeg" alt="Slide 1" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo2.jpeg" alt="Slide 1" onError={(e) => { e.target.src = '/images/noimage.png'; }} />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./images/demo3.jpeg" alt="Slide 2" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo3.jpeg" alt="Slide 2" onError={(e) => { e.target.src = '/images/noimage.png'; }} />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./images/demo4.jpeg" alt="Slide 3" onError={(e) => { e.target.src = 'images/noimage.png'; }} />
+                        <img src="./images/demo4.jpeg" alt="Slide 3" onError={(e) => { e.target.src = '/images/noimage.png'; }} />
                     </SwiperSlide>
                 </Swiper>
             </div>
 
-            {/* intro */}
+            {/* intro (giữ nguyên) */}
             <div id="intro">
                 <div className="center">
                     <div className="intro-title">
@@ -141,10 +193,10 @@ function Home() {
                         <div className="intro-left">
                             <Link to="/gioi-thieu" className="scale-img intro-image">
                                 <img 
-                                    src="/images/logo.png" // Sửa đường dẫn logo
+                                    src="/images/logo.png" 
                                     alt="SKY TRAVEL"
                                     onError={(e) => { e.target.src = '/images/noimage.png'; }}
-                                    style={{ width: '100%', height: 'auto' }} // Đảm bảo logo hiển thị đúng tỷ lệ
+                                    style={{ width: '100%', height: 'auto' }}
                                 />
                             </Link>
                         </div>
@@ -159,7 +211,7 @@ function Home() {
                 </div>
             </div>
 
-            {/* country */}
+            {/* country (giữ nguyên) */}
             <div id="country">
                 <div className="center">
                     <div className="title-main">
@@ -248,264 +300,67 @@ function Home() {
                             <h2>Tour trong nước</h2>
                         </div>
                         <div className="product-content">
-                            {loading ? (
+                            {loadingDomestic ? (
                                 <div>Đang tải dữ liệu...</div>
-                            ) : error ? (
-                                <div>Có lỗi xảy ra: {error}</div>
-                            ) : (
+                            ) : errorDomestic ? (
+                                <div>Có lỗi xảy ra: {errorDomestic}</div>
+                            ) : domesticTours.length > 0 ? (
                                 <div className="product-row">
                                     {domesticTours.map(tour => renderTourItem(tour))}
                                 </div>
+                            ) : (
+                                <div>Không có tour trong nước nào để hiển thị.</div>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Tour ngoài nước */}
-            <div className='tour-ngoai-nuoc' id="tour">
+            {/* Tour Châu Á */}
+            <div className="tour-chau-a" id="tour">
                 <div className="tour">
                     <div className="center">
                         <div className="title-main">
                             <p>Lập kế hoạch chuyến đi của bạn cùng chúng tôi</p>
-                            <h2>Tour ngoài nước</h2>
+                            <h2>Tour Châu Á</h2>
                         </div>
                         <div className="product-content">
-                            <div className="product-row">
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/phnompenh-vuon-chua-pukiri" title="PHNOMPENH - VƯỜN CHÙA PUKIRI">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/campuchia.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR CAMPUCHIA</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/phnompenh-vuon-chua-pukiri" 
-                                                title="PHNOMPENH - VƯỜN CHÙA PUKIRI"
-                                            >
-                                                PHNOMPENH - VƯỜN CHÙA PUKIRI
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />2N1Đ
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />02/2025
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
+                            {loadingAsia ? (
+                                <div>Đang tải dữ liệu...</div>
+                            ) : errorAsia ? (
+                                <div>Có lỗi xảy ra: {errorAsia}</div>
+                            ) : asiaTours.length > 0 ? (
+                                <div className="product-row">
+                                    {asiaTours.map(tour => renderTourItem(tour))}
                                 </div>
-                                
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/mui-ne-nghi-duong" title="TOUR THÁI LAN">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/thailan.jpeg" alt="SA-WA-DEE THAILAND BANGKOK – PATTAYA" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR THÁI LAN</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/mui-ne-nghi-duong" 
-                                                title="SA-WA-DEE THAILAND BANGKOK – PATTAYA"
-                                            >
-                                                SA-WA-DEE THAILAND BANGKOK – PATTAYA
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />3 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />08/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            ) : (
+                                <div>Không có tour Châu Á nào để hiển thị.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/tour-ha-noi" title="TOUR HÀN QUỐC">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/cung-dien-gyeongbokgung-4149-6975.jpg" alt="TOUR HÀN QUỐC" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR HÀN QUỐC</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/tour-ha-noi" 
-                                                title="HÀN QUỐC - VẺ ĐẸP LÃNG MẠN VÀ YÊN BÌNH"
-                                            >
-                                                HÀN QUỐC - VẺ ĐẸP LÃNG MẠN VÀ YÊN BÌNH
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />2 NGÀY 1 ĐÊM
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />06/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
+            {/* Tour Châu Âu */}
+            <div className="tour-chau-au" id="tour">
+                <div className="tour">
+                    <div className="center">
+                        <div className="title-main">
+                            <p>Lập kế hoạch chuyến đi của bạn cùng chúng tôi</p>
+                            <h2>Tour Châu Âu</h2>
+                        </div>
+                        <div className="product-content">
+                            {loadingEurope ? (
+                                <div>Đang tải dữ liệu...</div>
+                            ) : errorEurope ? (
+                                <div>Có lỗi xảy ra: {errorEurope}</div>
+                            ) : europeTours.length > 0 ? (
+                                <div className="product-row">
+                                    {europeTours.map(tour => renderTourItem(tour))}
                                 </div>
-
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/an-do-delhi-jaipur-agra" title="ẤN ĐỘ DELHI – JAIPUR – AGRA">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/an-1702-3873.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR ẤN ĐỘ</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/an-do-delhi-jaipur-agra" 
-                                                title="ẤN ĐỘ DELHI – JAIPUR – AGRA"
-                                            >
-                                                ẤN ĐỘ DELHI – JAIPUR – AGRA
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />4 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />07/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="product-row">
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/tour-sapa" title="Tour Pháp">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/du-lich-phap-14-10-2017-9-2582.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">Tour Pháp</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/tour-sapa" 
-                                                title="VIỆT NAM - PHÁP - THUỴ SỸ - NHỮNG MIỀN ĐẤT DI SẢN"
-                                            >
-                                                VIỆT NAM - PHÁP - THUỴ SỸ - NHỮNG MIỀN ĐẤT DI SẢN
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />3 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />09/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/tour-halong" title="TOUR BALI">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/bali-ivivu-13.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR BALI</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/tour-halong" 
-                                                title="TOUR BALI - Khám Phá Thiên Đường Nhiệt Đới"
-                                            >
-                                                TOUR BALI - Khám Phá Thiên Đường Nhiệt Đới
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />2 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />10/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/tour-nha-trang" title="TOUR LONDON">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/Anh - Big Ben.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">TOUR LONDON</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/tour-nha-trang" 
-                                                title="TOUR LONDON -KHÁM PHÁ THỦ ĐÔ VƯƠNG QUỐC ANH"
-                                            >
-                                                TOUR LONDON -KHÁM PHÁ THỦ ĐÔ VƯƠNG QUỐC ANH
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />3 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />11/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="product-item">
-                                    <div className="product-image">
-                                        <Link to="/tour-phu-quoc" title="Tour Pháp">
-                                            <img className="img-fluid zoom-image" src="/images/images_tour/anh_tour_nuoc_ngoai/du-lich-phap-14-10-2017-9-2582.jpg" />
-                                        </Link>
-                                    </div>
-                                    <div className="product-desc">
-                                        <p className="product-item-name">Tour Pháp</p>
-                                        <h3 className="product-name">
-                                            <Link 
-                                                className="text-decoration-none text-split text-split-2 tour-name-link" 
-                                                to="/tour-phu-quoc" 
-                                                title="VIỆT NAM - PHÁP – THỤY SỸ ( NÚI TITLIS) - Ý – VATICAN"
-                                            >
-                                                VIỆT NAM - PHÁP – THỤY SỸ ( NÚI TITLIS) - Ý – VATICAN
-                                            </Link>
-                                        </h3>
-                                        <p className="product-info">
-                                            <img src="./images/icon-p1.png" alt="Icon product" />4 NGÀY
-                                        </p>
-                                        <div className="product-info2">
-                                            <p className="product-info">
-                                                <img src="./images/icon-p2.png" alt="Icon product" />12/2023
-                                            </p>
-                                            <span className="price-new">Liên hệ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            ) : (
+                                <div>Không có tour Châu Âu nào để hiển thị.</div>
+                            )}
                         </div>
                     </div>
                 </div>
