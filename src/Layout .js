@@ -19,8 +19,6 @@ import ConsultationManagement from './pages/admin/ConsultationManagement';
 import AccountManagement from './pages/admin/AccountManagement';
 import RevenueStatistics from './pages/admin/RevenueStatistics';
 import Reports from './pages/admin/Reports';
-import SearchInfo from './pages/admin/SearchInfo';
-import TourEditPage from './pages/admin/TourEditPage';
 import BackToTop from './components/BackToTop';
 import TourInfoPage from './pages/TourInfoPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -56,8 +54,6 @@ function Layout() {
             <Route path="/admin/quan-ly-nguoi-dung" element={<UserManagement />} />
             <Route path="/admin/bao-cao" element={<Reports />} />
             <Route path="/admin/cham-soc-khach-hang" element={<ConsultationManagement />} />
-            <Route path="/admin/tra-cuu" element={<SearchInfo />} />
-            <Route path="/admin/sua-noi-dung" element={<TourEditPage />} />
             <Route path="/admin/quan-ly-tai-khoan" element={<AccountManagement />} />
           </Route>
         </Routes>

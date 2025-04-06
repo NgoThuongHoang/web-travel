@@ -50,14 +50,7 @@ const features = [
     color: '#ff4d4f',
     allowedRoles: ['Admin', 'User']
   },
-  {
-    title: 'Tra cứu',
-    icon: <FileSearchOutlined style={{ fontSize: '24px' }} />,
-    description: 'Tra cứu thông tin liên quan',
-    path: '/admin/tra-cuu',
-    color: '#2f54eb',
-    allowedRoles: ['Admin', 'User']
-  },
+
   {
     title: 'Báo cáo',
     icon: <SolutionOutlined style={{ fontSize: '24px' }} />,
@@ -66,14 +59,7 @@ const features = [
     color: '#13c2c2',
     allowedRoles: ['Admin', 'User']
   },
-  {
-    title: 'Sửa nội dung',
-    icon: <EditOutlined style={{ fontSize: '24px' }} />,
-    description: 'Sửa nội dung các trang',
-    path: '/admin/sua-noi-dung',
-    color: '#eb2f96',
-    allowedRoles: ['Admin', 'User']
-  },
+  
   {
     title: 'Quản lý tài khoản',
     icon: <TeamOutlined style={{ fontSize: '24px' }} />,
