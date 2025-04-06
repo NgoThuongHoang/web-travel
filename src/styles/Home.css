@@ -361,3 +361,12 @@ body {
     font-size: 12px;
   }
 }
+
+#tour-search-section {
+  padding: 20px 0;
+}
+
+#tour-search-section {
+  padding-top: 0; /* Đảm bảo không có padding trên cùng quá lớn */
+  margin-top: 0; /* Đảm bảo không có margin trên cùng quá lớn */
+}
