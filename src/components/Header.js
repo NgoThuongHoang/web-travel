@@ -179,7 +179,7 @@ const Header = () => {
                 className="navbar navbar-expand-lg navbar-light bg-light"
                 style={{ top: 0, width: "100%", zIndex: 1000, position: "sticky" }}
             >
-                <div className="container" style={{ padding: "0px" }}>
+                <div className="container" style={{ padding: "0px", height: "80px" }}>
                     <a className="navbar-brand logo" href="/">
                         <img
                             onError={(e) => {

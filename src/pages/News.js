@@ -1,8 +1,10 @@
-import React from 'react';
+import React from 'react';      
+import TourTicket from '../components/TourTicket';
 
 function News() {
     return (
         <>
+        <TourTicket />
             {/* Breadcrumb */}
             <div className="breadCrumbs">
                 <div className="center">

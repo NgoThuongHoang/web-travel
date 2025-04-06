@@ -1,0 +1,149 @@
+.ticket-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #f0f0f0;
+    padding: 20px;
+  }
+  
+  .ticket {
+    width: 900px;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    position: relative;
+  }
+  
+  .ticket-title {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .ticket-title h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2ecc71;
+    text-transform: uppercase;
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 10px;
+  }
+  
+  .ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+  }
+  
+  .logo {
+    height: 50px;
+  }
+  
+  .ticket-code {
+    font-size: 16px;
+    font-weight: bold;
+    color: #e58703;
+  }
+  
+  .section {
+    margin: 20px 0;
+  }
+  
+  .section h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e58703;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
+  
+  .info-row {
+    display: flex;
+    flex-wrap: nowrap; /* Ngăn xuống dòng */
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1 1 30%;
+  }
+  
+  .label {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .value {
+    color: #666;
+  }
+  
+  .itinerary {
+    margin-top: 15px;
+    display: flex;
+    gap: 5px;
+  }
+  
+  .passenger-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  
+  .passenger-table th,
+  .passenger-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .passenger-table th {
+    background: #f8f8f8;
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+  }
+  
+  .passenger-table td {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .passenger-table .passenger-info {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .passenger-table .total-row td {
+    font-weight: bold;
+    color: #e74c3c;
+  }
+  
+  .ticket-footer {
+    text-align: center;
+    padding-top: 20px;
+  }
+  
+  .qr-code {
+    margin-bottom: 15px;
+  }
+  
+  .note {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0;
+  }
+  
+  .note.warning {
+    color: #e58703; /* Đổi màu ghi chú chúc mừng thành xanh lá */
+    font-style: normal;
+    font-weight: bold;
+  }
