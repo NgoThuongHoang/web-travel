@@ -9,6 +9,7 @@ const tourRoutes = require('./routes/tourRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
 const PORT = 5001;
@@ -38,6 +39,7 @@ app.use('/api/tours', tourRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Khởi động server
 app.listen(PORT, () => {
