@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "antd";
 import "../styles/Header.css";
 import "antd/dist/reset.css";
@@ -130,28 +130,34 @@ const Header = () => {
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN BẮC</h5>
-                      <a className="dropdown-item" href="/tour-xuyen-bac">TOUR XUYÊN BẮC</a>
-                      <a className="dropdown-item" href="/tour-ha-giang">TOUR HÀ GIANG</a>
-                      <a className="dropdown-item" href="/tour-sa-pa">TOUR SA PA</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/23">TOUR HÀ NỘI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/24">TOUR HẠ LONG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/25">TOUR HÀ GIANG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/26">TOUR SA PA</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN TRUNG</h5>
-                      <a className="dropdown-item" href="/tour-hue">TOUR HUẾ</a>
-                      <a className="dropdown-item" href="/tour-quang-tri">TOUR QUẢNG TRỊ</a>
-                      <a className="dropdown-item" href="/tour-quang-binh">TOUR QUẢNG BÌNH</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/27">TOUR HUẾ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/28">TOUR QUẢNG TRỊ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/29">TOUR QUẢNG BÌNH</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/59">TOUR NINH THUẬN</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/60">TOUR ĐÀ NẴNG</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN NAM</h5>
-                      <a className="dropdown-item" href="/tour-can-tho">TOUR CẦN THƠ</a>
-                      <a className="dropdown-item" href="/tour-an-giang">TOUR AN GIANG</a>
-                      <a className="dropdown-item" href="/tour-ca-mau">TOUR CÀ MAU</a>
-                      <a className="dropdown-item" href="/tour-vung-tau">TOUR VŨNG TÀU</a>
-                      <a className="dropdown-item" href="/tour-dong-thap">TOUR ĐỒNG THÁP</a>
-                      <a className="dropdown-item" href="/tour-ben-tre">TOUR BẾN TRE</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/30">TOUR CẦN THƠ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/31">TOUR AN GIANG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/32">TOUR CÀ MAU</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/33">TOUR VŨNG TÀU</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/34">TOUR ĐỒNG THÁP</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/35">TOUR BẾN TRE</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">TÂY NGUYÊN</h5>
-                      <a className="dropdown-item" href="/tour-gia-lai">TOUR GIA LAI</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/36">TOUR GIA LAI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/61">BUÔN MA THUỘT</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/62">TOUR ĐÀ LẠT</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/63">TOUR KON TUM</Link>
                     </div>
                   </div>
                 </div>
@@ -182,29 +188,37 @@ const Header = () => {
                         className="tour-image"
                       />
                     </div>
+                    {/* Cột 1: Châu Á (4 tour) */}
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU Á</h5>
-                      <a className="dropdown-item" href="/tour-thai-lan">TOUR THÁI LAN</a>
-                      <a className="dropdown-item" href="/tour-singapore">TOUR SINGAPORE</a>
-                      <a className="dropdown-item" href="/tour-nhat-ban">TOUR NHẬT BẢN</a>
-                      <a className="dropdown-item" href="/tour-han-quoc">TOUR HÀN QUỐC</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/40">TOUR BANGKOK</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/41">TOUR ẤN ĐỘ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/42">TOUR PHNOM PENH</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/43">TOUR HONG KONG</Link>
                     </div>
+                    {/* Cột 2: Châu Á (4 tour) */}
+                    <div className="tour-column">
+                      <h5 className="tour-title">CHÂU Á</h5>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/44">TOUR BALI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/45">TOUR KYOTO</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/46">TOUR SEOUL</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/47">TOUR SINGAPORE</Link>
+                    </div>
+                    {/* Cột 1: Châu Âu (4 tour) */}
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU ÂU</h5>
-                      <a className="dropdown-item" href="/tour-phap">TOUR PHÁP</a>
-                      <a className="dropdown-item" href="/tour-duc">TOUR ĐỨC</a>
-                      <a className="dropdown-item" href="/tour-y">TOUR Ý</a>
-                      <a className="dropdown-item" href="/tour-anh">TOUR ANH</a>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/48">TOUR PRAGUE</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/49">TOUR ATHENS</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/50">TOUR PARIS</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/51">TOUR BARCELONA</Link>
                     </div>
+                    {/* Cột 2: Châu Âu (4 tour) */}
                     <div className="tour-column">
-                      <h5 className="tour-title">CHÂU MỸ</h5>
-                      <a className="dropdown-item" href="/tour-my">TOUR MỸ</a>
-                      <a className="dropdown-item" href="/tour-canada">TOUR CANADA</a>
-                    </div>
-                    <div className="tour-column">
-                      <h5 className="tour-title">CHÂU ÚC</h5>
-                      <a className="dropdown-item" href="/tour-uc">TOUR ÚC</a>
-                      <a className="dropdown-item" href="/tour-new-zealand">TOUR NEW ZEALAND</a>
+                      <h5 className="tour-title">CHÂU ÂU</h5>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/52">TOUR ROME</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/53">TOUR LONDON</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/54">TOUR AMSTERDAM</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/55">TOUR VIENNA</Link>
                     </div>
                   </div>
                 </div>
