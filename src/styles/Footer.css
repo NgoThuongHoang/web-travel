@@ -1,0 +1,57 @@
+#footer {
+    color: #fff; /* Màu chữ trắng để nổi trên background */
+  }
+  
+  .footer-top {
+    padding: 40px 0;
+  }
+  
+  .footer-tit, .footer-tit2 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #fff;
+  }
+  
+  .footer-content p, .footer-list li a {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .footer-list li a:hover {
+    color: #f0a500; /* Màu khi hover */
+  }
+  
+  .footer-4 {
+    text-align: center; /* Căn giữa Fanpage */
+  }
+  
+  #fanpage-facebook {
+    display: flex;
+    justify-content: center; /* Căn giữa widget */
+    width: 100%; /* Đảm bảo container đủ rộng */
+    overflow: visible; /* Tránh bị che bởi các phần tử khác */
+  }
+  
+  .fb-page {
+    margin: 0 auto; /* Căn giữa khung Fanpage */
+  }
+  
+  .footer-bottom {
+    background-color: rgba(0, 0, 0, 0.5); /* Nền tối cho phần copyright */
+    padding: 10px 0;
+  }
+  
+  .copyright a {
+    color: #f0a500;
+  }
+  
+  .copyright a:hover {
+    color: #fff;
+  }
+
+  .col-md-3{
+    padding-right: 20px;
+  }
+  
