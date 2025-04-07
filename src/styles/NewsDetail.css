@@ -1,0 +1,128 @@
+.news-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background-color: #ffffff;
+    border-radius: 12px;
+}
+
+.news-title {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 80px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.news-subtitle {
+    font-size: 20px;
+    color: #34495e;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.season-item ~ .season-item {
+    margin-top: 30px;
+}
+
+h2.news-subtitle,
+h3.news-subtitle {
+    scroll-margin-top: 120px;
+}
+
+h4.news-subtitle {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.news-paragraph {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #444;
+    margin-bottom: 16px;
+    text-align: justify;
+}
+
+.news-detail-container .news-list {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.news-detail-container .news-list li {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+/* Định dạng ảnh */
+.news-image-wrapper {
+    text-align: center; /* Căn giữa ảnh */
+    margin-bottom: 20px; /* Thêm khoảng cách dưới ảnh */
+}
+
+.news-image-wrapper img {
+    width: 80%; /* Đảm bảo ảnh chiếm toàn bộ chiều rộng */
+    max-width: 100%; /* Đảm bảo ảnh không vượt quá chiều rộng của container */
+    height: auto; /* Giữ tỷ lệ khung hình của ảnh */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Thêm bóng cho ảnh */
+    position: relative;
+    text-align: center; /* Canh giữa ảnh và ghi chú */
+}
+
+.news-image-wrapper .image-caption {
+    font-style: italic;
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+    text-align: center; /* Canh giữa ghi chú */
+    padding-bottom: 20px;
+}
+
+/* Nav menu */
+.news-nav {
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgb(61, 61, 61);
+    margin-bottom: 20px;
+}
+
+.news-nav .news-nav-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.news-nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column; /* chuyển sang dạng dọc */
+    gap: 10px; /* khoảng cách giữa các mục */
+}
+
+.news-nav li {
+    margin-left: 20px;
+}
+
+.news-nav a {
+    color: #000;
+    text-decoration: none;
+    font-size: 16px;
+    white-space: nowrap; /* không cho xuống dòng */
+}
+
+.news-nav a:hover {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+/* Submenu (li con) */
+.news-nav li ul {
+    margin-top: 5px;
+    padding-left: 25px; /* thụt vào */
+}
+
+.news-nav li ul li {
+    margin: 5px 0;
+}

@@ -8,6 +8,9 @@ import Tours from './pages/Tours';
 import TourDetails from './pages/TourDetails';
 import About from './pages/About';
 import News from './pages/News';
+import News1 from "./pages/News1";
+import News2 from "./pages/News2";
+import News3 from "./pages/News3";
 import Contact from './pages/Contact';
 import PaymentPage from './components/PaymentPage';
 import Login from './pages/Login';
@@ -42,6 +45,18 @@ function Layout() {
           <Route path="/thanh-toan" element={<PaymentPage tourId={tourId} />} />
           <Route path="/ve-chung-toi" element={<About />} />
           <Route path="/tin-tuc" element={<News />} />
+          <Route
+              path="/tin-tuc/kinh-nghiem-du-lich-mien-bac-mua-nao-dep-nhat-va-tho-mong-nhat-trong-nam"
+              element={<News1 />}
+          />
+          <Route
+              path="/tin-tuc/review-cac-diem-du-lich-nghi-duong-mien-bac-dip-304-dep-nhu-mo"
+              element={<News2 />}
+          />
+          <Route
+              path="/tin-tuc/kinh-nghiem-du-lich-sau-dich-ban-can-biet-de-co-mot-chuyen-di-nhu-y"
+              element={<News3 />}
+          />
           <Route path="/lien-he" element={<Contact />} />
           <Route path="/tour-info-page" element={<TourInfoPage />} />
           <Route path="/dang-nhap" element={<Login />} />
