@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Radio, Checkbox, DatePicker, Select, Typography, Col, Row, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, MinusOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import moment from 'moment';
+import qrBanking from '../qr-banking.JPG'; // Import ảnh QR
 import '../styles/PaymentPage.css';
 import 'antd/dist/reset.css';
 
@@ -481,33 +482,91 @@ const PaymentPage = ({ tourId }) => {
 
               <div className="section-spacing">
                 <Title level={4}>Phương Thức Thanh Toán</Title>
-                <Form.Item name="payment" rules={[{ required: true, message: 'Vui lòng chọn phương thức thanh toán!' }]}>
-                  <Radio.Group onChange={(e) => setSelectedPayment(e.target.value)} value={selectedPayment}>
+                <Form.Item
+                  name="payment"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng chọn phương thức thanh toán!",
+                    },
+                  ]}
+                >
+                  <Radio.Group
+                    onChange={(e) => setSelectedPayment(e.target.value)}
+                    value={selectedPayment}
+                  >
                     <div className="payment-methods">
                       <div className="payment-option">
-                        <Radio value="Thanh toán tại văn phòng Lửa Việt">Thanh toán tại văn phòng Lửa Việt</Radio>
-                        <div className={`address-details ${selectedPayment === 'Thanh toán tại văn phòng Lửa Việt' ? 'active' : ''}`}>
+                        <Radio value="Thanh toán tại văn phòng">
+                          Thanh toán tại văn phòng
+                        </Radio>
+                        <div
+                          className={`address-details ${
+                            selectedPayment === "Thanh toán tại văn phòng" ? "active" : ""
+                          }`}
+                        >
                           <Text>
-                            <div>Thanh toán trực tiếp tại</div>
-                            <div style={{ marginTop: '8px' }}><strong>Văn phòng HCM</strong><br />677 Trần Hưng Đạo, Phường 1, Quận 5, TP. HCM<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
-                            <div style={{ marginTop: '8px' }}><strong>Văn phòng Hà Nội</strong><br />Tầng 3, Tòa nhà Dolphin Plaza, số 28 Trần Bình, Phường Mỹ Đình 2, Quận Nam Từ Liêm, TP. Hà Nội<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
-                            <div style={{ marginTop: '8px' }}><strong>Văn phòng Cần Thơ</strong><br />Số 09 Cách Mạng Tháng Tám, Phường Thới Bình, Quận Ninh Kiều, TP. Cần Thơ<br />Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)</div>
+                            <div style={{ marginTop: "8px" }}>
+                              <strong>Công ty TNHH Du lịch Sky Travel</strong>
+                              <br />
+                              Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai
+                              <br />
+                              Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
+                            </div>
                           </Text>
                         </div>
                       </div>
-                      <div className="payment-option"><Radio value="Thu tiền tại nhà">Thu tiền tại nhà</Radio></div>
-                      <div className="payment-option"><Radio value="Chuyển khoản">Chuyển khoản</Radio></div>
-                      <div className="payment-option"><Radio value="Thanh toán online">Thanh toán online</Radio></div>
+                      <div className="payment-option">
+                        <Radio value="Chuyển khoản">Chuyển khoản</Radio>
+                        {selectedPayment === "Chuyển khoản" && (
+                          <div
+                            className="bank-details"
+                            style={{
+                              marginTop: "10px",
+                              display: "flex", // Sử dụng flex để ảnh và text nằm cạnh nhau
+                              alignItems: "center", // Căn giữa theo chiều dọc
+                              gap: "30px", // Khoảng cách giữa text và ảnh
+                            }}
+                          >
+                            <Text>
+                              <strong>Ngân hàng:</strong> Vietcombank
+                              <br />
+                              <strong>Số tài khoản:</strong> 123456789
+                              <br />
+                              <strong>Chủ tài khoản:</strong> Nguyễn Văn A
+                              <br />
+                              <strong>Chi nhánh:</strong> TP. HCM
+                              <br />
+                              <strong>Nội dung:</strong> Mã tour - Số điện thoại
+                            </Text>
+                            <img
+                              src={qrBanking} // Giả sử qrBanking đã được import ở đầu file
+                              alt="QR Code Chuyển Khoản"
+                              style={{
+                                width: "300px", // Tăng kích thước ảnh lên (có thể điều chỉnh)
+                                height: "300px", // Giữ tỉ lệ vuông
+                                objectFit: "contain", // Đảm bảo ảnh không bị méo
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Radio.Group>
                   {showPaymentError && (
-                    <Text style={{ color: 'red', display: 'block', marginTop: '5px' }}>
+                    <Text
+                      style={{
+                        color: "red",
+                        display: "block",
+                        marginTop: "5px",
+                      }}
+                    >
                       Vui lòng chọn phương thức thanh toán!
                     </Text>
                   )}
                 </Form.Item>
               </div>
-            </Form>
+              </Form>
           </div>
 
           <div className="summary-container">
