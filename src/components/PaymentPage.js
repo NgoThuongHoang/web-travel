@@ -16,14 +16,14 @@ const PaymentPage = ({ tourId }) => {
   const [nguoiLon, setNguoiLon] = useState(1);
   const [treEm, setTreEm] = useState(0);
   const [emBe, setEmBe] = useState(0);
-  const [singleRoomSelections, setSingleRoomSelections] = useState([]);
+  const [singleRoomSelections, setSingleRoomSelections] = useState([false]); // Khởi tạo với 1 người lớn mặc định
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAgreed, setIsAgreed] = useState(false);
   const [showAgreeError, setShowAgreeError] = useState(false);
   const [showPaymentError, setShowPaymentError] = useState(false);
   const [useContactInfo, setUseContactInfo] = useState(false);
-  const [useContactPhoneAndAddress, setUseContactPhoneAndAddress] = useState([]);
+  const [useContactPhoneAndAddress, setUseContactPhoneAndAddress] = useState([false]);
   const [totalPrice, setTotalPrice] = useState(0);
   const formRef = useRef(null);
 
@@ -44,8 +44,25 @@ const PaymentPage = ({ tourId }) => {
 
   useEffect(() => {
     const totalTravelers = nguoiLon + treEm + emBe;
-    setSingleRoomSelections(new Array(totalTravelers).fill(false));
-    setUseContactPhoneAndAddress(new Array(totalTravelers).fill(false));
+    const currentLength = singleRoomSelections.length;
+
+    // Nếu số lượng hành khách tăng, thêm các giá trị false cho hành khách mới
+    if (totalTravelers > currentLength) {
+      setSingleRoomSelections(prev => [
+        ...prev,
+        ...new Array(totalTravelers - currentLength).fill(false)
+      ]);
+      setUseContactPhoneAndAddress(prev => [
+        ...prev,
+        ...new Array(totalTravelers - currentLength).fill(false)
+      ]);
+    } 
+    // Nếu số lượng hành khách giảm, cắt bớt mảng nhưng giữ nguyên các lựa chọn hiện có
+    else if (totalTravelers < currentLength) {
+      setSingleRoomSelections(prev => prev.slice(0, totalTravelers));
+      setUseContactPhoneAndAddress(prev => prev.slice(0, totalTravelers));
+    }
+    // Nếu số lượng không đổi, không làm gì để giữ nguyên trạng thái
   }, [nguoiLon, treEm, emBe]);
 
   useEffect(() => {
@@ -78,39 +95,48 @@ const PaymentPage = ({ tourId }) => {
     }
   }, [useContactPhoneAndAddress, nguoiLon, treEm, emBe]);
 
-  const nguoiLonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.price || 4790000;
-  const treEmPrice = tour?.prices?.find(p => p.age_group === "5-11")?.price || 3600000;
+  const nguoiLonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.price || 4700000;
+  const treEmPrice = tour?.prices?.find(p => p.age_group === "5-11")?.price || 2350000;
   const emBePrice = tour?.prices?.find(p => p.age_group === "Under 5")?.price || 0;
-  const phongDonPrice = tour?.prices?.find(p => p.age_group === "Adult")?.single_room_price || 2200000;
+  const phongDonPriceAdult = tour?.prices?.find(p => p.age_group === "Adult")?.single_room_price || 5350000;
+  const phongDonPriceChild = tour?.prices?.find(p => p.age_group === "5-11")?.single_room_price || 3000000;
 
   useEffect(() => {
     const totalNguoiLon = nguoiLon * nguoiLonPrice;
     const totalTreEm = treEm * treEmPrice;
     const totalEmBe = emBe * emBePrice;
-    const totalPhongDon = singleRoomSelections.filter(Boolean).length * phongDonPrice;
+
+    let totalPhongDon = 0;
+    singleRoomSelections.forEach((selected, index) => {
+      if (selected) {
+        if (index < nguoiLon) {
+          totalPhongDon += phongDonPriceAdult; // Người lớn
+        } else if (index < nguoiLon + treEm) {
+          totalPhongDon += phongDonPriceChild; // Trẻ em 5-11 tuổi
+        }
+      }
+    });
+
     const newTotalPrice = totalNguoiLon + totalTreEm + totalEmBe + totalPhongDon;
     setTotalPrice(newTotalPrice);
-  }, [nguoiLon, treEm, emBe, singleRoomSelections, nguoiLonPrice, treEmPrice, emBePrice, phongDonPrice]);
+  }, [nguoiLon, treEm, emBe, singleRoomSelections, nguoiLonPrice, treEmPrice, emBePrice, phongDonPriceAdult, phongDonPriceChild]);
 
   const totalTickets = nguoiLon + treEm + emBe;
 
   const formatPrice = (price) => price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' VNĐ';
 
-  // Hàm formatDate được sửa để tránh trả về "N/A"
   const formatDate = (date) => {
-    // Nếu date không tồn tại hoặc không hợp lệ, trả về một giá trị mặc định
     if (!date || isNaN(new Date(date).getTime())) {
-      return moment("2025-03-15").format('DD/MM/YYYY'); // Giá trị mặc định nếu không có ngày
+      return moment("2025-03-15").format('DD/MM/YYYY');
     }
     return moment(date).format('DD/MM/YYYY');
   };
 
-  // Hàm tính ngày kết thúc dựa trên ngày khởi hành và số ngày
   const calculateEndDate = (startDate, days) => {
-    const start = startDate ? new Date(startDate) : new Date("2025-03-15"); // Giá trị mặc định nếu không có startDate
-    const tourDays = days || 4; // Giá trị mặc định nếu không có days
+    const start = startDate ? new Date(startDate) : new Date("2025-03-15");
+    const tourDays = days || 4;
     const endDate = new Date(start);
-    endDate.setDate(start.getDate() + tourDays); // Cộng số ngày
+    endDate.setDate(start.getDate() + tourDays);
     return endDate;
   };
 
@@ -120,6 +146,8 @@ const PaymentPage = ({ tourId }) => {
 
     for (let i = 0; i < totalTravelers; i++) {
       const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
+      const phongDonPrice = travelerType === 'Người lớn' ? phongDonPriceAdult : travelerType === 'Trẻ em' ? phongDonPriceChild : 0;
+
       travelerFields.push(
         <div key={i} className="traveler-card">
           <Text strong style={{ display: 'block', marginBottom: '10px' }}>{`${travelerType} ${i + 1}`}</Text>
@@ -194,7 +222,7 @@ const PaymentPage = ({ tourId }) => {
                 >
                   <Input placeholder="Nhập địa chỉ" />
                 </Form.Item>
-              </Col>
+            </Col>
             )}
             {travelerType !== 'Em bé' && (
               <Col span={i === 0 ? 16 : 8}>
@@ -204,6 +232,7 @@ const PaymentPage = ({ tourId }) => {
                   valuePropName="checked"
                 >
                   <Checkbox
+                    checked={singleRoomSelections[i]}
                     onChange={(e) => {
                       const newSelections = [...singleRoomSelections];
                       newSelections[i] = e.target.checked;
@@ -244,7 +273,6 @@ const PaymentPage = ({ tourId }) => {
 
       const formValues = formRef.current.getFieldsValue();
 
-      // Thu thập thông tin người đặt tour (lead customer - Người lớn 1)
       const leadCustomer = {
         full_name: formValues.username,
         phone: formValues.tel,
@@ -255,17 +283,14 @@ const PaymentPage = ({ tourId }) => {
         traveler_type: 'Lead',
       };
 
-      // Kiểm tra thông tin người đặt tour
       if (!leadCustomer.full_name || !leadCustomer.phone || !leadCustomer.email || !leadCustomer.gender || !leadCustomer.birth_date) {
         Modal.error({ title: 'Lỗi', content: 'Vui lòng điền đầy đủ thông tin người đặt tour!' });
         return;
       }
 
-      // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       const travelers = [];
       const allTravelersForSingleRoom = [];
 
-      // Thêm Lead vào allTravelersForSingleRoom để tính single_rooms
       allTravelersForSingleRoom.push({
         full_name: leadCustomer.full_name,
         gender: leadCustomer.gender,
@@ -276,7 +301,6 @@ const PaymentPage = ({ tourId }) => {
         traveler_type: leadCustomer.traveler_type,
       });
 
-      // Thu thập thông tin người đi cùng (từ Người lớn 2 trở đi)
       for (let i = 1; i < totalTickets; i++) {
         const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
         const birthDate = formValues[`ngaysinh_traveler_${i}`];
@@ -297,20 +321,16 @@ const PaymentPage = ({ tourId }) => {
         allTravelersForSingleRoom.push(traveler);
       }
 
-      // Tính end_date dựa trên start_date và số ngày của tour
       const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
       const tourDays = tour?.days || 4;
       const endDate = calculateEndDate(startDate, tourDays);
 
-      // Kết hợp notes và additional_notes
       const notes = formValues.notes || [];
       const additionalNotes = formValues.additional_notes || '';
       const specialRequests = [...notes, additionalNotes].filter(Boolean).join(', ');
 
-      // Tính tổng số phòng đơn từ allTravelersForSingleRoom (bao gồm cả Lead)
       const totalSingleRooms = allTravelersForSingleRoom.filter(traveler => traveler.single_room).length;
 
-      // Tạo bookingData
       const bookingData = {
         full_name: leadCustomer.full_name,
         phone: leadCustomer.phone,
@@ -363,7 +383,6 @@ const PaymentPage = ({ tourId }) => {
 
   if (!tour) return <div>Đang tải thông tin tour...</div>;
 
-  // Tính ngày kết thúc để hiển thị trong giao diện
   const startDate = tour?.start_date ? new Date(tour.start_date) : new Date("2025-03-15");
   const endDate = calculateEndDate(startDate, tour?.days);
 
@@ -465,7 +484,7 @@ const PaymentPage = ({ tourId }) => {
               <div className="section-spacing">
                 <Row gutter={16}>
                   <Col span={24}>
-                    <Text>Bằng cách nhập chuột vào nút "ĐỒNG Ý" dưới đây, Khách hàng đồng ý rằng các Điều kiện điều khoản này sẽ được áp dụng. Vui lòng đọc kỹ Điều kiện điều khoản trước khi thực hiện chọn sử dụng dịch vụ của Lửa Việt Tours.</Text>
+                    <Text>Bằng cách nhập chuột vào nút "ĐỒNG Ý" dưới đây, Khách hàng đồng ý rằng các Điều kiện điều khoản này sẽ được áp dụng. Vui lòng đọc kỹ Điều kiện điều khoản trước khi thực hiện chọn sử dụng dịch vụ của Sky Travel.</Text>
                     <Form.Item>
                       <Checkbox checked={isAgreed} onChange={handleAgreeChange}>
                         Tôi đã đọc và đồng ý với <a href="#">Điều khoản thanh toán</a>
@@ -482,35 +501,16 @@ const PaymentPage = ({ tourId }) => {
 
               <div className="section-spacing">
                 <Title level={4}>Phương Thức Thanh Toán</Title>
-                <Form.Item
-                  name="payment"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Vui lòng chọn phương thức thanh toán!",
-                    },
-                  ]}
-                >
-                  <Radio.Group
-                    onChange={(e) => setSelectedPayment(e.target.value)}
-                    value={selectedPayment}
-                  >
+                <Form.Item name="payment" rules={[{ required: true, message: "Vui lòng chọn phương thức thanh toán!" }]}>
+                  <Radio.Group onChange={(e) => setSelectedPayment(e.target.value)} value={selectedPayment}>
                     <div className="payment-methods">
                       <div className="payment-option">
-                        <Radio value="Thanh toán tại văn phòng">
-                          Thanh toán tại văn phòng
-                        </Radio>
-                        <div
-                          className={`address-details ${
-                            selectedPayment === "Thanh toán tại văn phòng" ? "active" : ""
-                          }`}
-                        >
+                        <Radio value="Thanh toán tại văn phòng">Thanh toán tại văn phòng</Radio>
+                        <div className={`address-details ${selectedPayment === "Thanh toán tại văn phòng" ? "active" : ""}`}>
                           <Text>
                             <div style={{ marginTop: "8px" }}>
-                              <strong>Công ty TNHH Du lịch Sky Travel</strong>
-                              <br />
-                              Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai
-                              <br />
+                              <strong>Công ty TNHH Du lịch Sky Travel</strong><br />
+                              Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai<br />
                               Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
                             </div>
                           </Text>
@@ -519,54 +519,28 @@ const PaymentPage = ({ tourId }) => {
                       <div className="payment-option">
                         <Radio value="Chuyển khoản">Chuyển khoản</Radio>
                         {selectedPayment === "Chuyển khoản" && (
-                          <div
-                            className="bank-details"
-                            style={{
-                              marginTop: "10px",
-                              display: "flex", // Sử dụng flex để ảnh và text nằm cạnh nhau
-                              alignItems: "center", // Căn giữa theo chiều dọc
-                              gap: "30px", // Khoảng cách giữa text và ảnh
-                            }}
-                          >
+                          <div className="bank-details" style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "30px" }}>
                             <Text>
-                              <strong>Ngân hàng:</strong> Vietcombank
-                              <br />
-                              <strong>Số tài khoản:</strong> 123456789
-                              <br />
-                              <strong>Chủ tài khoản:</strong> Nguyễn Văn A
-                              <br />
-                              <strong>Chi nhánh:</strong> TP. HCM
-                              <br />
+                              <strong>Ngân hàng:</strong> Vietcombank<br />
+                              <strong>Số tài khoản:</strong> 123456789<br />
+                              <strong>Chủ tài khoản:</strong> Nguyễn Văn A<br />
+                              <strong>Chi nhánh:</strong> TP. HCM<br />
                               <strong>Nội dung:</strong> Mã tour - Số điện thoại
                             </Text>
-                            <img
-                              src={qrBanking} // Giả sử qrBanking đã được import ở đầu file
-                              alt="QR Code Chuyển Khoản"
-                              style={{
-                                width: "300px", // Tăng kích thước ảnh lên (có thể điều chỉnh)
-                                height: "300px", // Giữ tỉ lệ vuông
-                                objectFit: "contain", // Đảm bảo ảnh không bị méo
-                              }}
-                            />
+                            <img src={qrBanking} alt="QR Code Chuyển Khoản" style={{ width: "300px", height: "300px", objectFit: "contain" }} />
                           </div>
                         )}
                       </div>
                     </div>
                   </Radio.Group>
                   {showPaymentError && (
-                    <Text
-                      style={{
-                        color: "red",
-                        display: "block",
-                        marginTop: "5px",
-                      }}
-                    >
+                    <Text style={{ color: "red", display: "block", marginTop: "5px" }}>
                       Vui lòng chọn phương thức thanh toán!
                     </Text>
                   )}
                 </Form.Item>
               </div>
-              </Form>
+            </Form>
           </div>
 
           <div className="summary-container">
@@ -581,7 +555,15 @@ const PaymentPage = ({ tourId }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Người lớn:</Text><Text strong>{`${nguoiLon} x ${formatPrice(nguoiLonPrice)}`}</Text></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Trẻ em:</Text><Text strong>{`${treEm} x ${formatPrice(treEmPrice)}`}</Text></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Em bé:</Text><Text strong>{`${emBe} x ${formatPrice(emBePrice)}`}</Text></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text>Phòng đơn:</Text><Text strong>{formatPrice(singleRoomSelections.filter(Boolean).length * phongDonPrice)}</Text></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <Text>Phòng đơn:</Text>
+              <Text strong>{formatPrice(singleRoomSelections.reduce((sum, selected, index) => {
+                if (selected) {
+                  return sum + (index < nguoiLon ? phongDonPriceAdult : index < nguoiLon + treEm ? phongDonPriceChild : 0);
+                }
+                return sum;
+              }, 0))}</Text>
+            </div>
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text strong>Tổng cộng:</Text><Text strong className="total-price">{formatPrice(totalPrice)}</Text></div>
             <Button type="primary" className="book-button" onClick={handleSubmit} disabled={tour?.remaining_tickets === 0}>

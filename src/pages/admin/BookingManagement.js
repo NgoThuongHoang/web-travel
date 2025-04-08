@@ -134,16 +134,16 @@ const OrderManagement = () => {
   const calculateTotalAmount = (tourId, adults, childrenUnder5, children5_11, singleRooms) => {
     const tour = tours.find(t => t.id === tourId);
     if (!tour) return 0;
-
-    const adultPrice = tour.prices?.find(p => p.age_group === "Adult")?.price || 0;
-    const childPrice = tour.prices?.find(p => p.age_group === "Child")?.price || 0;
-    const singleRoomPrice = tour.prices?.find(p => p.age_group === "Adult")?.single_room_price || 0;
-
+  
+    const adultPrice = tour.prices?.find(p => p.age_group === "Adult")?.price || 0; // 4700000
+    const childPrice = tour.prices?.find(p => p.age_group === "5-11")?.price || 0; // 2350000
+    const singleRoomPrice = tour.prices?.find(p => p.age_group === "Adult")?.single_room_price || 0; // 5350000
+  
     const adultsCount = adults || 0;
     const childrenUnder5Count = childrenUnder5 || 0;
     const children5_11Count = children5_11 || 0;
     const singleRoomsCount = singleRooms || 0;
-
+  
     return (adultsCount * adultPrice) + 
            (children5_11Count * childPrice) + 
            (singleRoomsCount * singleRoomPrice);

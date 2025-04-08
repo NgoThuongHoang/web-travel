@@ -743,19 +743,20 @@ const generateTicketHTML = (order) => {
     let price = '0đ';
     let surcharge = '0đ';
 
+    // Ánh xạ đúng với age_group từ tour_prices
     if (customer.traveler_type === 'Người lớn' || customer.traveler_type === 'Lead') {
       price = order.prices['Adult']?.price ? `${order.prices['Adult'].price.toLocaleString('vi-VN')}đ` : '0đ';
       surcharge = customer.single_room && order.prices['Adult']?.single_room_price
         ? `${order.prices['Adult'].single_room_price.toLocaleString('vi-VN')}đ`
         : '0đ';
     } else if (customer.traveler_type === 'Trẻ em') {
-      price = order.prices['Child']?.price ? `${order.prices['Child'].price.toLocaleString('vi-VN')}đ` : '0đ';
-      surcharge = customer.single_room && order.prices['Child']?.single_room_price
-        ? `${order.prices['Child'].single_room_price.toLocaleString('vi-VN')}đ`
+      price = order.prices['5-11']?.price ? `${order.prices['5-11'].price.toLocaleString('vi-VN')}đ` : '0đ';
+      surcharge = customer.single_room && order.prices['5-11']?.single_room_price
+        ? `${order.prices['5-11'].single_room_price.toLocaleString('vi-VN')}đ`
         : '0đ';
     } else if (customer.traveler_type === 'Em bé') {
-      price = order.prices['Infant']?.price ? `${order.prices['Infant'].price.toLocaleString('vi-VN')}đ` : '0đ';
-      surcharge = '0đ';
+      price = order.prices['Under 5']?.price ? `${order.prices['Under 5'].price.toLocaleString('vi-VN')}đ` : '0đ';
+      surcharge = '0đ'; // Em bé không có phụ thu phòng đơn
     }
 
     const total = (parseInt(price.replace(/[^0-9]/g, '')) + parseInt(surcharge.replace(/[^0-9]/g, ''))).toLocaleString('vi-VN') + 'đ';
@@ -787,10 +788,11 @@ const generateTicketHTML = (order) => {
       price = order.prices['Adult']?.price || 0;
       surcharge = customer.single_room && order.prices['Adult']?.single_room_price ? order.prices['Adult'].single_room_price : 0;
     } else if (customer.traveler_type === 'Trẻ em') {
-      price = order.prices['Child']?.price || 0;
-      surcharge = customer.single_room && order.prices['Child']?.single_room_price ? order.prices['Child'].single_room_price : 0;
+      price = order.prices['5-11']?.price || 0;
+      surcharge = customer.single_room && order.prices['5-11']?.single_room_price ? order.prices['5-11'].single_room_price : 0;
     } else if (customer.traveler_type === 'Em bé') {
-      price = order.prices['Infant']?.price || 0;
+      price = order.prices['Under 5']?.price || 0;
+      surcharge = 0; // Em bé không có phụ thu phòng đơn
     }
     return total + price + surcharge;
   }, 0).toLocaleString('vi-VN') + 'đ';
@@ -958,7 +960,7 @@ const generateTicketHTML = (order) => {
                 </div>
                 <div class="info-item">
                   <span class="label">Số khách:</span>
-                  <span class="value">${order.adults || 0} người lớn, ${order.children_5_11 || 0} trẻ em</span>
+                  <span class="value">${order.adults || 0} người lớn, ${order.children_5_11 || 0} trẻ em, ${order.children_under_5 || 0} em bé</span>
                 </div>
               </div>
               <div class="itinerary">
@@ -1157,14 +1159,16 @@ router.post('/send-email/:id', ensurePool, async (req, res) => {
       from: 'skytraveldntu@gmail.com',
       to: order.email,
       subject: `Vé Tour - Mã ${order.tour_code || 'N/A'}`,
-      text:
-        'Kính gửi Quý khách,\n\n' +
-        'Cảm ơn Quý khách đã tin tưởng và lựa chọn Sky Travel đồng hành trong hành trình sắp tới.\n' +
-        'Chúng tôi xin gửi kèm vé tour của Quý khách. Vui lòng kiểm tra lại thông tin để đảm bảo chính xác.\n' +
-        'Nếu cần hỗ trợ thêm, Quý khách vui lòng liên hệ với bộ phận chăm sóc khách hàng của chúng tôi.\n' +
-        'Kính chúc Quý khách một chuyến đi thật trọn vẹn và đáng nhớ!\n\n' +
-        'Trân trọng,\n' +
-        'Sky Travel',
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #000000;">
+          <p>Kính gửi Quý khách,</p>
+          <p>Cảm ơn Quý khách đã tin tưởng và lựa chọn Sky Travel đồng hành trong hành trình sắp tới.</p>
+          <p>Chúng tôi xin gửi kèm vé tour của Quý khách. Vui lòng kiểm tra lại thông tin để đảm bảo chính xác.</p>
+          <p>Nếu cần hỗ trợ thêm, Quý khách vui lòng liên hệ với bộ phận chăm sóc khách hàng của chúng tôi.</p>
+          <p>Kính chúc Quý khách một chuyến đi thật trọn vẹn và đáng nhớ!</p>
+          <p>Trân trọng,<br>Sky Travel</p>
+        </div>
+      `,
       attachments: [
         {
           filename: `ve-tour-${order.tour_code || 'unknown'}.pdf`,
