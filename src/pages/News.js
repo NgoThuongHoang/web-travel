@@ -1,12 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import TourTicket from "../components/TourTicket";
 import "../styles/News.css";
 
 function News() {
     return (
         <>
-            <TourTicket />
             {/* Breadcrumb */}
             <div className="breadCrumbs">
                 <div className="center">
@@ -47,7 +45,7 @@ function News() {
                                                 src="./images/icon-tt.png"
                                                 alt="Icon tin tức"
                                             />
-                                            <span></span>21 Tháng Tám, 2023
+                                            <span></span>11 Tháng Tám, 2024
                                         </p>
                                         <p className="news-name">
                                             {" "}
@@ -88,7 +86,7 @@ function News() {
                                                 src="./images/icon-tt.png"
                                                 alt="Icon tin tức"
                                             />
-                                            <span></span>21 Tháng Tám, 2023
+                                            <span></span>21 Tháng Sáu, 2024
                                         </p>
                                         <p className="news-name">
                                             {" "}
@@ -127,7 +125,7 @@ function News() {
                                                 src="./images/icon-tt.png"
                                                 alt="Icon tin tức"
                                             />
-                                            <span></span>21 Tháng Tám, 2023
+                                            <span></span>05 Tháng Tư, 2025
                                         </p>
                                         <p className="news-name">
                                             {" "}
