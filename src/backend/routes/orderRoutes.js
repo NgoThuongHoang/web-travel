@@ -1164,7 +1164,7 @@ router.post('/send-email/:id', ensurePool, async (req, res) => {
           <p>Kính gửi Quý khách,</p>
           <p>Cảm ơn Quý khách đã tin tưởng và lựa chọn Sky Travel đồng hành trong hành trình sắp tới.</p>
           <p>Chúng tôi xin gửi kèm vé tour của Quý khách. Vui lòng kiểm tra lại thông tin để đảm bảo chính xác.</p>
-          <p>Nếu cần hỗ trợ thêm, Quý khách vui lòng liên hệ với bộ phận chăm sóc khách hàng của chúng tôi.</p>
+          <p>Nếu cần hỗ trợ thêm, Quý khách vui lòng liên hệ với bộ phận chăm sóc khách hàng của chúng tôi qua số điện thoại: 0392 226 424</p>
           <p>Kính chúc Quý khách một chuyến đi thật trọn vẹn và đáng nhớ!</p>
           <p>Trân trọng,<br>Sky Travel</p>
         </div>

@@ -8,7 +8,7 @@
   }
   
   .ticket {
-    width: 900px;
+    width: 1000px;
     background: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 30px;
@@ -65,16 +65,19 @@
   
   .info-row {
     display: flex;
-    flex-wrap: nowrap; /* Ngăn xuống dòng */
-    gap: 20px;
+    flex-wrap: nowrap; /* Đảm bảo không xuống dòng */
+    gap: 10px; /* Giảm khoảng cách giữa các item nếu cần */
     align-items: center;
+    overflow-x: auto; /* Thêm thanh cuộn ngang nếu cần */
   }
   
   .info-item {
     display: flex;
     align-items: center;
     gap: 5px;
-    flex: 1 1 30%;
+    flex: 0 0 auto; /* Không cho co giãn */
+    white-space: nowrap; /* Ngăn nội dung xuống dòng */
+    min-width: 200px; /* Đặt chiều rộng tối thiểu cho mỗi item */
   }
   
   .label {
