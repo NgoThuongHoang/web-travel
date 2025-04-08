@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation, Pagination } from 'swiper/modules';
+import { Autoplay, Navigation, Pagination, EffectCoverflow } from 'swiper/modules';
 import 'swiper/swiper-bundle.css';
 import '../styles/Home.css'; 
 import TourSearchFilter from '../components/TourSearchFilter';
@@ -10,14 +10,39 @@ function Home() {
   const [domesticTours, setDomesticTours] = useState([]);
   const [asiaTours, setAsiaTours] = useState([]);
   const [europeTours, setEuropeTours] = useState([]);
+  const [featuredTours, setFeaturedTours] = useState([]); // Thêm state cho tour nổi bật
   const [loadingDomestic, setLoadingDomestic] = useState(true);
   const [loadingAsia, setLoadingAsia] = useState(true);
   const [loadingEurope, setLoadingEurope] = useState(true);
+  const [loadingFeatured, setLoadingFeatured] = useState(true); // Loading cho tour nổi bật
   const [errorDomestic, setErrorDomestic] = useState(null);
   const [errorAsia, setErrorAsia] = useState(null);
   const [errorEurope, setErrorEurope] = useState(null);
+  const [errorFeatured, setErrorFeatured] = useState(null); // Error cho tour nổi bật
 
   const foreignRegions = ["Châu Á", "Châu Âu"];
+
+  // Fetch tour nổi bật
+  useEffect(() => {
+    const fetchFeaturedTours = async () => {
+      try {
+        setLoadingFeatured(true);
+        const response = await fetch('http://localhost:5001/api/tours');
+        if (!response.ok) throw new Error('Không thể tải dữ liệu tour nổi bật');
+        const data = await response.json();
+        // Lọc và sắp xếp theo star_rating, lấy 10 tour cao nhất
+        const topTours = data
+          .sort((a, b) => b.star_rating - a.star_rating)
+          .slice(0, 10);
+        setFeaturedTours(topTours);
+      } catch (err) {
+        setErrorFeatured(err.message);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+    fetchFeaturedTours();
+  }, []);
 
   useEffect(() => {
     const fetchDomesticTours = async () => {
@@ -90,6 +115,69 @@ function Home() {
         ? tour.region.toUpperCase() 
         : 'NƯỚC NGOÀI';
 
+        const renderTourItem = (tour) => {
+          const firstImage = tour.images && tour.images.length > 0 
+            ? tour.images[0].image_url 
+            : '/images/noimage.png';
+          const duration = `${tour.days || 0} NGÀY ${tour.nights ? tour.nights + ' ĐÊM' : ''}`;
+          const startDate = tour.start_date 
+            ? new Date(tour.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : 'Chưa xác định';
+          const adultPrice = tour.prices && tour.prices.length > 0 
+            ? tour.prices.find(price => price.age_group === 'Adult') 
+            : null;
+          const priceDisplay = adultPrice 
+            ? `${adultPrice.price.toLocaleString('vi-VN')} VNĐ` 
+            : 'Liên hệ';
+          const regionName = tour.country === 'Vietnam' 
+            ? 'VIỆT NAM' 
+            : foreignRegions.includes(tour.region) 
+              ? tour.region.toUpperCase() 
+              : 'NƯỚC NGOÀI';
+      
+          return (
+            <div className="product-item featured-tour-item" key={tour.id}>
+              <div className="product-image">
+                <Link to={`/chi-tiet-tour/${tour.id}`} title={tour.name}>
+                  <img 
+                    className="img-fluid zoom-image" 
+                    src={firstImage} 
+                    alt={tour.name || 'Tour không tên'}
+                    onError={(e) => { e.target.src = '/images/noimage.png'; }}
+                    style={{ width: '100%', height: '200px', objectFit: 'cover' }}
+                  />
+                </Link>
+              </div>
+              <div className="product-desc">
+                <p className="product-item-name">TOUR {regionName}</p>
+                <h3 className="product-name">
+                  <Link 
+                    className="text-decoration-none text-split text-split-2 tour-name-link"
+                    to={`/chi-tiet-tour/${tour.id}`}
+                    title={tour.name}
+                  >
+                    {tour.name || 'Chưa có tên tour'}
+                  </Link>
+                </h3>
+                <p className="product-info">
+                  <img src="./images/icon-p1.png" alt="Icon product" />
+                  {duration}
+                </p>
+                <div className="product-info2">
+                  <p className="product-info">
+                    <img src="./images/icon-p2.png" alt="Icon product" />
+                    {startDate}
+                  </p>
+                  <span className="price-new">{priceDisplay}</span>
+                </div>
+                <div className="star-rating">
+                  {'★'.repeat(tour.star_rating || 0)}{'☆'.repeat(5 - (tour.star_rating || 0))}
+                </div>
+              </div>
+            </div>
+          );
+        };
+        
     return (
       <div className="product-item" key={tour.id}>
         <div className="product-image">
@@ -238,6 +326,56 @@ function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Thêm section Tour Nổi Bật */}
+      <div id="featured-tours" className="tour">
+        <div className="center">
+          <div className="title-main">
+            <p>Lập kế hoạch chuyến đi của bạn cùng chúng tôi</p>
+            <h2>Tour Nổi Bật</h2>
+          </div>
+          <div className="featured-tours-slider">
+            {loadingFeatured ? (
+              <div>Đang tải dữ liệu...</div>
+            ) : errorFeatured ? (
+              <div>Có lỗi xảy ra: {errorFeatured}</div>
+            ) : featuredTours.length > 0 ? (
+              <Swiper
+                modules={[Navigation, Pagination, Autoplay, EffectCoverflow]}
+                effect="coverflow"
+                grabCursor={true}
+                centeredSlides={true}
+                slidesPerView={3}
+                spaceBetween={30}
+                coverflowEffect={{
+                  rotate: 50,
+                  stretch: 0,
+                  depth: 100,
+                  modifier: 1,
+                  slideShadows: true,
+                }}
+                navigation
+                pagination={{ clickable: true }}
+                autoplay={{ delay: 5000, disableOnInteraction: false }}
+                loop={true} // Thêm loop để lặp vòng tròn
+                breakpoints={{
+                  320: { slidesPerView: 1 },
+                  768: { slidesPerView: 2 },
+                  1024: { slidesPerView: 3 },
+                }}
+              >
+                {featuredTours.map((tour) => (
+                  <SwiperSlide key={tour.id}>
+                    {renderTourItem(tour)}
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            ) : (
+              <div>Không có tour nổi bật nào để hiển thị.</div>
+            )}
           </div>
         </div>
       </div>

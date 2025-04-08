@@ -199,7 +199,7 @@ router.get("/", ensurePool, async (req, res) => {
     }
 });
 
-// API lấy danh sách khu vực
+// 
 router.get("/regions", ensurePool, async (req, res) => {
     try {
       const result = await req.app.locals.pool.request().query(`

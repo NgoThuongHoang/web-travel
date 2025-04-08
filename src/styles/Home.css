@@ -19,7 +19,6 @@ body {
 
 .title-main {
   text-align: center;
-  margin-bottom: 40px;
 }
 
 .title-main p {
@@ -37,12 +36,19 @@ body {
 .slideshow {
   width: 100%;
   margin-bottom: 40px;
+  overflow: hidden; /* Ngăn khoảng trắng tràn ra ngoài */
 }
 
-.swiper-slide img {
+.slideshow .swiper {
   width: 100%;
-  height: 500px;
+  margin: 0; /* Loại bỏ margin mặc định */
+}
+
+.slideshow .swiper-slide img {
+  width: 100%;
+  height: auto;
   object-fit: cover;
+  display: block; /* Đảm bảo ảnh không tạo khoảng trắng thừa */
 }
 
 /* Intro */
@@ -92,15 +98,15 @@ body {
 }
 
 .product-row {
-  display: grid; /* Chuyển sang dùng CSS Grid */
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Tạo cột responsive, mỗi cột tối thiểu 300px */
-  gap: 20px; /* Khoảng cách giữa các phần tử */
-  justify-items: center; /* Căn giữa các phần tử trong ô lưới */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  justify-items: center;
 }
 
 .product-item {
-  width: 100%; /* Đảm bảo phần tử chiếm toàn bộ chiều rộng của ô lưới */
-  max-width: 340px; /* Giới hạn chiều rộng tối đa */
+  width: 100%;
+  max-width: 340px;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
@@ -122,6 +128,128 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Featured Tours Slider */
+.featured-tours-slider {
+  margin-bottom: 40px;
+  padding: 0; /* Loại bỏ padding ngang để tránh khoảng trắng */
+  position: relative;
+  width: 100%;
+  overflow: hidden; /* Ngăn khoảng trắng tràn ra ngoài */
+}
+
+.featured-tours-slider .swiper {
+  padding: 20px 0;
+  width: 100%;
+  margin: 0; /* Loại bỏ margin mặc định */
+}
+
+.featured-tours-slider .swiper-slide {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+  width: auto; /* Đảm bảo slide không bị ép kích thước */
+}
+
+.featured-tours-slider .swiper-slide-active {
+  opacity: 1;
+}
+
+.featured-tours-slider .swiper-slide img {
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  display: block; /* Loại bỏ khoảng trắng thừa dưới ảnh */
+}
+
+.featured-tours-slider .product-item {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+.featured-tours-slider .swiper-slide-active .product-item {
+  transform: scale(1);
+}
+
+.featured-tours-slider .product-image img {
+  transition: transform 0.5s ease;
+}
+
+.featured-tours-slider .product-item:hover .product-image img {
+  transform: scale(1.1);
+}
+
+.featured-tours-slider .star-rating {
+  color: #ffcc00;
+  font-size: 18px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #fff;
+  background: #f28c38;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background: #e07b30;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.swiper-button-next {
+  right: 10px;
+}
+
+.swiper-button-prev {
+  left: 10px;
+}
+
+/* Pagination */
+.swiper-pagination-bullet {
+  background: #ccc;
+  opacity: 0.7;
+  width: 10px;
+  height: 10px;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background: #f28c38;
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Icon trong product-info */
+.product-info .small-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  transition: transform 0.3s ease;
+}
+
+.product-item:hover .small-icon {
+  transform: scale(1.2);
 }
 
 .product-desc {
@@ -173,19 +301,18 @@ body {
 }
 
 /* Responsive Design */
-
-/* Màn hình lớn (Desktop, > 1200px) */
 @media (min-width: 1200px) {
   .center {
     max-width: 1200px;
   }
 
   .swiper-slide img {
-    height: 500px;
+    width: auto;
+    height: auto;
   }
 
   .product-row {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Đảm bảo layout 3-4 cột trên desktop */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 
   .product-item {
@@ -193,14 +320,14 @@ body {
   }
 }
 
-/* Màn hình vừa (Tablet, 768px - 1199px) */
 @media (min-width: 768px) and (max-width: 1199px) {
   .center {
     max-width: 740px;
   }
 
   .swiper-slide img {
-    height: 400px;
+    width: auto;
+    height: auto;
   }
 
   .intro-container {
@@ -220,7 +347,7 @@ body {
   }
 
   .product-row {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 2 cột trên tablet */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 
   .product-image {
@@ -236,14 +363,14 @@ body {
   }
 }
 
-/* Màn hình nhỏ (Mobile, 576px - 767px) */
 @media (min-width: 576px) and (max-width: 767px) {
   .center {
     max-width: 540px;
   }
 
   .swiper-slide img {
-    height: 300px;
+    width: auto;
+    height: auto;
   }
 
   .intro-container {
@@ -283,7 +410,7 @@ body {
   }
 
   .product-row {
-    grid-template-columns: 1fr; /* 1 cột trên mobile */
+    grid-template-columns: 1fr;
   }
 
   .product-image {
@@ -301,7 +428,6 @@ body {
   }
 }
 
-/* Màn hình rất nhỏ (Mobile nhỏ, < 576px) */
 @media (max-width: 575px) {
   .center {
     padding: 0 10px;
@@ -316,7 +442,8 @@ body {
   }
 
   .swiper-slide img {
-    height: 200px;
+    width: auto;
+    height: auto;
   }
 
   .intro-container {
@@ -344,7 +471,7 @@ body {
   }
 
   .product-row {
-    grid-template-columns: 1fr; /* 1 cột trên mobile nhỏ */
+    grid-template-columns: 1fr;
   }
 
   .product-image {
@@ -364,9 +491,6 @@ body {
 
 #tour-search-section {
   padding: 20px 0;
-}
-
-#tour-search-section {
-  padding-top: 0; /* Đảm bảo không có padding trên cùng quá lớn */
-  margin-top: 0; /* Đảm bảo không có margin trên cùng quá lớn */
+  padding-top: 0;
+  margin-top: 0;
 }
