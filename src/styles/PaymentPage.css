@@ -24,7 +24,7 @@
   width: 350px;
   background-color: #fff;
   padding: 20px;
-  padding-top: 120px; 
+  padding-top: 105px; 
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky; /* Cố định phần tóm tắt khi cuộn */
@@ -94,14 +94,6 @@
 
 .address-details .ant-typography {
   line-height: 1.5;
-}
-
-.traveler-section {
-  border: 1px solid #d9d9d9;
-  padding: 16px;
-  border-radius: 4px;
-  background-color: #fff;
-  margin-bottom: 24px;
 }
 
 .traveler-count {
@@ -237,5 +229,69 @@
   .success-modal .ant-modal-content {
     width: 90%; /* Giảm chiều rộng modal trên màn hình nhỏ */
     margin: 0 auto;
+  }
+}
+
+.traveler-section .ant-typography {
+  margin-bottom: 20px !important;
+}
+
+.traveler-input-group {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  align-items: center;
+}
+
+
+/* Phần Hành Khách */
+.traveler-section {
+  border: 1px solid #d9d9d9;
+  padding: 16px;
+  border-radius: 4px;
+  background-color: #fff;
+  margin-bottom: 24px;
+}
+
+.traveler-count-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.traveler-count-input {
+  width: 50px;
+  min-width: 40px;
+  text-align: center;
+  padding: 4px;
+  height: 32px;
+}
+
+.age-note {
+  font-size: 12px;
+  display: inline;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 576px) {
+  .traveler-count-btn {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+  }
+  
+  .traveler-count-input {
+    width: 40px;
+    min-width: 40px;
+    height: 28px;
+    padding: 0 4px;
+  }
+  
+  .age-note {
+    font-size: 11px;
   }
 }

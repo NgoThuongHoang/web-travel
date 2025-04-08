@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Radio, Checkbox, DatePicker, Select, Typography, Col, Row, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, MinusOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import qrBanking from '../qr-banking.JPG'; // Import ảnh QR
+import qrBanking from '../qr-banking.JPG';
 import '../styles/PaymentPage.css';
 import 'antd/dist/reset.css';
 
@@ -16,7 +16,7 @@ const PaymentPage = ({ tourId }) => {
   const [nguoiLon, setNguoiLon] = useState(1);
   const [treEm, setTreEm] = useState(0);
   const [emBe, setEmBe] = useState(0);
-  const [singleRoomSelections, setSingleRoomSelections] = useState([false]); // Khởi tạo với 1 người lớn mặc định
+  const [singleRoomSelections, setSingleRoomSelections] = useState([false]);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAgreed, setIsAgreed] = useState(false);
@@ -26,6 +26,53 @@ const PaymentPage = ({ tourId }) => {
   const [useContactPhoneAndAddress, setUseContactPhoneAndAddress] = useState([false]);
   const [totalPrice, setTotalPrice] = useState(0);
   const formRef = useRef(null);
+
+  const styles = {
+    travelerCount: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      gap: '16px',
+      marginBottom: '16px',
+      '@media (max-width: 768px)': {
+        flexDirection: 'column'
+      }
+    },
+    bankDetails: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '30px',
+      marginTop: '10px',
+      '@media (max-width: 768px)': {
+        flexDirection: 'column',
+        gap: '15px'
+      }
+    },
+    qrCode: {
+      width: '300px',
+      height: '300px',
+      objectFit: 'contain',
+      '@media (max-width: 768px)': {
+        width: '200px',
+        height: '200px'
+      },
+      '@media (max-width: 576px)': {
+        width: '150px',
+        height: '150px'
+      }
+    },
+    formAndSummaryWrapper: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '20px'
+    },
+    travelerCardCol: {
+      span: 24,
+      xs: 24,
+      sm: 12,
+      md: 8,
+      lg: 8
+    }
+  };
 
   useEffect(() => {
     const fetchTour = async () => {
@@ -143,14 +190,15 @@ const PaymentPage = ({ tourId }) => {
   const renderTravelerFields = () => {
     const travelerFields = [];
     const totalTravelers = nguoiLon + treEm + emBe;
-
+  
     for (let i = 0; i < totalTravelers; i++) {
       const travelerType = i < nguoiLon ? 'Người lớn' : i < nguoiLon + treEm ? 'Trẻ em' : 'Em bé';
       const phongDonPrice = travelerType === 'Người lớn' ? phongDonPriceAdult : travelerType === 'Trẻ em' ? phongDonPriceChild : 0;
-
+  
       travelerFields.push(
         <div key={i} className="traveler-card">
           <Text strong style={{ display: 'block', marginBottom: '10px' }}>{`${travelerType} ${i + 1}`}</Text>
+          
           {i === 0 && travelerType === 'Người lớn' && (
             <Form.Item>
               <Checkbox checked={useContactInfo} onChange={(e) => setUseContactInfo(e.target.checked)}>
@@ -158,6 +206,7 @@ const PaymentPage = ({ tourId }) => {
               </Checkbox>
             </Form.Item>
           )}
+          
           {i !== 0 && (
             <Form.Item>
               <Checkbox
@@ -172,8 +221,9 @@ const PaymentPage = ({ tourId }) => {
               </Checkbox>
             </Form.Item>
           )}
-          <Row gutter={16}>
-            <Col span={8}>
+  
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={8} lg={8}>
               <Form.Item
                 name={`username_traveler_${i}`}
                 label={<span>Họ và tên <span style={{ color: 'red' }}>*</span></span>}
@@ -182,7 +232,7 @@ const PaymentPage = ({ tourId }) => {
                 <Input placeholder="Nhập Họ và tên" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8} lg={8}>
               <Form.Item
                 name={`gender_traveler_${i}`}
                 label={<span>Giới tính <span style={{ color: 'red' }}>*</span></span>}
@@ -194,7 +244,7 @@ const PaymentPage = ({ tourId }) => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8} lg={8}>
               <Form.Item
                 name={`ngaysinh_traveler_${i}`}
                 label={<span>Ngày sinh <span style={{ color: 'red' }}>*</span></span>}
@@ -204,8 +254,9 @@ const PaymentPage = ({ tourId }) => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
-            <Col span={8}>
+  
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={8} lg={8}>
               <Form.Item
                 name={`phone_traveler_${i}`}
                 label="Số điện thoại"
@@ -214,22 +265,25 @@ const PaymentPage = ({ tourId }) => {
                 <Input placeholder="Nhập số điện thoại" />
               </Form.Item>
             </Col>
+            
             {i !== 0 && (
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8} lg={8}>
                 <Form.Item
                   name={`address_traveler_${i}`}
                   label="Địa chỉ"
                 >
                   <Input placeholder="Nhập địa chỉ" />
                 </Form.Item>
-            </Col>
+              </Col>
             )}
+            
             {travelerType !== 'Em bé' && (
-              <Col span={i === 0 ? 16 : 8}>
+              <Col xs={24} sm={i === 0 ? 24 : 12} md={8} lg={8}>
                 <Form.Item
                   name={`single_room_traveler_${i}`}
                   label={<span>Phòng đơn <Text type="secondary">(Giá: {formatPrice(phongDonPrice)})</Text></span>}
                   valuePropName="checked"
+                  style={{ marginBottom: 0 }}
                 >
                   <Checkbox
                     checked={singleRoomSelections[i]}
@@ -387,74 +441,174 @@ const PaymentPage = ({ tourId }) => {
   const endDate = calculateEndDate(startDate, tour?.days);
 
   return (
-    <div>
+    <div className="payment-page">
       <div className="breadCrumbs">
         <div className="center">
           <ol className="breadcrumb">
-            <li className="breadcrumb-item"><a href="/" className="text-decoration-none"><span>Trang chủ</span></a></li>
-            <li className="breadcrumb-item active"><span>Thanh toán</span></li>
+            <li className="breadcrumb-item"><a href="/">Trang chủ</a></li>
+            <li className="breadcrumb-item active">Thanh toán</li>
           </ol>
         </div>
       </div>
 
       <div className="payment-page container">
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={styles.formAndSummaryWrapper}>
           <div className="form-container">
             <Title level={3} style={{ color: '#003087' }}>Tổng Quan Về Chuyến Đi</Title>
-            <Form layout="vertical" ref={formRef} className="c-wrap contactform" id="contactform">
+            <Form layout="vertical" ref={formRef}>
+              {/* Thông tin liên lạc */}
               <Title level={4}>Thông Tin Liên Lạc</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="username" label={<span>Họ và tên <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}>
-                    <Input placeholder="Nhập Họ và tên" />
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={24} md={12} lg={12}>
+                  <Form.Item 
+                    name="username" 
+                    label={<span>Họ và tên <span style={{ color: 'red' }}>*</span></span>} 
+                    rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
+                    labelCol={{ span: 24 }}
+                    wrapperCol={{ span: 24 }}
+                  >
+                    <Input placeholder="Nhập họ và tên" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item name="email" label={<span>Email <span style={{ color: 'red' }}>*</span></span>} rules={[{ type: 'email', required: true, message: 'Vui lòng nhập email hợp lệ!' }]}>
-                    <Input placeholder="sample@gmail.com" />
+
+                <Col xs={24} sm={24} md={12} lg={12}>
+                  <Form.Item 
+                    name="email" 
+                    label={<span>Email <span style={{ color: 'red' }}>*</span></span>} 
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập email!' },
+                      { type: 'email', message: 'Email không hợp lệ!' }
+                    ]}
+                    labelCol={{ span: 24 }}
+                    wrapperCol={{ span: 24 }}
+                  >
+                    <Input placeholder="example@gmail.com" />
                   </Form.Item>
                 </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="tel" label={<span>Số điện thoại <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }]}>
-                    <Input placeholder="Nhập số điện thoại liên hệ" />
+
+                <Col xs={24} sm={24} md={12} lg={12}>
+                  <Form.Item 
+                    name="tel" 
+                    label={<span>Số điện thoại <span style={{ color: 'red' }}>*</span></span>} 
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                      { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số!' }
+                    ]}
+                    labelCol={{ span: 24 }}
+                    wrapperCol={{ span: 24 }}
+                  >
+                    <Input placeholder="Nhập số điện thoại" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item name="dia_chi" label={<span>Địa chỉ <span style={{ color: 'red' }}>*</span></span>} rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}>
+
+                <Col xs={24} sm={24} md={12} lg={12}>
+                  <Form.Item 
+                    name="dia_chi" 
+                    label={<span>Địa chỉ <span style={{ color: 'red' }}>*</span></span>} 
+                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
+                    labelCol={{ span: 24 }}
+                    wrapperCol={{ span: 24 }}
+                  >
                     <Input placeholder="Nhập địa chỉ liên hệ" />
                   </Form.Item>
                 </Col>
               </Row>
 
               <div className="traveler-section">
-                <Title level={4}>Hành Khách</Title>
-                <div className="traveler-count">
-                  <Form.Item name="nguoi_lon" label="Người lớn" initialValue={nguoiLon}>
-                    <Space>
-                      <Button icon={<MinusOutlined />} onClick={() => setNguoiLon(Math.max(1, nguoiLon - 1))} />
-                      <Input style={{ width: '60px', textAlign: 'center' }} value={nguoiLon} readOnly />
-                      <Button icon={<PlusOutlined />} onClick={() => setNguoiLon(nguoiLon + 1)} />
-                    </Space>
-                  </Form.Item>
-                  <Form.Item name="tre_em" label={<span>Trẻ em <Text type="secondary">(Từ 5 đến dưới 11 tuổi)</Text></span>} initialValue={treEm}>
-                    <Space>
-                      <Button icon={<MinusOutlined />} onClick={() => setTreEm(Math.max(0, treEm - 1))} />
-                      <Input style={{ width: '60px', textAlign: 'center' }} value={treEm} readOnly />
-                      <Button icon={<PlusOutlined />} onClick={() => setTreEm(treEm + 1)} />
-                    </Space>
-                  </Form.Item>
-                </div>
-                <div className="traveler-count">
-                  <Form.Item name="em_be" label={<span>Em bé <Text type="secondary">(Dưới 5 tuổi)</Text></span>} initialValue={emBe}>
-                    <Space>
-                      <Button icon={<MinusOutlined />} onClick={() => setEmBe(Math.max(0, emBe - 1))} />
-                      <Input style={{ width: '60px', textAlign: 'center' }} value={emBe} readOnly />
-                      <Button icon={<PlusOutlined />} onClick={() => setEmBe(emBe + 1)} />
-                    </Space>
-                  </Form.Item>
-                </div>
+                <Title level={4} style={{ marginBottom: '20px' }}>Hành Khách</Title>
+                <Row gutter={[16, 16]} style={{ display: 'flex', justifyContent: 'center' }}>
+                  {/* Người lớn */}
+                  <Col xs={24} sm={8} md={8} lg={8}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ 
+                        marginBottom: '8px',
+                        textAlign: 'center',
+                        width: '100%'
+                      }}>
+                        <Text strong>Người lớn</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                        <Button 
+                          icon={<MinusOutlined />} 
+                          onClick={() => setNguoiLon(Math.max(1, nguoiLon - 1))}
+                          className="traveler-count-btn"
+                        />
+                        <Input 
+                          value={nguoiLon} 
+                          readOnly 
+                          className="traveler-count-input"
+                        />
+                        <Button 
+                          icon={<PlusOutlined />} 
+                          onClick={() => setNguoiLon(nguoiLon + 1)}
+                          className="traveler-count-btn"
+                        />
+                      </div>
+                    </div>
+                  </Col>
+
+                  {/* Trẻ em */}
+                  <Col xs={24} sm={8} md={8} lg={8}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ 
+                        marginBottom: '8px',
+                        textAlign: 'center',
+                        width: '100%'
+                      }}>
+                        <Text strong>Trẻ em </Text>
+                        <Text type="secondary" className="age-note">(5-11 tuổi)</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                        <Button 
+                          icon={<MinusOutlined />} 
+                          onClick={() => setTreEm(Math.max(0, treEm - 1))}
+                          className="traveler-count-btn"
+                        />
+                        <Input 
+                          value={treEm} 
+                          readOnly 
+                          className="traveler-count-input"
+                        />
+                        <Button 
+                          icon={<PlusOutlined />} 
+                          onClick={() => setTreEm(treEm + 1)}
+                          className="traveler-count-btn"
+                        />
+                      </div>
+                    </div>
+                  </Col>
+
+                  {/* Em bé */}
+                  <Col xs={24} sm={8} md={8} lg={8}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ 
+                        marginBottom: '8px',
+                        textAlign: 'center',
+                        width: '100%'
+                      }}>
+                        <Text strong>Em bé </Text>
+                        <Text type="secondary" className="age-note">(dưới 5 tuổi)</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                        <Button 
+                          icon={<MinusOutlined />} 
+                          onClick={() => setEmBe(Math.max(0, emBe - 1))}
+                          className="traveler-count-btn"
+                        />
+                        <Input 
+                          value={emBe} 
+                          readOnly 
+                          className="traveler-count-input"
+                        />
+                        <Button 
+                          icon={<PlusOutlined />} 
+                          onClick={() => setEmBe(emBe + 1)}
+                          className="traveler-count-btn"
+                        />
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
               </div>
 
               <div className="traveler-section">
@@ -462,6 +616,7 @@ const PaymentPage = ({ tourId }) => {
                 {renderTravelerFields()}
               </div>
 
+              {/* Phần còn lại giữ nguyên */}
               <div className="section-spacing">
                 <Title level={4}>Quý khách có ghi chú lưu ý gì, hãy nói với chúng tôi!</Title>
                 <Form.Item name="notes">
@@ -501,7 +656,7 @@ const PaymentPage = ({ tourId }) => {
 
               <div className="section-spacing">
                 <Title level={4}>Phương Thức Thanh Toán</Title>
-                <Form.Item name="payment" rules={[{ required: true, message: "Vui lòng chọn phương thức thanh toán!" }]}>
+                <Form.Item name="payment" rules={[{ required: true }]}>
                   <Radio.Group onChange={(e) => setSelectedPayment(e.target.value)} value={selectedPayment}>
                     <div className="payment-methods">
                       <div className="payment-option">
@@ -519,7 +674,7 @@ const PaymentPage = ({ tourId }) => {
                       <div className="payment-option">
                         <Radio value="Chuyển khoản">Chuyển khoản</Radio>
                         {selectedPayment === "Chuyển khoản" && (
-                          <div className="bank-details" style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "30px" }}>
+                          <div style={styles.bankDetails}>
                             <Text>
                               <strong>Ngân hàng:</strong> Vietcombank<br />
                               <strong>Số tài khoản:</strong> 123456789<br />
@@ -527,7 +682,7 @@ const PaymentPage = ({ tourId }) => {
                               <strong>Chi nhánh:</strong> TP. HCM<br />
                               <strong>Nội dung:</strong> Mã tour - Số điện thoại
                             </Text>
-                            <img src={qrBanking} alt="QR Code Chuyển Khoản" style={{ width: "300px", height: "300px", objectFit: "contain" }} />
+                            <img src={qrBanking} alt="QR Code" style={styles.qrCode} />
                           </div>
                         )}
                       </div>
@@ -544,9 +699,18 @@ const PaymentPage = ({ tourId }) => {
           </div>
 
           <div className="summary-container">
-            <img src={tour?.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"} alt="Tour Image" className="tour-image" />
-            <Text style={{ display: 'block', marginBottom: '10px' }}><a href="#" style={{ marginRight: '5px' }}>#️⃣</a> Mã tour: {tour?.tour_code || "HNLCSP4N3D"}</Text>
-            <Title level={4}>{tour?.name || "MIỀN BẮC 4N3Đ | HÀ NỘI – LÀO CAI – SA PA"}</Title>
+            <img 
+              src={tour?.images?.[0]?.image_url || "/images/images_tour/anh_tour_viet_nam/ban-cat-cat-4139-1775.jpg"} 
+              alt="Tour" 
+              className="tour-image" 
+              style={{ width: '100%', height: 'auto', maxHeight: '200px' }}
+            />
+            <Text style={{ display: 'block', marginBottom: '10px' }}>
+              <a href="#" style={{ marginRight: '5px' }}>#️⃣</a> Mã tour: {tour?.tour_code || "HNLCSP4N3D"}
+            </Text>
+            <Title level={4} style={{ fontSize: '18px', '@media (min-width: 768px)': { fontSize: '24px' } }}>
+              {tour?.name || "MIỀN BẮC 4N3Đ | HÀ NỘI – LÀO CAI – SA PA"}
+            </Title>
             <Text style={{ display: 'block', marginBottom: '10px' }}>
               {formatDate(startDate)} → {formatDate(endDate)}
             </Text>
@@ -566,7 +730,13 @@ const PaymentPage = ({ tourId }) => {
             </div>
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><Text strong>Tổng cộng:</Text><Text strong className="total-price">{formatPrice(totalPrice)}</Text></div>
-            <Button type="primary" className="book-button" onClick={handleSubmit} disabled={tour?.remaining_tickets === 0}>
+            <Button 
+              type="primary" 
+              className="book-button" 
+              onClick={handleSubmit} 
+              disabled={tour?.remaining_tickets === 0}
+              style={{ marginTop: '20px' }}
+            >
               {tour?.remaining_tickets === 0 ? 'Hết vé' : 'Đặt Ngay'}
             </Button>
           </div>
