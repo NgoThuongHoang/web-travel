@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/TourTicket.css';
 import logo from '../logo.png';
-import QRCode from 'react-qr-code';
 import axios from 'axios';
+import { Button, Modal, Spin } from 'antd'; // Thêm Spin từ Ant Design để hiển thị loading
 
 const API_URL = 'http://localhost:5001/api';
 
 const TourTicket = ({ orderId }) => {
   const [ticketData, setTicketData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [emailSent, setEmailSent] = useState(false); // Trạng thái đã gửi email
+  const [modalVisible, setModalVisible] = useState(false); // Trạng thái hiển thị modal
+  const [isSending, setIsSending] = useState(false); // Trạng thái đang gửi email
 
   useEffect(() => {
     const fetchTicketData = async () => {
@@ -33,39 +36,24 @@ const TourTicket = ({ orderId }) => {
           passengerList: order.customers.map((customer) => {
             let price = '0đ';
             let surcharge = '0đ';
-            let type = customer.traveler_type;
-
-            if (type === 'Lead') {
-              type = 'Người đặt tour';
-            }
+            let type = customer.traveler_type === 'Lead' ? 'Người đặt tour' : customer.traveler_type;
 
             if (customer.traveler_type === 'Người lớn' || customer.traveler_type === 'Lead') {
-              price = order.prices['Adult']?.price
-                ? `${order.prices['Adult'].price.toLocaleString('vi-VN')}đ`
-                : '0đ';
+              price = order.prices['Adult']?.price ? `${order.prices['Adult'].price.toLocaleString('vi-VN')}đ` : '0đ';
               surcharge = customer.single_room && order.prices['Adult']?.single_room_price
                 ? `${order.prices['Adult'].single_room_price.toLocaleString('vi-VN')}đ`
                 : '0đ';
             } else if (customer.traveler_type === 'Trẻ em') {
-              price = order.prices['Child']?.price
-                ? `${order.prices['Child'].price.toLocaleString('vi-VN')}đ`
-                : '0đ';
+              price = order.prices['Child']?.price ? `${order.prices['Child'].price.toLocaleString('vi-VN')}đ` : '0đ';
               surcharge = customer.single_room && order.prices['Child']?.single_room_price
                 ? `${order.prices['Child'].single_room_price.toLocaleString('vi-VN')}đ`
                 : '0đ';
             } else if (customer.traveler_type === 'Em bé') {
-              price = order.prices['Infant']?.price
-                ? `${order.prices['Infant'].price.toLocaleString('vi-VN')}đ`
-                : '0đ';
+              price = order.prices['Infant']?.price ? `${order.prices['Infant'].price.toLocaleString('vi-VN')}đ` : '0đ';
               surcharge = '0đ';
             }
 
-            return {
-              name: customer.full_name,
-              type,
-              price,
-              surcharge,
-            };
+            return { name: customer.full_name, type, price, surcharge };
           }),
           payment: {
             bookingCode: order.id.toString(),
@@ -73,9 +61,11 @@ const TourTicket = ({ orderId }) => {
             method: order.payment_method || 'N/A',
             status: order.status === 'confirmed' ? 'Đã thanh toán' : 'Chưa thanh toán',
           },
+          emailSent: order.email_sent || false,
         };
 
         setTicketData(formattedData);
+        setEmailSent(order.email_sent || false);
       } catch (error) {
         console.error('Lỗi khi lấy dữ liệu vé:', error);
       } finally {
@@ -83,17 +73,14 @@ const TourTicket = ({ orderId }) => {
       }
     };
 
-    if (orderId) {
-      fetchTicketData();
-    }
+    if (orderId) fetchTicketData();
   }, [orderId]);
 
   const calculateDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return 'N/A';
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
     return `${diffDays} ngày ${diffDays - 1} đêm`;
   };
 
@@ -110,6 +97,34 @@ const TourTicket = ({ orderId }) => {
 
   const formattedTotalPrice = totalPrice.toLocaleString('vi-VN') + 'đ';
 
+  const handleSendEmail = async () => {
+    setIsSending(true); // Bật trạng thái đang gửi
+    try {
+      const response = await axios.post(`${API_URL}/orders/send-email/${orderId}`);
+      if (response.data.emailSent) {
+        setEmailSent(true); // Cập nhật trạng thái đã gửi
+        setModalVisible(true); // Hiển thị modal
+      }
+    } catch (error) {
+      console.error('Lỗi khi gửi email:', error);
+      if (error.response?.data?.emailSent) {
+        setEmailSent(true); // Cập nhật trạng thái nếu email đã gửi trước đó
+        setModalVisible(true); // Hiển thị modal
+      } else {
+        Modal.error({
+          title: 'Lỗi',
+          content: 'Không thể gửi email. Vui lòng thử lại!',
+        });
+      }
+    } finally {
+      setIsSending(false); // Tắt trạng thái đang gửi sau khi hoàn tất
+    }
+  };
+
+  const handleModalOk = () => {
+    setModalVisible(false);
+  };
+
   if (loading) return <div>Đang tải vé...</div>;
   if (!ticketData) return <div>Không tìm thấy thông tin vé.</div>;
 
@@ -117,9 +132,9 @@ const TourTicket = ({ orderId }) => {
     <div className="ticket-container">
       <div className="ticket">
         <div className="ticket-header">
-          <img src={logo} alt="Đất Việt Tour Logo" className="logo" />
+          <img src={logo} alt=" Sky Travel Logo" className="logo" />
           <div className="ticket-code">
-            <span>Mã vé: {ticketData.tour.code}</span>
+            <span>Mã đặt tour: {ticketData.payment.bookingCode}</span>
           </div>
         </div>
 
@@ -213,18 +228,41 @@ const TourTicket = ({ orderId }) => {
         </div>
 
         <div className="ticket-footer">
-          <div className="qr-code">
-            <QRCode
-              value={`https://datviettour.com.vn/verify?ticket=${ticketData.tour.code}`}
-              size={120}
-            />
-          </div>
-          <p className="note">Vui lòng xuất trình vé này và mã QR cho nhân viên</p>
+          <p className="note">Vui lòng xuất trình vé này cho nhân viên</p>
           <p className="note warning">
             Chúc quý khách có một chuyến đi vui vẻ và an toàn!
           </p>
+          <Button
+            type="primary"
+            onClick={handleSendEmail}
+            disabled={emailSent || isSending} // Vô hiệu hóa nút khi đang gửi hoặc đã gửi
+            style={{ marginTop: '10px' }}
+          >
+            {isSending ? (
+              <>
+                <Spin size="small" style={{ marginRight: '8px' }} />
+                Đang gửi...
+              </>
+            ) : emailSent ? (
+              'Đã gửi email'
+            ) : (
+              'Gửi email'
+            )}
+          </Button>
         </div>
       </div>
+
+      {/* Modal thông báo gửi email thành công */}
+      <Modal
+        title="Thông báo"
+        visible={modalVisible}
+        onOk={handleModalOk}
+        onCancel={handleModalOk}
+        okText="Đóng"
+        cancelText="Hủy"
+      >
+        <p>Email đã được gửi thành công đến {ticketData.customer.email}!</p>
+      </Modal>
     </div>
   );
 };

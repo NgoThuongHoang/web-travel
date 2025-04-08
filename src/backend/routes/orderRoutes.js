@@ -1,6 +1,7 @@
 const express = require('express');
 const { sql } = require('../db');
-
+const nodemailer = require('nodemailer');
+const pdf = require('html-pdf');
 const router = express.Router();
 
 // Middleware kiểm tra pool
@@ -10,6 +11,15 @@ const ensurePool = (req, res, next) => {
   }
   next();
 };
+
+// Cấu hình Nodemailer với Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'skytraveldntu@gmail.com',
+    pass: 'pwzqsuufuqvyxska', // Nếu 2FA bật, thay bằng mật khẩu ứng dụng (xem phần lưu ý)
+  },
+});
 
 // API lấy danh sách orders
 router.get('/', ensurePool, async (req, res) => {
@@ -152,6 +162,7 @@ router.get('/:id', ensurePool, async (req, res) => {
           o.total_amount,
           o.status,
           o.created_at AS order_date,
+          o.email_sent, -- Thêm cột email_sent
           t.tour_code,
           t.name AS tour_name
         FROM [web_travel].[dbo].[orders] o
@@ -263,10 +274,10 @@ router.get('/:id', ensurePool, async (req, res) => {
 
     // Tổng hợp lịch trình với định dạng "Ngày X: [title]" và bôi đen "Ngày X"
     const itinerary = itineraryResult.recordset.length > 0
-    ? itineraryResult.recordset
-        .map(item => `<strong>Ngày ${item.day_number}</strong>: ${item.title}`)
-        .join('<br><br>')
-    : 'TP.HCM   -   ' + (order.tour_name || 'Điểm đến') + '   -   TP.HCM';
+      ? itineraryResult.recordset
+          .map(item => `<strong>Ngày ${item.day_number}</strong>: ${item.title}`)
+          .join('<br><br>')
+      : 'TP.HCM   -   ' + (order.tour_name || 'Điểm đến') + '   -   TP.HCM';
 
     order.itinerary = itinerary;
 
@@ -291,6 +302,16 @@ router.get('/:id', ensurePool, async (req, res) => {
     });
 
     order.prices = prices;
+
+    // Tính thời gian tour
+    order.duration = order.start_date && order.end_date
+      ? (() => {
+          const start = new Date(order.start_date);
+          const end = new Date(order.end_date);
+          const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+          return `${diffDays} ngày ${diffDays - 1} đêm`;
+        })()
+      : 'N/A';
 
     res.status(200).json(order);
   } catch (err) {
@@ -710,6 +731,462 @@ router.delete('/:id', ensurePool, async (req, res) => {
     // Rollback giao dịch nếu có lỗi
     await transaction.rollback();
     console.error('Lỗi xóa đơn hàng:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// Hàm tạo HTML cho vé (dựa trên dữ liệu order)
+const generateTicketHTML = (order) => {
+  const itinerary = order.itinerary || 'N/A';
+  const passengers = order.customers.map((customer, index) => {
+    let type = customer.traveler_type === 'Lead' ? 'Người đặt tour' : customer.traveler_type;
+    let price = '0đ';
+    let surcharge = '0đ';
+
+    if (customer.traveler_type === 'Người lớn' || customer.traveler_type === 'Lead') {
+      price = order.prices['Adult']?.price ? `${order.prices['Adult'].price.toLocaleString('vi-VN')}đ` : '0đ';
+      surcharge = customer.single_room && order.prices['Adult']?.single_room_price
+        ? `${order.prices['Adult'].single_room_price.toLocaleString('vi-VN')}đ`
+        : '0đ';
+    } else if (customer.traveler_type === 'Trẻ em') {
+      price = order.prices['Child']?.price ? `${order.prices['Child'].price.toLocaleString('vi-VN')}đ` : '0đ';
+      surcharge = customer.single_room && order.prices['Child']?.single_room_price
+        ? `${order.prices['Child'].single_room_price.toLocaleString('vi-VN')}đ`
+        : '0đ';
+    } else if (customer.traveler_type === 'Em bé') {
+      price = order.prices['Infant']?.price ? `${order.prices['Infant'].price.toLocaleString('vi-VN')}đ` : '0đ';
+      surcharge = '0đ';
+    }
+
+    const total = (parseInt(price.replace(/[^0-9]/g, '')) + parseInt(surcharge.replace(/[^0-9]/g, ''))).toLocaleString('vi-VN') + 'đ';
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>
+          <div class="passenger-info">
+            <span class="label">Họ tên:</span>
+            <span class="value">${customer.full_name}</span>
+          </div>
+          <div class="passenger-info">
+            <span class="label">Loại khách:</span>
+            <span class="value">${type}</span>
+          </div>
+        </td>
+        <td>${price}</td>
+        <td>${surcharge}</td>
+        <td>${total}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const totalPrice = order.customers.reduce((total, customer) => {
+    let price = 0;
+    let surcharge = 0;
+    if (customer.traveler_type === 'Người lớn' || customer.traveler_type === 'Lead') {
+      price = order.prices['Adult']?.price || 0;
+      surcharge = customer.single_room && order.prices['Adult']?.single_room_price ? order.prices['Adult'].single_room_price : 0;
+    } else if (customer.traveler_type === 'Trẻ em') {
+      price = order.prices['Child']?.price || 0;
+      surcharge = customer.single_room && order.prices['Child']?.single_room_price ? order.prices['Child'].single_room_price : 0;
+    } else if (customer.traveler_type === 'Em bé') {
+      price = order.prices['Infant']?.price || 0;
+    }
+    return total + price + surcharge;
+  }, 0).toLocaleString('vi-VN') + 'đ';
+
+  // Generate QR Code URL
+  const qrCodeValue = `https://skytravel.com/verify?ticket=${order.tour_code || 'N/A'}&customer=${order.email || 'N/A'}`;
+
+  return `
+    <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+          }
+          .ticket-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+          }
+          .ticket {
+            width: 900px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            position: relative;
+          }
+          .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+          }
+          .logo {
+            height: 50px;
+          }
+          .tour-title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          }
+          .tour-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e58703;
+            margin: 0;
+          }
+          .tour-code {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e58703;
+          }
+          .section {
+            margin: 20px 0;
+          }
+          .section h3 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e58703;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+          }
+          .info-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            align-items: center;
+          }
+          .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1 1 30%;
+          }
+          .label {
+            font-weight: bold;
+            color: #333;
+          }
+          .value {
+            color: #666;
+          }
+          .itinerary {
+            margin-top: 15px;
+            display: flex;
+            gap: 5px;
+          }
+          .passenger-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+          }
+          .passenger-table th,
+          .passenger-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+          }
+          .passenger-table th {
+            background: #f8f8f8;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+          }
+          .passenger-table td {
+            color: #666;
+            font-size: 14px;
+          }
+          .passenger-table .passenger-info {
+            display: flex;
+            gap: 5px;
+          }
+          .passenger-table .total-row td {
+            font-weight: bold;
+            color: #e74c3c;
+          }
+          .ticket-footer {
+            text-align: center;
+            padding-top: 20px;
+          }
+          .qr-code {
+            margin-bottom: 15px;
+          }
+          .note {
+            font-size: 13px;
+            color: #666;
+            margin: 5px 0;
+          }
+          .note.warning {
+            color: #e58703;
+            font-style: normal;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket-container">
+          <div class="ticket">
+            <div class="ticket-header">
+              <img src="https://drive.google.com/uc?export=view&id=1AJt6gW1lTXHBq6ml9jLixIXZRvq1yLoP" alt="Sky Travel Logo" class="logo" />
+            </div>
+
+            <div class="section">
+              <div class="tour-title-section">
+                <h3 class="tour-name">${order.tour_name || 'N/A'}</h3>
+                <div class="tour-code">Mã đặt tour: ${order.id || 'N/A'}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="label">Ngày khởi hành:</span>
+                  <span class="value">${order.start_date ? new Date(order.start_date).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Thời gian:</span>
+                  <span class="value">${order.duration || 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Số khách:</span>
+                  <span class="value">${order.adults || 0} người lớn, ${order.children_5_11 || 0} trẻ em</span>
+                </div>
+              </div>
+              <div class="itinerary">
+                <span class="label">Lịch trình:</span>
+                <span class="value">${itinerary}</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>Thông tin hành khách</h3>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="label">Họ tên:</span>
+                  <span class="value">${order.full_name || 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Số điện thoại:</span>
+                  <span class="value">${order.phone || 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Email:</span>
+                  <span class="value">${order.email || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>Danh sách khách đi tour</h3>
+              <table class="passenger-table">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Thông tin hành khách</th>
+                    <th>Giá vé</th>
+                    <th>Phụ thu phòng đơn</th>
+                    <th>Tổng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${passengers}
+                  <tr class="total-row">
+                    <td colspan="4">Tổng tiền</td>
+                    <td>${totalPrice}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ticket-footer">
+              <p class="note">Vui lòng xuất trình vé này cho nhân viên</p>
+              <p class="note warning">Chúc quý khách có một chuyến đi vui vẻ và an toàn!</p>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+// Hàm giả lập tạo QR code (trong thực tế nên dùng thư viện chuyên dụng)
+function generateQRCodeSVG(text) {
+  return `
+    <rect width="120" height="120" fill="#FFFFFF"/>
+    <text x="60" y="65" font-family="Arial" font-size="14" text-anchor="middle" fill="#0072ff">QR Code</text>
+    <text x="60" y="85" font-family="Arial" font-size="10" text-anchor="middle" fill="#888">${text.substring(0, 20)}...</text>
+  `;
+}
+
+// API gửi email với PDF
+router.post('/send-email/:id', ensurePool, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra trạng thái email_sent
+    const checkEmailSent = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(id))
+      .query(`
+        SELECT email_sent
+        FROM [web_travel].[dbo].[orders]
+        WHERE id = @order_id
+      `);
+
+    if (checkEmailSent.recordset.length === 0) {
+      return res.status(404).json({ error: 'Đơn hàng không tồn tại!' });
+    }
+
+    if (checkEmailSent.recordset[0].email_sent) {
+      return res.status(400).json({ error: 'Email đã được gửi trước đó!', emailSent: true });
+    }
+
+    // Lấy thông tin đơn hàng
+    const orderResult = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(id))
+      .query(`
+        SELECT 
+          o.id,
+          o.tour_id,
+          o.customer_id,
+          o.start_date,
+          o.end_date,
+          o.adults,
+          o.children_under_5,
+          o.children_5_11,
+          o.single_rooms,
+          o.pickup_point,
+          o.special_requests,
+          o.payment_method,
+          o.total_amount,
+          o.status,
+          o.created_at AS order_date,
+          t.tour_code,
+          t.name AS tour_name
+        FROM [web_travel].[dbo].[orders] o
+        LEFT JOIN [web_travel].[dbo].[tours] t ON o.tour_id = t.id
+        WHERE o.id = @order_id
+      `);
+
+    if (orderResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Đơn hàng không tồn tại!' });
+    }
+
+    const order = orderResult.recordset[0];
+
+    let leadCustomerResult = await req.app.locals.pool.request()
+      .input('customer_id', sql.Int, order.customer_id)
+      .query(`
+        SELECT full_name, phone, email
+        FROM [web_travel].[dbo].[customers]
+        WHERE id = @customer_id
+      `);
+
+    let leadCustomer = leadCustomerResult.recordset[0] || {};
+    order.full_name = leadCustomer.full_name || 'N/A';
+    order.phone = leadCustomer.phone || 'N/A';
+    order.email = leadCustomer.email || 'N/A';
+
+    const customersResult = await req.app.locals.pool.request()
+      .input('order_id', sql.Int, order.id)
+      .query(`
+        SELECT full_name, single_room, traveler_type
+        FROM [web_travel].[dbo].[customers]
+        WHERE order_id = @order_id
+      `);
+
+    order.customers = customersResult.recordset || [];
+
+    const itineraryResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT day_number, title
+        FROM [web_travel].[dbo].[tour_itineraries]
+        WHERE tour_id = @tour_id
+        ORDER BY day_number ASC
+      `);
+
+    order.itinerary = itineraryResult.recordset.length > 0
+      ? itineraryResult.recordset.map(item => `<strong>Ngày ${item.day_number}</strong>: ${item.title}`).join('                ')
+      : 'TP.HCM   -   ' + (order.tour_name || 'Điểm đến') + '   -   TP.HCM';
+
+    order.duration = order.start_date && order.end_date
+      ? (() => {
+          const start = new Date(order.start_date);
+          const end = new Date(order.end_date);
+          const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+          return `${diffDays} ngày ${diffDays - 1} đêm`;
+        })()
+      : 'N/A';
+
+    const pricesResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT age_group, price, single_room_price
+        FROM [web_travel].[dbo].[tour_prices]
+        WHERE tour_id = @tour_id
+      `);
+
+    const prices = {};
+    pricesResult.recordset.forEach(price => {
+      prices[price.age_group] = {
+        price: price.price,
+        single_room_price: price.single_room_price || 0,
+      };
+    });
+    order.prices = prices;
+
+    const ticketHTML = generateTicketHTML(order);
+    const pdfOptions = { format: 'A4' };
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      pdf.create(ticketHTML, pdfOptions).toBuffer((err, buffer) => {
+        if (err) reject(err);
+        else resolve(buffer);
+      });
+    });
+
+    const mailOptions = {
+      from: 'skytraveldntu@gmail.com',
+      to: order.email,
+      subject: `Vé Tour - Mã ${order.tour_code || 'N/A'}`,
+      text:
+        'Kính gửi Quý khách,\n\n' +
+        'Cảm ơn Quý khách đã tin tưởng và lựa chọn Sky Travel đồng hành trong hành trình sắp tới.\n' +
+        'Chúng tôi xin gửi kèm vé tour của Quý khách. Vui lòng kiểm tra lại thông tin để đảm bảo chính xác.\n' +
+        'Nếu cần hỗ trợ thêm, Quý khách vui lòng liên hệ với bộ phận chăm sóc khách hàng của chúng tôi.\n' +
+        'Kính chúc Quý khách một chuyến đi thật trọn vẹn và đáng nhớ!\n\n' +
+        'Trân trọng,\n' +
+        'Sky Travel',
+      attachments: [
+        {
+          filename: `ve-tour-${order.tour_code || 'unknown'}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    };
+    
+    await transporter.sendMail(mailOptions);
+
+    // Cập nhật trạng thái email_sent
+    await req.app.locals.pool.request()
+      .input('order_id', sql.Int, parseInt(id))
+      .query(`
+        UPDATE [web_travel].[dbo].[orders]
+        SET email_sent = 1
+        WHERE id = @order_id
+      `);
+
+    res.status(200).json({ message: 'Email đã được gửi thành công!', emailSent: true });
+  } catch (err) {
+    console.error('Lỗi khi gửi email:', err);
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });

@@ -254,6 +254,7 @@ const OrderManagement = () => {
     { title: "Khách hàng", dataIndex: "full_name", sorter: (a, b) => a.full_name?.localeCompare(b.full_name) },
     { title: "Tour", render: (_, record) => tours.find(t => t.id === record.tour_id)?.name || 'N/A' },
     { title: "Mã tour", render: (_, record) => tours.find(t => t.id === record.tour_id)?.tour_code || 'N/A' },
+    { title: "Mã đặt tour", dataIndex: "id" }, // Thêm cột Mã đặt tour, lấy từ order.id
     { title: "Ngày đặt", dataIndex: "order_date", render: formatDate, sorter: (a, b) => new Date(a.order_date) - new Date(b.order_date) },
     {
       title: "Trạng thái",
@@ -428,6 +429,7 @@ const OrderManagement = () => {
         <p><strong>Email:</strong> {selectedOrder.email || 'N/A'}</p>
         <p><strong>Tour:</strong> {tours.find(t => t.id === selectedOrder.tour_id)?.name || 'N/A'}</p>
         <p><strong>Mã tour:</strong> {tours.find(t => t.id === selectedOrder.tour_id)?.tour_code || 'N/A'}</p>
+        <p><strong>Mã đặt tour:</strong> {selectedOrder.id || 'N/A'}</p>
         <p><strong>Ngày đặt:</strong> {formatDate(selectedOrder.order_date)}</p>
         <p><strong>Ngày bắt đầu:</strong> {formatDate(selectedOrder.start_date)}</p>
         <p><strong>Ngày kết thúc:</strong> {formatDate(selectedOrder.end_date)}</p>
