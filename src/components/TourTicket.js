@@ -1,65 +1,121 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/TourTicket.css';
-import logo from '../logo.png'; // Giả sử bạn có logo của Đất Việt Tour
-import QRCode from 'react-qr-code'; // Thư viện để tạo mã QR
+import logo from '../logo.png';
+import QRCode from 'react-qr-code';
+import axios from 'axios';
 
-const TourTicket = () => {
-  const ticketData = {
-    customer: {
-      name: "Nguyễn Ngọc Ngân",
-      phone: "0902156845",
-      email: "ngocngan.website@gmail.com",
-    },
-    tour: {
-      name: "Tour Du Lịch Thái Lan: Phuket | Vịnh Phang Nga (4N3D)",
-      code: "Out1-2457",
-      startDate: "12/07/2018",
-      duration: "4 ngày 3 đêm",
-      passengers: "4 sao",
-      itinerary: "TP.HCM - PHUKET - PHUKET - VỊNH PHANG NGA - PHUKET - FREEDAY - PHUKET - TP.HCM",
-    },
-    passengerList: [
-      {
-        name: "Nguyễn Ngọc Kim Ngân",
-        type: "Người lớn",
-        price: "7,990,000đ", // Tiền vé
-        surcharge: "3,000,000đ", // Phụ thu phòng đơn
-      },
-      {
-        name: "Vương Bảo Ngọc",
-        type: "Trẻ em (2-11 tuổi)",
-        price: "7,280,000đ", // Tiền vé
-        surcharge: "1,500,000đ", // Phụ thu phòng đơn
-      },
-    ],
-    payment: {
-      bookingCode: "HD-403",
-      trips: "02",
-      method: "Thanh toán tại văn phòng tour Đất Việt",
-      status: "Chưa thanh toán",
-    },
+const API_URL = 'http://localhost:5001/api';
+
+const TourTicket = ({ orderId }) => {
+  const [ticketData, setTicketData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTicketData = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/orders/${orderId}`);
+        const order = response.data;
+
+        const formattedData = {
+          customer: {
+            name: order.full_name || 'N/A',
+            phone: order.phone || 'N/A',
+            email: order.email || 'N/A',
+          },
+          tour: {
+            name: order.tour_name || 'N/A',
+            code: order.tour_code || 'N/A',
+            startDate: order.start_date ? new Date(order.start_date).toLocaleDateString('vi-VN') : 'N/A',
+            duration: calculateDuration(order.start_date, order.end_date),
+            passengers: `${order.adults || 0} người lớn, ${order.children_5_11 || 0} trẻ em`,
+            itinerary: order.itinerary || 'N/A',
+          },
+          passengerList: order.customers.map((customer) => {
+            let price = '0đ';
+            let surcharge = '0đ';
+            let type = customer.traveler_type;
+
+            if (type === 'Lead') {
+              type = 'Người đặt tour';
+            }
+
+            if (customer.traveler_type === 'Người lớn' || customer.traveler_type === 'Lead') {
+              price = order.prices['Adult']?.price
+                ? `${order.prices['Adult'].price.toLocaleString('vi-VN')}đ`
+                : '0đ';
+              surcharge = customer.single_room && order.prices['Adult']?.single_room_price
+                ? `${order.prices['Adult'].single_room_price.toLocaleString('vi-VN')}đ`
+                : '0đ';
+            } else if (customer.traveler_type === 'Trẻ em') {
+              price = order.prices['Child']?.price
+                ? `${order.prices['Child'].price.toLocaleString('vi-VN')}đ`
+                : '0đ';
+              surcharge = customer.single_room && order.prices['Child']?.single_room_price
+                ? `${order.prices['Child'].single_room_price.toLocaleString('vi-VN')}đ`
+                : '0đ';
+            } else if (customer.traveler_type === 'Em bé') {
+              price = order.prices['Infant']?.price
+                ? `${order.prices['Infant'].price.toLocaleString('vi-VN')}đ`
+                : '0đ';
+              surcharge = '0đ';
+            }
+
+            return {
+              name: customer.full_name,
+              type,
+              price,
+              surcharge,
+            };
+          }),
+          payment: {
+            bookingCode: order.id.toString(),
+            trips: '01',
+            method: order.payment_method || 'N/A',
+            status: order.status === 'confirmed' ? 'Đã thanh toán' : 'Chưa thanh toán',
+          },
+        };
+
+        setTicketData(formattedData);
+      } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu vé:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) {
+      fetchTicketData();
+    }
+  }, [orderId]);
+
+  const calculateDuration = (startDate, endDate) => {
+    if (!startDate || !endDate) return 'N/A';
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return `${diffDays} ngày ${diffDays - 1} đêm`;
   };
 
-  // Hàm chuyển đổi định dạng tiền từ chuỗi sang số để tính toán
   const parsePrice = (priceStr) => {
-    return parseInt(priceStr.replace(/[^0-9]/g, ""), 10);
+    if (!priceStr || priceStr === 'N/A') return 0;
+    return parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
   };
 
-  // Tính tổng tiền: Cộng tiền vé và phụ thu của từng hành khách
-  const totalPrice = ticketData.passengerList.reduce((total, passenger) => {
+  const totalPrice = ticketData?.passengerList.reduce((total, passenger) => {
     const ticketPrice = parsePrice(passenger.price);
     const surchargePrice = parsePrice(passenger.surcharge);
     return total + ticketPrice + surchargePrice;
-  }, 0);
+  }, 0) || 0;
 
-  // Định dạng lại tổng tiền thành chuỗi có dấu phân cách
-  const formattedTotalPrice = totalPrice.toLocaleString('vi-VN') + "đ";
+  const formattedTotalPrice = totalPrice.toLocaleString('vi-VN') + 'đ';
+
+  if (loading) return <div>Đang tải vé...</div>;
+  if (!ticketData) return <div>Không tìm thấy thông tin vé.</div>;
 
   return (
     <div className="ticket-container">
       <div className="ticket">
-
-        {/* Header với logo và mã vé */}
         <div className="ticket-header">
           <img src={logo} alt="Đất Việt Tour Logo" className="logo" />
           <div className="ticket-code">
@@ -67,7 +123,6 @@ const TourTicket = () => {
           </div>
         </div>
 
-        {/* Thông tin tour */}
         <div className="section">
           <h3>{ticketData.tour.name}</h3>
           <div className="info-row">
@@ -80,17 +135,19 @@ const TourTicket = () => {
               <span className="value">{ticketData.tour.duration}</span>
             </div>
             <div className="info-item">
-              <span className="label">Khách sạn:</span>
+              <span className="label">Số khách:</span>
               <span className="value">{ticketData.tour.passengers}</span>
             </div>
           </div>
           <div className="itinerary">
             <span className="label">Lịch trình:</span>
-            <span className="value">{ticketData.tour.itinerary}</span>
+            <span
+              className="value"
+              dangerouslySetInnerHTML={{ __html: ticketData.tour.itinerary }}
+            />
           </div>
         </div>
 
-        {/* Thông tin hành khách */}
         <div className="section">
           <h3>Thông tin hành khách</h3>
           <div className="info-row">
@@ -109,7 +166,6 @@ const TourTicket = () => {
           </div>
         </div>
 
-        {/* Danh sách khách đi tour */}
         <div className="section">
           <h3>Danh sách khách đi tour</h3>
           <table className="passenger-table">
@@ -119,7 +175,7 @@ const TourTicket = () => {
                 <th>Thông tin hành khách</th>
                 <th>Giá vé</th>
                 <th>Phụ thu phòng đơn</th>
-                <th>Tổng</th> {/* Thêm cột tổng cho từng hành khách */}
+                <th>Tổng</th>
               </tr>
             </thead>
             <tbody>
@@ -127,7 +183,7 @@ const TourTicket = () => {
                 const ticketPrice = parsePrice(passenger.price);
                 const surchargePrice = parsePrice(passenger.surcharge);
                 const passengerTotal = ticketPrice + surchargePrice;
-                const formattedPassengerTotal = passengerTotal.toLocaleString('vi-VN') + "đ";
+                const formattedPassengerTotal = passengerTotal.toLocaleString('vi-VN') + 'đ';
 
                 return (
                   <tr key={index}>
@@ -144,7 +200,7 @@ const TourTicket = () => {
                     </td>
                     <td>{passenger.price}</td>
                     <td>{passenger.surcharge}</td>
-                    <td>{formattedPassengerTotal}</td> {/* Hiển thị tổng tiền của từng hành khách */}
+                    <td>{formattedPassengerTotal}</td>
                   </tr>
                 );
               })}
@@ -156,7 +212,6 @@ const TourTicket = () => {
           </table>
         </div>
 
-        {/* Mã QR và ghi chú */}
         <div className="ticket-footer">
           <div className="qr-code">
             <QRCode

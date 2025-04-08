@@ -165,6 +165,7 @@ router.get('/:id', ensurePool, async (req, res) => {
 
     const order = orderResult.recordset[0];
 
+    // Lấy thông tin khách hàng chính (Lead)
     let leadCustomerResult = await req.app.locals.pool.request()
       .input('customer_id', sql.Int, order.customer_id)
       .query(`
@@ -225,6 +226,7 @@ router.get('/:id', ensurePool, async (req, res) => {
       order.birth_date = null;
     }
 
+    // Lấy danh sách khách hàng đi cùng
     const customersResult = await req.app.locals.pool.request()
       .input('order_id', sql.Int, order.id)
       .query(`
@@ -243,6 +245,52 @@ router.get('/:id', ensurePool, async (req, res) => {
       `);
 
     order.customers = customersResult.recordset || [];
+
+    // Lấy lịch trình từ bảng tour_itineraries
+    const itineraryResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT 
+          id,
+          tour_id,
+          day_number,
+          title,
+          details
+        FROM [web_travel].[dbo].[tour_itineraries]
+        WHERE tour_id = @tour_id
+        ORDER BY day_number ASC
+      `);
+
+    // Tổng hợp lịch trình với định dạng "Ngày X: [title]" và bôi đen "Ngày X"
+    const itinerary = itineraryResult.recordset.length > 0
+    ? itineraryResult.recordset
+        .map(item => `<strong>Ngày ${item.day_number}</strong>: ${item.title}`)
+        .join('<br><br>')
+    : 'TP.HCM   -   ' + (order.tour_name || 'Điểm đến') + '   -   TP.HCM';
+
+    order.itinerary = itinerary;
+
+    // Lấy giá từ bảng tour_prices
+    const pricesResult = await req.app.locals.pool.request()
+      .input('tour_id', sql.Int, order.tour_id)
+      .query(`
+        SELECT 
+          age_group,
+          price,
+          single_room_price
+        FROM [web_travel].[dbo].[tour_prices]
+        WHERE tour_id = @tour_id
+      `);
+
+    const prices = {};
+    pricesResult.recordset.forEach(price => {
+      prices[price.age_group] = {
+        price: price.price,
+        single_room_price: price.single_room_price || 0,
+      };
+    });
+
+    order.prices = prices;
 
     res.status(200).json(order);
   } catch (err) {

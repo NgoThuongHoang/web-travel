@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined
 import axios from 'axios';
 import moment from 'moment';
 import PaymentPage from '../../components/PaymentPage';
+import TourTicket from '../../components/TourTicket'; // Import TourTicket
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,6 +50,7 @@ const OrderManagement = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showTicketModal, setShowTicketModal] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -270,6 +272,7 @@ const OrderManagement = () => {
           <Button type="primary" icon={<EyeOutlined />} onClick={() => { setSelectedOrder(record); setShowDetailModal(true); }}>Chi tiết</Button>
           <Button type="default" icon={<EditOutlined />} onClick={() => handleEditOrder(record)}>Sửa</Button>
           <Button danger icon={<DeleteOutlined />} onClick={() => { setSelectedOrder(record); setShowDeleteModal(true); }}>Xóa</Button>
+          <Button type="primary" onClick={() => { setSelectedOrder(record); setShowTicketModal(true); }}>Xem vé</Button>
         </Space>
       ),
     },
@@ -799,6 +802,17 @@ const OrderManagement = () => {
         cancelText="Hủy"
       >
         <p>Bạn có chắc chắn muốn xóa đơn đặt tour này?</p>
+      </Modal>
+      
+      {/* Modal hiển thị vé */}
+      <Modal
+        title="Vé Tour"
+        open={showTicketModal}
+        onCancel={() => setShowTicketModal(false)}
+        footer={null}
+        width={800}
+      >
+        {selectedOrder && <TourTicket orderId={selectedOrder.id} />}
       </Modal>
     </div>
   );
