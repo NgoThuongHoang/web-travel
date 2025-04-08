@@ -310,21 +310,19 @@ const TourDetail = () => {
 
   return (
     <>
-
-    <div className="container">
     <div className="breadCrumbs">
-        <div className="center">
-          <ol className="breadcrumb">
-            <li className="breadcrumb-item">
-              <a className="text-decoration-none" href="/"><span>Trang chủ</span></a>
-            </li>
-            <li className="breadcrumb-item active">
-              <span>Thông tin chuyến đi</span>
-            </li>
-          </ol>
-        </div>
+      <div className="center">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <a className="text-decoration-none" href="/"><span>Trang chủ</span></a>
+          </li>
+          <li className="breadcrumb-item active">
+            <span>Thông tin chuyến đi</span>
+          </li>
+        </ol>
       </div>
-
+    </div>
+    <div className="container">
       <Layout className="tour-detail-page">
         <Header className="tour-header">
           <Title level={2}>{tourInfo.title}</Title>
@@ -538,7 +536,6 @@ const TourDetail = () => {
         </Content>
       </Layout>
     </div>
-
     </>
   );
 };

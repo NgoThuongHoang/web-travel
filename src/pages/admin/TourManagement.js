@@ -31,23 +31,23 @@ const formatPrice = (price) => {
 const TourManagement = () => {
   const [tours, setTours] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [filterStatus, setFilterStatus] = useState(""); // Thêm state để lưu trạng thái lọc
+  const [filterStatus, setFilterStatus] = useState("");
   const [selectedTour, setSelectedTour] = useState(null);
   const [tourItinerary, setTourItinerary] = useState([]);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("");
+  const [filterRegion, setFilterRegion] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  const [availableRegions, setAvailableRegions] = useState([]);
 
-  const fetchTours = async () => {
-    setLoading(true);
+  // Hàm lấy danh sách khu vực từ API
+  const fetchAvailableRegions = async () => {
     try {
-      // Tạo query string với cả search và status
-      const query = new URLSearchParams();
-      if (searchText) query.append("search", searchText);
-      if (filterStatus) query.append("status", filterStatus);
-
-      const response = await fetch(`${API_BASE_URL}?${query.toString()}`, {
+      const response = await fetch(`${API_BASE_URL}/regions`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -55,24 +55,67 @@ const TourManagement = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Lỗi khi gọi API: ${response.status}`);
+        throw new Error(`Lỗi khi gọi API regions: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Dữ liệu từ API:", data);
+      setAvailableRegions(data);
+    } catch (error) {
+      console.error("Lỗi fetchAvailableRegions:", error);
+      setAvailableRegions([]);
+    }
+  };
 
+  useEffect(() => {
+    fetchAvailableRegions();
+  }, []);
+
+  const fetchTours = async () => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams();
+      if (searchText) query.append("search", searchText);
+      if (filterStatus) query.append("status", filterStatus);
+  
+      // Updated logic for filtering
+      if (filterType === "domestic") {
+        query.append("country", "Vietnam"); // Filter for domestic tours
+        if (filterRegion) {
+          query.append("region", filterRegion); // Filter specific region if selected
+        }
+      } else if (filterType === "international") {
+        query.append("country_not", "Vietnam"); // Filter for international tours
+        if (filterRegion) {
+          query.append("region", filterRegion); // Filter specific region if selected
+        }
+      }
+  
+      const response = await fetch(`${API_BASE_URL}?${query.toString()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      console.log("Dữ liệu từ API:", data);
+  
       if (Array.isArray(data)) {
         const parsedData = data.map((tour) => {
           const adultPrice = tour.prices?.find(price => price.age_group === "Adult")?.price || null;
-
+  
           return {
             ...tour,
             highlights: typeof tour.highlights === "string" ? JSON.parse(tour.highlights) : tour.highlights || [],
             images: tour.images || [],
             price: adultPrice,
             displayStatus: tour.status === "pending" ? "Đang chờ" : "Hoạt động",
-            country: tour.country || "Không xác định", // Thêm country
-            suggestions: tour.suggestions || "", // Thêm suggestions
+            country: tour.country || "Không xác định",
+            suggestions: tour.suggestions || "",
           };
         });
         setTours(parsedData);
@@ -151,10 +194,9 @@ const TourManagement = () => {
     }
   };
 
-  // Gọi fetchTours khi searchText hoặc filterStatus thay đổi
   useEffect(() => {
     fetchTours();
-  }, [searchText, filterStatus]);
+  }, [searchText, filterStatus, filterType, filterRegion]);
 
   const handleDelete = async () => {
     try {
@@ -183,7 +225,11 @@ const TourManagement = () => {
 
   const handleSubmit = async (tourData) => {
     try {
-      const totalTickets = parseInt(tourData.total_tickets) || 0; // Đảm bảo total_tickets là số nguyên
+      const totalTickets = parseInt(tourData.total_tickets);
+      if (isNaN(totalTickets) || totalTickets < 0) {
+        throw new Error("Số vé tổng (total_tickets) không hợp lệ!");
+      }
+
       const tourPayload = {
         name: tourData.title || "Tour không có tiêu đề",
         days: parseInt(tourData.days) || 1,
@@ -203,14 +249,11 @@ const TourManagement = () => {
             caption: image.caption || null,
           })),
         region: tourData.region || "Không xác định",
-        country: tourData.country || "Không xác định", // Thêm country
-        suggestions: tourData.suggestions || "", // Thêm suggestions
-        total_tickets: totalTickets, // Sử dụng giá trị đã parse
-        remaining_tickets: totalTickets, // Đảm bảo remaining_tickets bằng total_tickets
+        country: tourData.country || "Không xác định",
+        suggestions: tourData.suggestions || "",
+        total_tickets: totalTickets,
       };
-  
-      console.log("tourPayload:", tourPayload); // Log để kiểm tra
-  
+
       let tourResponse;
       if (selectedTour) {
         tourResponse = await fetch(`${API_BASE_URL}/${selectedTour.id}`, {
@@ -229,14 +272,14 @@ const TourManagement = () => {
           body: JSON.stringify(tourPayload),
         });
       }
-  
+
       if (!tourResponse.ok) {
         const errorData = await tourResponse.json();
         throw new Error(errorData.error || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour: ${tourResponse.status} - Không có thông tin lỗi chi tiết`);
       }
-  
+
       message.success(selectedTour ? "Cập nhật tour thành công!" : "Thêm tour thành công!");
-      await fetchTours();
+      await fetchTours(); // Gọi lại fetchTours để làm mới danh sách tour
     } catch (error) {
       message.error(error.message || `Lỗi khi ${selectedTour ? 'cập nhật' : 'tạo'} tour!`);
       console.error("Lỗi handleSubmit:", error);
@@ -259,6 +302,12 @@ const TourManagement = () => {
       key: "name",
     },
     {
+      title: "Mã Tour",
+      dataIndex: "tour_code",
+      key: "tour_code",
+      render: (text) => text || "Chưa có mã", // Hiển thị "Chưa có mã" nếu tour_code là null hoặc undefined
+    },
+    {
       title: "Khu vực",
       dataIndex: "region",
       key: "region",
@@ -279,13 +328,13 @@ const TourManagement = () => {
     {
       title: "Thời gian",
       key: "duration",
-      width: 150, // Đặt độ rộng cố định cho cột
+      width: 150,
       render: (_, record) => (
-        <div 
+        <div
           style={{
-            whiteSpace: 'nowrap', // Ngăn không cho text xuống dòng
-            overflow: 'hidden', // Ẩn phần text vượt quá kích thước
-            textOverflow: 'ellipsis', // Hiển thị dấu ... khi text quá dài
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {`${record.days} NGÀY ${record.nights} ĐÊM`}
@@ -293,7 +342,7 @@ const TourManagement = () => {
       ),
     },
     {
-      title: "Số vé hiện có", // Thêm cột mới
+      title: "Số vé hiện có",
       dataIndex: "total_tickets",
       key: "total_tickets",
       render: (text) => text || "0",
@@ -313,7 +362,7 @@ const TourManagement = () => {
           style={{
             padding: "6px 12px",
             borderRadius: "16px",
-            backgroundColor: record.status === "active" ? "#52c41a" : "#fadb14", // Xanh cho active, vàng cho pending
+            backgroundColor: record.status === "active" ? "#52c41a" : "#fadb14",
             color: record.status === "active" ? "#fff" : "#000",
             fontWeight: "500",
             display: "inline-block",
@@ -417,6 +466,49 @@ const TourManagement = () => {
             <Option value="active">Hoạt động</Option>
             <Option value="pending">Đang chờ</Option>
           </Select>
+          <Select
+            placeholder="Lọc theo loại tour"
+            style={{ width: 200 }}
+            value={filterType}
+            onChange={(value) => {
+              setFilterType(value);
+              setFilterRegion("");
+            }}
+          >
+            <Option value="">Tất cả</Option>
+            <Option value="domestic">Tour trong nước</Option>
+            <Option value="international">Tour ngoài nước</Option>
+          </Select>
+          {(filterType === "domestic" || filterType === "international") && (
+            <Select
+              placeholder="Lọc theo khu vực"
+              style={{ width: 200 }}
+              value={filterRegion}
+              onChange={(value) => setFilterRegion(value)}
+            >
+              <Option value="">Tất cả</Option>
+              {filterType === "domestic" && 
+                availableRegions
+                  .filter(region => 
+                    !['Châu Á', 'Châu Âu', 'Nước ngoài'].includes(region) &&
+                    ['Miền Bắc', 'Miền Trung', 'Miền Nam', 'Tây Nguyên'].includes(region)
+                  )
+                  .map(region => (
+                    <Option key={region} value={region}>{region}</Option>
+                  ))
+              }
+              {filterType === "international" && 
+                availableRegions
+                  .filter(region => 
+                    ['Châu Á', 'Châu Âu', 'Nước ngoài'].includes(region) ||
+                    region.includes('Châu')
+                  )
+                  .map(region => (
+                    <Option key={region} value={region}>{region}</Option>
+                  ))
+              }
+            </Select>
+          )}
           <Button type="primary" icon={<PlusOutlined />} onClick={() => {
             setSelectedTour(null);
             setShowEditModal(true);
@@ -427,10 +519,16 @@ const TourManagement = () => {
 
         <Table
           columns={columns}
-          dataSource={tours}
+          dataSource={tours.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
           rowKey="id"
           loading={loading}
-          pagination={false}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: tours.length,
+            onChange: (page) => setCurrentPage(page),
+            showSizeChanger: false,
+          }}
         />
       </Card>
 
@@ -464,7 +562,7 @@ const TourManagement = () => {
               <strong>Trạng thái:</strong> {selectedTour.status === "pending" ? "Đang chờ" : "Hoạt động"}
             </p>
             <p>
-              <strong>Số vé hiện có:</strong> {selectedTour.total_tickets || "0"} {/* Thêm hiển thị total_tickets */}
+              <strong>Số vé hiện có:</strong> {selectedTour.total_tickets || "0"}
             </p>
             <p>
               <strong>Số vé còn lại:</strong> {selectedTour.remaining_tickets || "0"}

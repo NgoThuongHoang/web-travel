@@ -16,6 +16,7 @@ import {
   List,
   InputNumber,
   Select,
+  Divider,
 } from "antd";
 import {
   UploadOutlined,
@@ -71,8 +72,26 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     { age_group: "5-11", price: "", single_room_price: "", description: "" },
     { age_group: "Adult", price: "", single_room_price: "", description: "" },
   ]);
-
+  const [selectedRegion, setSelectedRegion] = useState(""); // State để lưu giá trị dropdown khu vực
+  const [customRegion, setCustomRegion] = useState(""); // State để lưu khu vực tùy chỉnh
+  const [availableRegions, setAvailableRegions] = useState([]);
   const carouselRef = useRef(null);
+
+  useEffect(() => {
+    // Gọi API lấy danh sách khu vực khi component mount
+    const fetchRegions = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/regions`);
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableRegions(data);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách khu vực:", error);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   // Hàm lấy lịch trình từ API
   const fetchItinerary = async (tourId) => {
@@ -168,14 +187,14 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     } else {
       setFileList([]);
     }
-  
+
     if (tour?.prices && Array.isArray(tour.prices)) {
       const formattedPrices = [
         { age_group: "Under 5", price: 0, single_room_price: null, description: "Miễn phí cho trẻ dưới 5 tuổi" },
         { age_group: "5-11", price: "", single_room_price: "", description: "" },
         { age_group: "Adult", price: "", single_room_price: "", description: "" },
       ];
-  
+
       tour.prices.forEach((price) => {
         const index = formattedPrices.findIndex((p) => p.age_group === price.age_group);
         if (index !== -1) {
@@ -189,13 +208,28 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
       });
       setPrices(formattedPrices);
     }
-  
+
     if (tour?.highlights && Array.isArray(tour.highlights)) {
       setHighlights(tour.highlights);
     } else {
       setHighlights([]);
     }
-  
+
+    // Cập nhật giá trị khu vực
+    if (tour?.region) {
+      const predefinedRegions = ["Miền Bắc", "Miền Trung", "Miền Nam", "Nước ngoài"];
+      if (predefinedRegions.includes(tour.region)) {
+        setSelectedRegion(tour.region);
+        setCustomRegion("");
+      } else {
+        setSelectedRegion("Khác");
+        setCustomRegion(tour.region);
+      }
+    } else {
+      setSelectedRegion("");
+      setCustomRegion("");
+    }
+
     // Thay vì chỉ resetFields, chúng ta set giá trị cụ thể
     form.setFieldsValue({
       title: tour?.name || "",
@@ -210,9 +244,10 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
       status: tour?.status || "active",
       star_rating: tour?.star_rating || 3,
       region: tour?.region || "",
-      country: tour?.country || "", // Thêm country
-      suggestions: tour?.suggestions || "", // Thêm suggestions
+      country: tour?.country || "",
+      suggestions: tour?.suggestions || "",
       total_tickets: tour?.total_tickets || 0,
+      customRegion: tour?.region || "",
     });
   }, [tour, form]);
 
@@ -233,12 +268,16 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     status: tour?.status || "active",
     star_rating: tour?.star_rating || 3,
     region: tour?.region || "",
-    country: tour?.country || "", // Thêm country
-    suggestions: tour?.suggestions || "", // Thêm suggestions
-    total_tickets: tour?.total_tickets || 0, // Thêm total_tickets vào initialValues
+    country: tour?.country || "",
+    suggestions: tour?.suggestions || "",
+    total_tickets: tour?.total_tickets || 0,
+    customRegion: tour?.region || "",
   };
 
   const onFinish = (values) => {
+    // Xử lý khu vực: Nếu chọn "Khác", lấy giá trị từ customRegion
+    const finalRegion = selectedRegion === "Khác" ? customRegion : selectedRegion;
+
     const data = {
       ...values,
       images: fileList.map((file) => ({
@@ -263,12 +302,12 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         single_room_price: price.single_room_price ? parseFloat(price.single_room_price) : null,
         description: price.description || "",
       })),
-      region: values.region || "Không xác định",
-      country: values.country || "Không xác định", // Thêm country
-      suggestions: values.suggestions || "", // Thêm suggestions
-      total_tickets: parseInt(values.total_tickets) || 0, // Thêm total_tickets vào data
+      region: finalRegion || "Không xác định",
+      country: values.country || "Không xác định",
+      suggestions: values.suggestions || "",
+      total_tickets: parseInt(values.total_tickets) || 0,
     };
-    console.log("Data gửi từ TourEditForm:", data); // Thêm log để kiểm tra
+    console.log("Data gửi từ TourEditForm:", data);
     setPreviewData(data);
     setIsPreviewVisible(true);
   };
@@ -409,18 +448,76 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="Khu vực"
-                name="region"
-                rules={[{ required: true, message: "Vui lòng chọn khu vực" }]}
+            <Form.Item
+              label="Khu vực"
+              name="region"
+              rules={[{ required: true, message: "Vui lòng chọn hoặc nhập khu vực" }]}
+            >
+              <Select
+                placeholder="Chọn khu vực"
+                value={selectedRegion}
+                onChange={(value) => {
+                  setSelectedRegion(value);
+                  if (value !== "Khác") {
+                    setCustomRegion("");
+                  }
+                }}
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '8px 0' }} />
+                    <div style={{ padding: '0 8px' }}>
+                      <Select
+                        placeholder="Tìm hoặc thêm khu vực mới"
+                        showSearch
+                        value={customRegion}
+                        onChange={(value) => {
+                          setSelectedRegion("Khác");
+                          setCustomRegion(value);
+                        }}
+                        onSearch={(value) => setCustomRegion(value)}
+                        style={{ width: '100%' }}
+                        options={availableRegions
+                          .filter(r => !menu.props.items.some(item => item.key === r))
+                          .map(r => ({ value: r, label: r }))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
               >
-                <Select placeholder="Chọn khu vực">
-                  <Option value="Miền Bắc">Miền Bắc</Option>
-                  <Option value="Miền Trung">Miền Trung</Option>
-                  <Option value="Miền Nam">Miền Nam</Option>
-                  <Option value="Nước ngoài">Nước ngoài</Option>
-                </Select>
+                {availableRegions.map(region => (
+                  <Option key={region} value={region}>{region}</Option>
+                ))}
+                <Option value="Khác">Khác (nhập tùy chỉnh)</Option>
+              </Select>
+            </Form.Item>
+            {selectedRegion === "Khác" && (
+              <Form.Item
+                label="Nhập khu vực tùy chỉnh"
+                name="customRegion"
+                rules={[{ required: true, message: "Vui lòng nhập khu vực tùy chỉnh" }]}
+              >
+                <Input
+                  value={customRegion}
+                  onChange={(e) => setCustomRegion(e.target.value)}
+                  placeholder="Nhập khu vực mới"
+                />
               </Form.Item>
+            )}
+              {selectedRegion === "Khác" && (
+                <Form.Item
+                  label="Nhập khu vực tùy chỉnh"
+                  name="customRegion"
+                  rules={[{ required: true, message: "Vui lòng nhập khu vực tùy chỉnh" }]}
+                >
+                  <Input
+                    value={customRegion}
+                    onChange={(e) => setCustomRegion(e.target.value)}
+                    placeholder="Nhập khu vực"
+                  />
+                </Form.Item>
+              )}
             </Col>
             <Col span={12}>
               <Form.Item
@@ -430,16 +527,18 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
                 <Input placeholder="Nhập quốc gia" />
               </Form.Item>
             </Col>
-            <Row gutter={16}>
-              <Col span={24}>
-                <Form.Item
-                  label="Gợi ý"
-                  name="suggestions"
-                >
-                  <TextArea placeholder="Nhập gợi ý cho tour" rows={3} />
-                </Form.Item>
-              </Col>
-            </Row>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                label="Gợi ý"
+                name="suggestions"
+              >
+                <TextArea placeholder="Nhập gợi ý cho tour" rows={3} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Thời gian">
                 <Row gutter={8}>
@@ -525,7 +624,6 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
               </Form.Item>
             </Col>
           </Row>
-          {/* Thêm trường nhập total_tickets */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -851,7 +949,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
               <Row gutter={16}>
                 <Col span={12}>
                   <Text>
-                    <span role="img" aria-label="ticket">🎫</span> Số vé hiện có: {previewData.total_tickets || "0"} {/* Thêm hiển thị total_tickets */}
+                    <span role="img" aria-label="ticket">🎫</span> Số vé hiện có: {previewData.total_tickets || "0"}
                   </Text>
                 </Col>
               </Row>

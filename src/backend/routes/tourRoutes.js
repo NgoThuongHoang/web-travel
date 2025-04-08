@@ -55,7 +55,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
 // API lấy danh sách tour
 router.get("/", ensurePool, async (req, res) => {
     try {
-        const { search, status, country, region } = req.query;
+        const { search, status, country, country_not, region } = req.query;
 
         let query = `
       SELECT t.*, tp.age_group, tp.price, tp.single_room_price, tp.description
@@ -63,8 +63,6 @@ router.get("/", ensurePool, async (req, res) => {
       LEFT JOIN [web_travel].[dbo].[tour_prices] tp ON t.id = tp.tour_id
     `;
         const params = {};
-
-        // Khởi tạo điều kiện WHERE
         let whereClauses = [];
 
         // Xử lý tìm kiếm theo tên tour
@@ -93,16 +91,32 @@ router.get("/", ensurePool, async (req, res) => {
             params.status = status;
         }
 
-        // Lọc theo country
+        // Lọc theo country (tour trong nước)
         if (country) {
             whereClauses.push(`t.country = @country`);
             params.country = country;
         }
 
-        // Lọc theo region
+        // Lọc theo country_not (tour ngoài nước)
+        if (country_not) {
+            whereClauses.push(`t.country != @country_not`);
+            params.country_not = country_not;
+        }
+
+        // Lọc theo region (Bắc/Trung/Nam hoặc Châu Á/Châu Âu)
         if (region) {
-            whereClauses.push(`t.region = @region`);
-            params.region = region;
+            // Nếu region là một chuỗi chứa nhiều khu vực (ví dụ: "Miền Bắc,Miền Trung,Miền Nam")
+            if (region.includes(',')) {
+                const regions = region.split(',');
+                const regionConditions = regions.map((reg, index) => {
+                    params[`region${index}`] = reg.trim();
+                    return `t.region = @region${index}`;
+                });
+                whereClauses.push(`(${regionConditions.join(' OR ')})`);
+            } else {
+                whereClauses.push(`t.region = @region`);
+                params.region = region;
+            }
         }
 
         // Kết hợp các điều kiện WHERE
@@ -121,6 +135,7 @@ router.get("/", ensurePool, async (req, res) => {
 
         const tourResult = await request.query(query);
 
+        // Phần còn lại của code giữ nguyên...
         const imageResult = await req.app.locals.pool.request().query(`
       SELECT id, tour_id, image_url, caption
       FROM [web_travel].[dbo].[tour_images]
@@ -175,12 +190,30 @@ router.get("/", ensurePool, async (req, res) => {
         });
 
         const result = Object.values(tours);
-        console.log("Tours found:", result); // Log kết quả để kiểm tra
+        console.log("Tours found:", result.length); // Log số lượng tour tìm thấy
 
         res.json(result);
     } catch (err) {
         console.error("Lỗi lấy danh sách tour:", err);
         res.status(500).json({ error: "Lỗi server: " + err.message });
+    }
+});
+
+// API lấy danh sách khu vực
+router.get("/regions", ensurePool, async (req, res) => {
+    try {
+      const result = await req.app.locals.pool.request().query(`
+        SELECT DISTINCT region 
+        FROM [web_travel].[dbo].[tours]
+        WHERE region IS NOT NULL
+        ORDER BY region
+      `);
+      
+      const regions = result.recordset.map(item => item.region);
+      res.json(regions);
+    } catch (err) {
+      console.error("Lỗi lấy danh sách khu vực:", err);
+      res.status(500).json({ error: "Lỗi server: " + err.message });
     }
 });
 
@@ -506,18 +539,36 @@ router.put("/:id", ensurePool, async (req, res) => {
             .request()
             .input("id", sql.Int, parseInt(id))
             .query(
-                "SELECT remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @id"
+                "SELECT total_tickets, remaining_tickets FROM [web_travel].[dbo].[tours] WHERE id = @id"
             );
 
         if (tourCheck.recordset.length === 0) {
             return res.status(404).json({ error: "Tour không tồn tại!" });
         }
 
-        const currentRemainingTickets =
-            tourCheck.recordset[0].remaining_tickets;
-        const bookedTickets =
-            tourCheck.recordset[0].total_tickets - currentRemainingTickets;
-        const newRemainingTickets = total_tickets - bookedTickets;
+        const currentTotalTickets = tourCheck.recordset[0].total_tickets || 0;
+        const currentRemainingTickets = tourCheck.recordset[0].remaining_tickets || 0;
+
+        // Tính số vé đã đặt (bookedTickets) dựa trên total_tickets và remaining_tickets hiện tại
+        const bookedTickets = currentTotalTickets - currentRemainingTickets;
+
+        // Kiểm tra total_tickets từ request body
+        if (!total_tickets || isNaN(total_tickets) || total_tickets < 0) {
+            return res.status(400).json({ error: "Số vé tổng (total_tickets) không hợp lệ!" });
+        }
+
+        // Tính remaining_tickets mới
+        let newRemainingTickets = total_tickets - bookedTickets;
+
+        // Đảm bảo remaining_tickets không âm
+        if (newRemainingTickets < 0) {
+            return res.status(400).json({
+                error: `Số vé tổng mới (${total_tickets}) không đủ để đáp ứng số vé đã đặt (${bookedTickets})!`
+            });
+        }
+
+        // Đảm bảo remaining_tickets không lớn hơn total_tickets
+        newRemainingTickets = Math.min(newRemainingTickets, total_tickets);
 
         await req.app.locals.pool
             .request()
@@ -536,16 +587,17 @@ router.put("/:id", ensurePool, async (req, res) => {
                 JSON.stringify(highlights)
             )
             .input("region", sql.NVarChar, region)
-            .input("country", sql.NVarChar, country || null) // Thêm country
-            .input("suggestions", sql.NVarChar, suggestions || null) // Thêm suggestions
+            .input("country", sql.NVarChar, country || null)
+            .input("suggestions", sql.NVarChar, suggestions || null)
             .input("total_tickets", sql.Int, total_tickets)
             .input("remaining_tickets", sql.Int, newRemainingTickets).query(`
-        UPDATE [web_travel].[dbo].[tours]
-        SET name = @name, start_date = @start_date, status = @status, days = @days, nights = @nights,
-            transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating,
-            highlights = @highlights, region = @region, country = @country, suggestions = @suggestions, total_tickets = @total_tickets, remaining_tickets = @remaining_tickets
-        WHERE id = @id
-      `);
+                UPDATE [web_travel].[dbo].[tours]
+                SET name = @name, start_date = @start_date, status = @status, days = @days, nights = @nights,
+                    transportation = @transportation, departure_point = @departure_point, star_rating = @star_rating,
+                    highlights = @highlights, region = @region, country = @country, suggestions = @suggestions, 
+                    total_tickets = @total_tickets, remaining_tickets = @remaining_tickets
+                WHERE id = @id
+            `);
 
         await req.app.locals.pool
             .request()
