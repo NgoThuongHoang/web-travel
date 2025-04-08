@@ -74,6 +74,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
   ]);
   const [selectedRegion, setSelectedRegion] = useState(""); // State để lưu giá trị dropdown khu vực
   const [customRegion, setCustomRegion] = useState(""); // State để lưu khu vực tùy chỉnh
+  const [regionInput, setRegionInput] = useState('');
   const [availableRegions, setAvailableRegions] = useState([]);
   const carouselRef = useRef(null);
 
@@ -161,12 +162,14 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
 
   // Gọi API để lấy lịch trình khi tour thay đổi
   useEffect(() => {
-    if (tour?.id) {
-      fetchItinerary(tour.id);
+    if (tour?.region) {
+      setRegionInput(tour.region);
+      form.setFieldsValue({ region: tour.region });
     } else {
-      setItineraryDays([]);
+      setRegionInput('');
+      form.setFieldsValue({ region: '' });
     }
-  }, [tour]);
+  }, [tour, form]);
 
   // Chuyển đổi tour?.images, tour?.prices và tour?.highlights sang định dạng phù hợp
   useEffect(() => {
@@ -302,7 +305,7 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
         single_room_price: price.single_room_price ? parseFloat(price.single_room_price) : null,
         description: price.description || "",
       })),
-      region: finalRegion || "Không xác định",
+      region: regionInput || values.region || "Không xác định",
       country: values.country || "Không xác định",
       suggestions: values.suggestions || "",
       total_tickets: parseInt(values.total_tickets) || 0,
@@ -310,6 +313,11 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
     console.log("Data gửi từ TourEditForm:", data);
     setPreviewData(data);
     setIsPreviewVisible(true);
+  };
+
+  // Thêm hàm xử lý khi đóng modal preview
+  const handleClosePreview = () => {
+    setIsPreviewVisible(false);
   };
 
   // Hàm xử lý thay đổi giá
@@ -451,73 +459,17 @@ const TourEditForm = ({ tour, onSubmit, onCancel }) => {
             <Form.Item
               label="Khu vực"
               name="region"
-              rules={[{ required: true, message: "Vui lòng chọn hoặc nhập khu vực" }]}
+              rules={[{ required: true, message: "Vui lòng nhập khu vực" }]}
             >
-              <Select
-                placeholder="Chọn khu vực"
-                value={selectedRegion}
-                onChange={(value) => {
-                  setSelectedRegion(value);
-                  if (value !== "Khác") {
-                    setCustomRegion("");
-                  }
+              <Input
+                value={regionInput}
+                onChange={(e) => {
+                  setRegionInput(e.target.value);
+                  form.setFieldsValue({ region: e.target.value });
                 }}
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    <Divider style={{ margin: '8px 0' }} />
-                    <div style={{ padding: '0 8px' }}>
-                      <Select
-                        placeholder="Tìm hoặc thêm khu vực mới"
-                        showSearch
-                        value={customRegion}
-                        onChange={(value) => {
-                          setSelectedRegion("Khác");
-                          setCustomRegion(value);
-                        }}
-                        onSearch={(value) => setCustomRegion(value)}
-                        style={{ width: '100%' }}
-                        options={availableRegions
-                          .filter(r => !menu.props.items.some(item => item.key === r))
-                          .map(r => ({ value: r, label: r }))
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-              >
-                {availableRegions.map(region => (
-                  <Option key={region} value={region}>{region}</Option>
-                ))}
-                <Option value="Khác">Khác (nhập tùy chỉnh)</Option>
-              </Select>
+                placeholder="Nhập khu vực (ví dụ: Miền Bắc, Châu Á, Châu Mỹ...)"
+              />
             </Form.Item>
-            {selectedRegion === "Khác" && (
-              <Form.Item
-                label="Nhập khu vực tùy chỉnh"
-                name="customRegion"
-                rules={[{ required: true, message: "Vui lòng nhập khu vực tùy chỉnh" }]}
-              >
-                <Input
-                  value={customRegion}
-                  onChange={(e) => setCustomRegion(e.target.value)}
-                  placeholder="Nhập khu vực mới"
-                />
-              </Form.Item>
-            )}
-              {selectedRegion === "Khác" && (
-                <Form.Item
-                  label="Nhập khu vực tùy chỉnh"
-                  name="customRegion"
-                  rules={[{ required: true, message: "Vui lòng nhập khu vực tùy chỉnh" }]}
-                >
-                  <Input
-                    value={customRegion}
-                    onChange={(e) => setCustomRegion(e.target.value)}
-                    placeholder="Nhập khu vực"
-                  />
-                </Form.Item>
-              )}
             </Col>
             <Col span={12}>
               <Form.Item
