@@ -9,10 +9,7 @@ const Footer = () => {
             <div className="addressFoot">
               <div className="title">CÔNG TY CỔ PHẦN DU LỊCH SKY TRAVEL</div>
               <div className="be">
-                <strong>Địa chỉ</strong>: Kp5, Đ. Nguyễn Khuyến, P. Trảng Dài, Tp. Biên Hoà, T. Đồng Nai.
-              </div>
-              <div className="be">
-                <strong>Văn phòng</strong>:{" "}
+                <strong>Địa chỉ:</strong>:{" "}
                 <a href="https://maps.app.goo.gl/RNNucSf5YJ62hqe17" target="_blank" rel="noopener noreferrer">
                 Tầng 11, The Pegasus Plaza, 53-55 Đ. Võ Thị Sáu, Quyết Thắng, Biên Hòa, Đồng Nai, Việt Nam.             
                 </a>
@@ -38,18 +35,18 @@ const Footer = () => {
               <div className="botLink">
                 <ul>
                   <li>
-                    <a href="//dulichviet.com.vn/tin-tuc/dieu-khoan-dieu-kien">Chính sách đặt tour</a>
+                    <a href="#">Chính sách đặt tour</a>
                   </li>
                   <li>
-                    <a href="//dulichviet.com.vn/tin-tuc/chinh-sach-bao-mat-thong-tin-khach-hang">
+                    <a href="#">
                       Chính sách bảo mật
                     </a>
                   </li>
                   <li>
-                    <a href="//dulichviet.com.vn/khach-hang">Ý kiến khách hàng</a>
+                    <a href="#">Ý kiến khách hàng</a>
                   </li>
                   <li>
-                    <a href="//dulichviet.com.vn/gop-y">Phiếu góp ý</a>
+                    <a href="/huong-dan-dat-tour">Hướng dẫn đặt tour</a>
                   </li>
                 </ul>
               </div>
@@ -71,7 +68,7 @@ const Footer = () => {
                 />
               </div>
               <div className="congthuong">
-                <a href="http://online.gov.vn/Home/WebDetails/1977" title="BỘ CÔNG THƯƠNG" target="_blank" rel="noopener noreferrer">
+                <a href="#" title="BỘ CÔNG THƯƠNG" target="_blank" rel="noopener noreferrer">
                   <img
                     className="lazyload"
                     alt="BỘ CÔNG THƯƠNG"

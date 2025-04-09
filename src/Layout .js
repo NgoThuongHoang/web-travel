@@ -25,6 +25,7 @@ import Reports from './pages/admin/Reports';
 import BackToTop from './components/BackToTop';
 import TourInfoPage from './pages/TourInfoPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import TourGuide from "./pages/TourGuide";
 import './styles/Layout.css';
 
 function Layout() {
@@ -63,6 +64,7 @@ function Layout() {
           <Route path="/lien-he" element={<Contact />} />
           <Route path="/tour-info-page" element={<TourInfoPage />} />
           <Route path="/dang-nhap" element={<Login />} />
+          <Route path="/huong-dan-dat-tour" element={<TourGuide />} />
           <Route element={<ProtectedRoute adminOnly={true} />}>
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/quan-ly-tour" element={<TourManagement />} />

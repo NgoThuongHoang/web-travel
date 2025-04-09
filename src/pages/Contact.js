@@ -368,10 +368,10 @@ function Contact() {
                         <div className="col-md-6 col-12 mb-4">
                             <h2 className="contact-title">Thông tin về Công ty TNHH Du lịch Sky Travel</h2>
                             <div className="contact-info">
-                                <p>Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai</p>
-                                <p>Hotline: 0984.046.668</p>
-                                <p>Email: skytravel@gmail.com</p>
-                                <p>Website: <a href="http://skytravel.com">http://skytravel.com</a></p>
+                                <p>Địa chỉ: Tầng 11, The Pegasus Plaza, 53-55 Đ. Võ Thị Sáu, Quyết Thắng, Biên Hòa, Đồng Nai, Việt Nam.</p>
+                                <p>Hotline: 0392 226 424</p>
+                                <p>Email: skytraveldntu@gmail.com</p>
+                                <p>Website: <a href="http://dulichsieure.top">http://dulichsieure.top</a></p>
                             </div>
                         </div>
                     </div>
