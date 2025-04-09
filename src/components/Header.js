@@ -244,11 +244,11 @@ const Header = () => {
                 TRA CỨU
               </a>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <a className="nav-link active" href="/dang-nhap" title="Đăng nhập">
                 <i className="fas fa-user" style={{ marginRight: "5px" }}></i>
               </a>
-            </li>
+            </li> */}
             <li className="nav-item">
               <button
                 className="btn btn-link"
