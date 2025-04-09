@@ -1,91 +1,220 @@
-import React, { useEffect } from 'react';
-import '../styles/Footer.css'; // Import file CSS nếu cần
+import '../styles/Footer.css';
 
 const Footer = () => {
-  useEffect(() => {
-    // Tạo fb-root nếu chưa có
-    if (!document.getElementById('fb-root')) {
-      const fbRoot = document.createElement('div');
-      fbRoot.id = 'fb-root';
-      document.body.appendChild(fbRoot);
-    }
-
-    // Nhúng Facebook SDK
-    const script = document.createElement('script');
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = 'anonymous';
-    script.src = 'https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v20.0';
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   return (
-    <div id="footer" style={{ backgroundImage: "url('./images/bg-footer.jpg')", backgroundSize: 'cover' }}>
-      <div className="footer-top py-4">
-        <div className="container d-flex flex-wrap align-items-start justify-content-between">
-          <div className="footer-1 col-md-3">
-            <h5 className="footer-tit2">Công ty TNHH Du lịch Sky Travel</h5>
-            <div className="footer-content">
-              <p>Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai</p>
-              <p>Hotline: 0984.046.668</p>
-              <p>Email: skytravel@gmail.com</p>
-              <p>Website: <a href="http://Skytravel.com" className="text-decoration-none">skytravel.com</a></p>
+    <div className="mainFoot">
+      <div className="row mb">
+        <div className="col-lg-5 col-md-5 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="addressFoot">
+              <div className="title">CÔNG TY CỔ PHẦN DU LỊCH SKY TRAVEL</div>
+              <div className="be">
+                <strong>Địa chỉ</strong>: Kp5, Đ. Nguyễn Khuyến, P. Trảng Dài, Tp. Biên Hoà, T. Đồng Nai.
+              </div>
+              <div className="be">
+                <strong>Văn phòng</strong>:{" "}
+                <a href="https://maps.app.goo.gl/RNNucSf5YJ62hqe17" target="_blank" rel="noopener noreferrer">
+                Tầng 11, The Pegasus Plaza, 53-55 Đ. Võ Thị Sáu, Quyết Thắng, Biên Hòa, Đồng Nai, Việt Nam.             
+                </a>
+              </div>
+              <div className="be">
+                <strong>Điện thoại</strong>: <a href="tel:02873056789">028 73056789</a> |{" "}
+                <strong>Hotline</strong>: <a href="tel:19001177">1900 1177</a>
+              </div>
+              <div className="be">
+                <strong>Website</strong>:{" "}
+                <a href="https://dulichsieure.top">dulichsieure.top</a> |{" "}
+                <strong>Email</strong>:{" "}
+                <a href="mailto:skytraveldntu@gmail.com">skytraveldntu@gmail.com</a>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="footer-2 col-md-3">
-            <h5 className="footer-tit">Dịch vụ</h5>
-            <ul className="footer-list list-unstyled">
-              <li><a className="text-decoration-none" href="tour-ngan-ngay" title="Tour ngắn ngày">Tour ngắn ngày</a></li>
-              <li><a className="text-decoration-none" href="tour-dai-ngay" title="Tour dài ngày">Tour dài ngày</a></li>              
-            </ul>
+        <div className="col-lg-2 col-md-2 col-sm-12 col-xs-12 hidden-sm hidden-xs">
+          <div className="boxBot">
+            <div className="title">Góc khách hàng</div>
+            <div className="content">
+              <div className="botLink">
+                <ul>
+                  <li>
+                    <a href="//dulichviet.com.vn/tin-tuc/dieu-khoan-dieu-kien">Chính sách đặt tour</a>
+                  </li>
+                  <li>
+                    <a href="//dulichviet.com.vn/tin-tuc/chinh-sach-bao-mat-thong-tin-khach-hang">
+                      Chính sách bảo mật
+                    </a>
+                  </li>
+                  <li>
+                    <a href="//dulichviet.com.vn/khach-hang">Ý kiến khách hàng</a>
+                  </li>
+                  <li>
+                    <a href="//dulichviet.com.vn/gop-y">Phiếu góp ý</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <div className="footer-3 col-md-3">
-            <h5 className="footer-tit">Góc khách hàng</h5>
-            <ul className="footer-list list-unstyled">
-              <li><a className="text-decoration-none" href="ho-tro-dat-tour" title="Hỗ trợ đặt tour">Hỗ trợ đặt tour</a></li>
-              <li><a className="text-decoration-none" href="chinh-sach-bao-mat" title="Chính sách bảo mật">Chính sách bảo mật</a></li>
-              <li><a className="text-decoration-none" href="chinh-sach-bao-hanh" title="Phiếu góp ý">Phiếu góp ý</a></li>
-            </ul>
+        <div className="col-lg-2 col-md-2 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="title">Chứng nhận</div>
+            <div className="content">
+              <div className="dmca">
+                <img
+                  className="lazyload"
+                  alt="DMCA.com"
+                  width="135"
+                  height="28"
+                  src="//dulichviet.com.vn/images/dmca.png"
+                />
+              </div>
+              <div className="congthuong">
+                <a href="http://online.gov.vn/Home/WebDetails/1977" title="BỘ CÔNG THƯƠNG" target="_blank" rel="noopener noreferrer">
+                  <img
+                    className="lazyload"
+                    alt="BỘ CÔNG THƯƠNG"
+                    width="120"
+                    height="44"
+                    src="//dulichviet.com.vn/images/congthuong.png"
+                  />
+                </a>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <div className="footer-4 col-md-3">
-            <p className="footer-tit">FANPAGE FACEBOOK</p>
-            <div id="fanpage-facebook">
-              <div
-                className="fb-page"
-                data-href="https://www.facebook.com/profile.php?id=61574793104293" // Link từ hình bạn cung cấp
-                data-tabs="" // Không hiển thị timeline, chỉ hiển thị header
-                data-width="500" // Chiều rộng phù hợp
-                data-height="130" // Chiều cao phù hợp
-                data-small-header="false" // Hiển thị header đầy đủ (ảnh bìa)
-                data-adapt-container-width="true" // Tự động điều chỉnh chiều rộng
-                data-hide-cover="false" // Hiển thị ảnh bìa
-                data-show-facepile="false" // Không hiển thị danh sách người thích
-              >
-                <blockquote
-                  cite="https://www.facebook.com/profile.php?id=61574793104293"
-                  className="fb-xfbml-parse-ignore"
-                >
-                  <a href="https://www.facebook.com/profile.php?id=61574793104293">Sky Travel</a>
-                </blockquote>
+        <div className="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="title">Đăng ký nhận thông tin khuyến mãi</div>
+            <div className="content">
+              <div className="formRecive">
+                <div className="txt">
+                  Nhập email để có cơ hội giảm 50% cho chuyến đi tiếp theo của Quý khách
+                </div>
+                <div className="form">
+                  <form className="mda-mail-box">
+                    <input
+                      name="femail"
+                      id="femail"
+                      className="mda-text"
+                      type="text"
+                      placeholder="Email của bạn"
+                    />
+                    <input type="hidden" name="f_trap" id="f_trap" value="th82fnh458iv00gnnb04ktmsm4" />
+                    <button type="button" aria-label="Đăng ký nhận tin">
+                      <i className="fa fa-envelope"></i>
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="footer-bottom py-2">
-        <div className="container text-center">
-          <p className="copyright m-0">
-            Copyright © 2024. Design by <a href="https://vinasoftware.com.vn/" className="text-decoration-none">Student DNTU</a>
-          </p>
+      <div className="row">
+        <div className="col-lg-5 col-md-5 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="congthuongTxt">
+              <strong>GIẤY PHÉP KINH DOANH DỊCH VỤ LỮ HÀNH QUỐC TẾ</strong>
+              <br />
+              Số GP/ No: 79-042/2022/ TCDL – GP LHQT
+              <br />
+              Do TCDL cấp ngày 30/11/2009 - Cấp thay đổi ngày 06/06/2022
+            </div>
+          </div>
         </div>
+
+        <div className="col-lg-2 col-md-2 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="title">Kết nối với chúng tôi</div>
+              <div className="content">
+                <div className="socialFoot">
+                  <ul>
+                    <li>
+                    <a 
+                      href="https://www.facebook.com/dulichviet/" 
+                      aria-label="Facebook" 
+                      className="fab fa-facebook-f" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    ></a>                    
+                    </li>
+                    <li>
+                    <a 
+                      href="https://x.com/ctyDuLichViet" 
+                      aria-label="Twitter" 
+                      className="fab fa-twitter" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    ></a>                                
+                    </li>
+                    <li>
+                    <a 
+                      href="https://www.youtube.com/user/dulichviettravel" 
+                      aria-label="YouTube" 
+                      className="fab fa-youtube" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    ></a>         
+                    </li>
+                    <li>
+                    <a 
+                      href="https://dulichviet.com.vn/view360/" 
+                      aria-label="Google Maps" 
+                      className="fas fa-map-marker-alt" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    ></a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+          </div>
+        </div>
+
+        <div className="col-lg-2 col-md-2 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="title">Chấp nhận thanh toán</div>
+            <div className="content">
+              <div className="pay">
+                <img
+                  className="lazyload"
+                  alt="PAYMENT"
+                  width="163"
+                  height="35"
+                  src="//dulichviet.com.vn/images/pay.png"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+          <div className="boxBot">
+            <div className="title">Ứng dụng di động</div>
+            <div className="content">
+              <div className="appstore">
+                <img
+                  className="lazyload"
+                  alt="Appstore"
+                  width="211"
+                  height="35"
+                  src="//dulichviet.com.vn/images/app.png"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="copyright">
+        <div className="copy">
+          Copyright © 2025 <strong>SKY TRAVEL</strong>
+        </div>
+        Ghi rõ nguồn "dulichsieure.top" khi sử dụng thông tin từ website này
       </div>
     </div>
   );
