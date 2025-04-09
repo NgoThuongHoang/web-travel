@@ -1,5 +1,5 @@
 .payment-page {
-  padding: 20px;
+  padding-bottom: 20px; /* Padding cho toàn bộ trang */
   font-family: Arial, sans-serif;
 }
 
