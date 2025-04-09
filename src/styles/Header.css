@@ -1,525 +1,602 @@
 /* Navbar Styles */
 .navbar {
-    position: fixed;
-    top: 0;
-    z-index: 1000;
-    background-color: #ffffff;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  padding: 10px 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  width: 100%;
+}
+
+.navbar:hover {
+  background-color: #f8f8f8;
+}
+
+.navbar-nav {
+  align-items: center;
+}
+
+.navbar-nav .nav-link {
+  color: #000 !important;
+  font-weight: 500;
+  padding: 10px 15px;
+  transition: color 0.3s ease;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-nav .nav-link:hover {
+  color: orange !important;
+  text-decoration: underline;
+}
+
+.nav-item {
+  margin-right: 20px;
+}
+
+.nav-item:last-child {
+  margin-right: 0;
+}
+
+/* Logo Styles */
+.logo img {
+  max-width: 200px;
+  height: auto;
+  margin-right: 20px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+/* Dropdown Styles */
+.navbar-nav .dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.navbar-nav .dropdown .dropdown-menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-25%);
+  min-width: 300px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.navbar-nav .dropdown .dropdown-menu2 {
+  transform: translateX(-45%);
+}
+
+.navbar-nav .dropdown .dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  text-decoration: none;
+  color: #000 !important;
+  display: block;
+  margin-bottom: 5px;
+  padding: 8px 12px;
+  border-radius: 3px;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  color: orange !important;
+  background-color: #f8f8f8;
+}
+
+/* Tour Container trong Dropdown */
+.tour-container {
+  width: 100%;
+}
+
+.tour-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.tour-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.tour-column img {
+  width: 100%;
+  height: 150px;
+  border-radius: 4px;
+}
+
+.tour-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333 !important;
+  padding-left: 12px;
+}
+
+/* Search Bar */
+.search-item {
+  display: none; /* Ẩn mặc định trên desktop */
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px 0 0 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-btn {
+  padding: 10px 15px;
+  border: none;
+  background: #ff7b00;
+  color: #fff;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.search-btn:hover {
+  background: #e67300;
+}
+
+.icon-search {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+.search-results {
+  list-style: none;
+  padding: 10px;
+  margin: 5px 0 15px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-results li {
+  padding: 8px 0;
+}
+
+.search-results li a {
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.search-results li a:hover {
+  color: #ff7b00;
+}
+
+/* Responsive Adjustments */
+
+/* Desktop lớn (trên 1200px) */
+@media (min-width: 1200px) {
+  .navbar-nav .dropdown-menu {
+    min-width: 900px;
+    left: 50%;
+    transform: translateX(-35%);
+  }
+
+  .tour-row {
+    flex-wrap: nowrap;
+  }
+
+  .tour-column {
+    min-width: 0;
+  }
+}
+
+/* Tablet (992px - 1200px) */
+@media (max-width: 1200px) and (min-width: 992px) {
+  .navbar {
+    padding: 8px 20px;
+  }
+
+  .logo img {
+    max-width: 180px;
+  }
+
+  .navbar-nav .nav-link {
+    font-size: 0.95rem;
+    padding: 8px 12px;
+  }
+
+  .nav-item {
+    margin-right: 15px;
+  }
+
+  .navbar-nav .dropdown-menu {
+    min-width: 700px;
+    transform: translateX(-50%);
+  }
+
+  .tour-row {
+    flex-wrap: wrap;
+  }
+
+  .tour-column {
+    flex: 1 1 45%;
+  }
+
+  .tour-title {
+    font-size: 1rem;
+  }
+}
+
+/* Tablet nhỏ và Mobile lớn (768px - 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+  .navbar {
+    padding: 8px 15px;
+  }
+
+  .logo img {
+    max-width: 160px;
+  }
+
+  .navbar-nav .nav-link {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .nav-item {
+    margin-right: 10px;
+  }
+
+  .navbar-nav .dropdown-menu {
+    min-width: 500px;
+    transform: translateX(-50%);
+  }
+
+  .tour-row {
+    flex-wrap: wrap;
+  }
+
+  .tour-column {
+    flex: 1 1 45%;
+  }
+
+  .tour-title {
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile (dưới 768px) */
+@media (max-width: 767px) {
+  .navbar {
     padding: 10px 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .navbar-nav .dropdown-menu {
+    transform: none !important;
+    left: auto !important;
+    right: auto !important;
+  }
+  
+  .navbar-nav .dropdown-menu2 {
+    transform: none !important;
+    left: auto !important;
+    right: auto !important;
+  }
+
+  .container {
+    height: 60px !important;
+  }
+
+  .logo img {
+    max-width: 130px;
+    transition: transform 0.3s ease;
+  }
+
+  .logo img:hover {
+    transform: scale(1.05);
+  }
+
+  .navbar-toggler {
+    border: none;
+    padding: 8px;
+    background: linear-gradient(135deg, #ff7b00, #e67300);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+  }
+
+  .navbar-toggler:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+  }
+
+  .navbar-collapse {
+    background-color: #fff;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+    padding: 15px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease-in-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .navbar-nav {
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
     width: 100%;
   }
-  
-  .navbar:hover {
-    background-color: #f8f8f8;
-  }
-  
-  .navbar-nav {
-    align-items: center;
-  }
-  
+
   .navbar-nav .nav-link {
-    color: #000 !important;
-    font-weight: 500;
-    padding: 10px 15px;
-    transition: color 0.3s ease;
     font-size: 1rem;
+    padding: 12px 15px;
+    width: 100%;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333 !important;
+    transition: all 0.3s ease;
+    text-align: center;
     display: flex;
+    justify-content: center;
     align-items: center;
   }
-  
+
   .navbar-nav .nav-link:hover {
-    color: orange !important;
-    text-decoration: underline;
+    background-color: #fff3e6;
+    color: #ff7b00 !important;
+    padding-left: 15px;
   }
-  
+
   .nav-item {
-    margin-right: 20px;
-  }
-  
-  .nav-item:last-child {
     margin-right: 0;
+    width: 100%;
   }
-  
-  /* Logo Styles */
-  .logo img {
-    max-width: 200px;
-    height: auto;
-    margin-right: 20px;
+
+  /* Search Bar trên mobile */
+  .search-item {
+    display: block;
+    margin-bottom: 15px;
+    width: 100%;
   }
-  
-  .navbar-brand {
+
+  .search-bar {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .btn.btn-link {
+    display: none;
+  }
+
+  /* Dropdown trên mobile */
+  .nav-has-sublist {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    position: relative;
+  }
+
+  .nav-has-sublist .nav-link {
+    padding-right: 30px;
+  }
+
+  .toggle-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
+    justify-content: center;
   }
-  
-  /* Dropdown Styles */
-  .navbar-nav .dropdown:hover .dropdown-menu {
-    display: block;
+
+  .icon-plus,
+  .icon-minus {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-size: contain;
+    transition: all 0.3s ease;
   }
-  
+
+  .icon-plus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff7b00'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  }
+
+  .icon-minus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff7b00'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+    display: none;
+  }
+
+  .toggle-btn.open .icon-plus {
+    display: none;
+  }
+
+  .toggle-btn.open .icon-minus {
+    display: inline-block;
+  }
+
   .navbar-nav .dropdown .dropdown-menu {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-25%);
-    min-width: 300px;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    display: none;
+    position: static;
+    width: 100%;
+    margin: 10px 0;
     padding: 10px;
+    background: #fafafa;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transform: none !important;
+    left: auto !important;
+    right: auto !important;
   }
 
-  .navbar-nav .dropdown .dropdown-menu2{
-    transform: translateX(-45%);
-
-  }
-  
   .navbar-nav .dropdown .dropdown-menu.show {
     display: block;
+    animation: fadeIn 0.3s ease-in-out;
   }
-  
-  .dropdown-item {
-    text-decoration: none;
-    color: #000 !important;
-    display: block;
-    margin-bottom: 5px;
-    padding: 8px 12px;
-    border-radius: 3px;
-    text-align: left; /* Căn trái trên desktop để thẳng hàng với tiêu đề */
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
-  
-  .dropdown-item:hover {
-    color: orange !important;
-    background-color: #f8f8f8;
-  }
-  
-  /* Tour Container trong Dropdown */
+
   .tour-container {
     width: 100%;
   }
-  
+
   .tour-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+    justify-content: space-between;
   }
-  
+
   .tour-column {
-    flex: 1;
-    min-width: 200px;
+    flex: 1 1 calc(50% - 5px);
+    padding: 0;
+    margin: 0;
+    min-width: 0;
   }
-  
+
+  .tour-column:empty {
+    display: none; /* Ẩn cột trống */
+  }
+
   .tour-column img {
-    width: 100%;
-    height: 150px;
-    border-radius: 4px;
+    display: none; /* Ẩn ảnh trên mobile */
   }
-  
+
   .tour-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #333 !important;
-    padding-left: 12px; /* Thêm padding-left để đồng bộ với dropdown-item */
-  }
-  
-  /* Search Box */
-  .input-group {
-    width: 100%;
-  }
-  
-  /* Style cho kết quả tìm kiếm ngang */
-.tour-results-horizontal {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  padding: 10px 0;
-  scrollbar-width: thin;
-}
-
-.tour-results-horizontal::-webkit-scrollbar {
-  height: 6px;
-}
-
-.tour-results-horizontal::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.tour-results-horizontal::-webkit-scrollbar-thumb {
-  background: #ff7b00;
-  border-radius: 3px;
-}
-
-.tour-results-horizontal::-webkit-scrollbar-thumb:hover {
-  background: #e67300;
-}
-
-.tour-card-horizontal {
-  min-width: 280px;
-  margin: 0;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.tour-card-horizontal:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-  .tour-name-link:hover {
+    font-size: 0.95rem;
+    margin: 0 0 8px 0;
+    padding: 0;
     color: #ff7b00 !important;
-    transition: color 0.3s ease;
+    font-weight: 600;
+    text-align: left;
   }
 
-  .tour-results {
-    margin-top: 20px;
+  .tour-title:after {
+    content: "";
+    display: block;
+    width: 25px;
+    height: 2px;
+    background: #ff7b00;
+    margin: 4px 0 0 0;
   }
 
-  .tour-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  .dropdown-item {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    color: #555 !important;
+    text-align: left;
+    margin: 2px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    background: #fff;
   }
 
-  .tour-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  .dropdown-item:hover {
+    background-color: #fff3e6;
+    color: #ff7b00 !important;
+    transform: translateX(5px);
   }
 
-  /* Thêm vào Header.css */
-.tour-name-link {
-  transition: color 0.2s;
-}
-
-.tour-name-link:hover {
-  color: #ff7b00 !important;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ff7b00;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #e67300;
-}
-
-/* Style cho ảnh tour */
-.tour-image {
-  transition: transform 0.3s ease;
-}
-
-.tour-image:hover {
-  transform: scale(1.02);
-}
-
-/* Style cho tên tour */
-.tour-name-link {
-  transition: color 0.2s ease;
-}
-
-.tour-name-link:hover {
-  color: #ff7b00 !important;
-}
-
-/* Style cho card tour */
-.ant-card {
-  transition: box-shadow 0.3s ease;
-}
-
-.ant-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-    
-  /* Responsive Adjustments */
-
-  /* Desktop lớn (trên 1200px) */
-  @media (min-width: 1200px) {
-    .navbar-nav .dropdown-menu {
-      min-width: 900px;
-      left: 50%;
-      transform: translateX(-35%);
-    }
-  
-    .tour-row {
-      flex-wrap: nowrap;
-    }
-  
-    .tour-column {
-      min-width: 0;
-    }
-  }
-  
-  /* Tablet (992px - 1200px) */
-  @media (max-width: 1200px) and (min-width: 992px) {
-    .navbar {
-      padding: 8px 20px;
-    }
-  
-    .logo img {
-      max-width: 180px;
-    }
-  
-    .navbar-nav .nav-link {
-      font-size: 0.95rem;
-      padding: 8px 12px;
-    }
-  
-    .nav-item {
-      margin-right: 15px;
-    }
-  
-    .navbar-nav .dropdown-menu {
-      min-width: 700px;
-      transform: translateX(-50%);
-    }
-  
-    .tour-row {
-      flex-wrap: wrap;
-    }
-  
-    .tour-column {
-      flex: 1 1 45%;
-    }
-  
-    .tour-title {
-      font-size: 1rem;
-    }
-  }
-  
-  /* Tablet nhỏ và Mobile lớn (768px - 991px) */
-  @media (max-width: 991px) and (min-width: 768px) {
-    .navbar {
-      padding: 8px 15px;
-    }
-  
-    .logo img {
-      max-width: 160px;
-    }
-  
-    .navbar-nav .nav-link {
-      font-size: 0.9rem;
-      padding: 8px 10px;
-    }
-  
-    .nav-item {
-      margin-right: 10px;
-    }
-  
-    .navbar-nav .dropdown-menu {
-      min-width: 500px;
-      transform: translateX(-50%);
-    }
-  
-    .tour-row {
-      flex-wrap: wrap;
-    }
-  
-    .tour-column {
-      flex: 1 1 45%;
-    }
-  
-    .tour-title {
-      font-size: 0.95rem;
-    }
-  }
-  
-  /* Mobile (dưới 768px) */
-  @media (max-width: 767px) {
-    .navbar {
-      padding: 6px 10px;
-    }
-  
-    .logo img {
-      max-width: 140px;
-    }
-  
-    /* Tùy chỉnh nút hamburger */
-    .navbar-toggler {
-      border: none;
-      padding: 5px 10px;
-      background: transparent;
-      transition: transform 0.3s ease;
-    }
-  
-    .navbar-toggler:hover {
-      transform: scale(1.1);
-    }
-  
-    .navbar-toggler-icon {
-      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0, 0, 0, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-    }
-  
-    /* Menu trên mobile */
-    .navbar-collapse {
-      background-color: #fff;
-      border-top: 1px solid #e0e0e0;
-      margin-top: 10px;
-      padding: 10px 0;
-      max-height: 80vh;
-      overflow-y: auto;
-      transition: all 0.3s ease;
-    }
-  
-    .navbar-collapse.show {
-      display: block;
-    }
-  
-    .navbar-nav {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0 10px;
-    }
-  
-    .navbar-nav .nav-link {
-      font-size: 0.85rem;
-      padding: 6px 8px;
-      width: 100%;
-      border-bottom: 1px solid #f0f0f0;
-      display: flex;
-      align-items: center;
-      transition: background-color 0.3s ease;
-    }
-  
-    .navbar-nav .nav-link:hover {
-      background-color: #f8f8f8;
-    }
-  
-    .nav-item {
-      margin-right: 0;
-      width: 100%;
-    }
-  
-    /* Dropdown trên mobile */
-    .navbar-nav .dropdown:hover .dropdown-menu {
-      display: none; /* Tắt hover trên mobile */
-    }
-  
-    .navbar-nav .dropdown .dropdown-menu {
-      position: static;
-      min-width: 100%;
-      box-shadow: none;
-      padding: 0;
-      background-color: #f8f8f8;
-      border: none;
-      margin-top: 5px;
-    }
-  
-    .navbar-nav .dropdown .dropdown-menu.show {
-      display: block;
-    }
-  
-    .dropdown-toggle::after {
-      float: right;
-      margin-top: 5px;
-      transition: transform 0.3s ease;
-    }
-  
-    .dropdown-toggle[aria-expanded="true"]::after {
-      transform: rotate(180deg);
-    }
-  
-    .dropdown-item {
-      text-align: left;
-      padding: 5px 10px; /* Đồng bộ padding-left với tour-title */
-      font-size: 0.85rem;
-      color: #000 !important;
-    }
-  
-    .dropdown-item:hover {
-      background-color: #f0f0f0;
-    }
-  
+  /* Tối ưu cho màn hình rất nhỏ */
+  @media (max-width: 400px) {
     .tour-row {
       flex-direction: column;
     }
-  
+
     .tour-column {
       flex: 1 1 100%;
-      padding: 10px;
-    }
-  
-    .tour-column img {
-      display: none;
-    }
-  
-    .tour-title {
-      font-size: 0.9rem;
-      margin-bottom: 5px;
-      padding-left: 10px;
-      color: #555 !important;
-    }
-  
-    /* Search Box */
-    .container[style*="position: absolute"] {
-      width: 90%;
-      max-width: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 6px;
-      z-index: 999;
-    }
-  
-    .input-group input {
-      font-size: 0.85rem;
-    }
-  
-    .input-group-append .btn {
-      padding: 5px 10px;
-    }
-  }
-  
-  /* Mobile rất nhỏ (dưới 576px) */
-  @media (max-width: 576px) {
-    .navbar {
-      padding: 5px 8px;
-    }
-  
-    .logo img {
-      max-width: 120px;
-    }
-  
-    .navbar-nav .nav-link {
-      font-size: 0.8rem;
-      padding: 5px 6px;
-    }
-  
-    .dropdown-item {
-      font-size: 0.8rem;
-      padding: 4px 10px; /* Đồng bộ padding-left với tour-title */
-    }
-  
-    .tour-title {
-      font-size: 0.85rem;
-    }
-  
-    .container[style*="position: absolute"] {
-      width: 95%;
-      padding: 5px;
-    }
-  
-    .input-group input {
-      font-size: 0.8rem;
-    }
-  
-    .input-group-append .btn {
-      padding: 4px 8px;
     }
 
-    .ant-card-body {
-      padding: 12px;
+    .tour-title {
+      font-size: 0.9rem;
     }
-    
-    .tour-info {
-      font-size: 14px;
+
+    .dropdown-item {
+      font-size: 0.8rem;
     }
   }
+}
+
+/* Mobile rất nhỏ (dưới 576px) */
+@media (max-width: 576px) {
+  .navbar {
+    padding: 8px 10px;
+  }
+
+  .logo img {
+    max-width: 110px;
+  }
+
+  .navbar-nav .nav-link {
+    font-size: 0.95rem;
+    padding: 10px 12px;
+  }
+
+  .dropdown-item {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  .tour-title {
+    font-size: 0.95rem;
+  }
+
+  .search-input {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .search-btn {
+    padding: 8px 12px;
+  }
+}
