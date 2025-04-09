@@ -676,9 +676,9 @@ const PaymentPage = ({ tourId }) => {
                         {selectedPayment === "Chuyển khoản" && (
                           <div style={styles.bankDetails}>
                             <Text>
-                              <strong>Ngân hàng:</strong> Vietcombank<br />
-                              <strong>Số tài khoản:</strong> 123456789<br />
-                              <strong>Chủ tài khoản:</strong> Nguyễn Văn A<br />
+                              <strong>Ngân hàng:</strong> BIDV<br />
+                              <strong>Số tài khoản:</strong> 1110547295<br />
+                              <strong>Chủ tài khoản:</strong> Nguyễn Văn Hướng<br />
                               <strong>Chi nhánh:</strong> TP. HCM<br />
                               <strong>Nội dung:</strong> Mã tour - Số điện thoại
                             </Text>
