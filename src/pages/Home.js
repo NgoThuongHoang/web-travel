@@ -114,72 +114,9 @@ function Home() {
       : foreignRegions.includes(tour.region) 
         ? tour.region.toUpperCase() 
         : 'NƯỚC NGOÀI';
-
-        const renderTourItem = (tour) => {
-          const firstImage = tour.images && tour.images.length > 0 
-            ? tour.images[0].image_url 
-            : '/images/noimage.png';
-          const duration = `${tour.days || 0} NGÀY ${tour.nights ? tour.nights + ' ĐÊM' : ''}`;
-          const startDate = tour.start_date 
-            ? new Date(tour.start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : 'Chưa xác định';
-          const adultPrice = tour.prices && tour.prices.length > 0 
-            ? tour.prices.find(price => price.age_group === 'Adult') 
-            : null;
-          const priceDisplay = adultPrice 
-            ? `${adultPrice.price.toLocaleString('vi-VN')} VNĐ` 
-            : 'Liên hệ';
-          const regionName = tour.country === 'Vietnam' 
-            ? 'VIỆT NAM' 
-            : foreignRegions.includes(tour.region) 
-              ? tour.region.toUpperCase() 
-              : 'NƯỚC NGOÀI';
-      
-          return (
-            <div className="product-item featured-tour-item" key={tour.id}>
-              <div className="product-image">
-                <Link to={`/chi-tiet-tour/${tour.id}`} title={tour.name}>
-                  <img 
-                    className="img-fluid zoom-image" 
-                    src={firstImage} 
-                    alt={tour.name || 'Tour không tên'}
-                    onError={(e) => { e.target.src = '/images/noimage.png'; }}
-                    style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-                  />
-                </Link>
-              </div>
-              <div className="product-desc">
-                <p className="product-item-name">TOUR {regionName}</p>
-                <h3 className="product-name">
-                  <Link 
-                    className="text-decoration-none text-split text-split-2 tour-name-link"
-                    to={`/chi-tiet-tour/${tour.id}`}
-                    title={tour.name}
-                  >
-                    {tour.name || 'Chưa có tên tour'}
-                  </Link>
-                </h3>
-                <p className="product-info">
-                  <img src="./images/icon-p1.png" alt="Icon product" />
-                  {duration}
-                </p>
-                <div className="product-info2">
-                  <p className="product-info">
-                    <img src="./images/icon-p2.png" alt="Icon product" />
-                    {startDate}
-                  </p>
-                  <span className="price-new">{priceDisplay}</span>
-                </div>
-                <div className="star-rating">
-                  {'★'.repeat(tour.star_rating || 0)}{'☆'.repeat(5 - (tour.star_rating || 0))}
-                </div>
-              </div>
-            </div>
-          );
-        };
-        
+  
     return (
-      <div className="product-item" key={tour.id}>
+      <div className="product-item featured-tour-item" key={tour.id}>
         <div className="product-image">
           <Link to={`/chi-tiet-tour/${tour.id}`} title={tour.name}>
             <img 
@@ -203,15 +140,20 @@ function Home() {
             </Link>
           </h3>
           <p className="product-info">
-            <img src="./images/icon-p1.png" alt="Icon product" />
+            <img src="./images/icon-p1.png" alt="Icon product" className="small-icon" />
             {duration}
           </p>
           <div className="product-info2">
             <p className="product-info">
-              <img src="./images/icon-p2.png" alt="Icon product" />
+              <img src="./images/icon-p2.png" alt="Icon product" className="small-icon" />
               {startDate}
             </p>
-            <span className="price-new">{priceDisplay}</span>
+            <p className="price-label">
+              Giá: <span className="price-new">{priceDisplay}</span>
+            </p>
+          </div>
+          <div className="star-rating">
+            Đánh giá: {'★'.repeat(tour.star_rating || 0)}{'☆'.repeat(5 - (tour.star_rating || 0))}
           </div>
         </div>
       </div>
@@ -347,7 +289,7 @@ function Home() {
                 modules={[Navigation, Pagination, Autoplay, EffectCoverflow]}
                 effect="coverflow"
                 grabCursor={true}
-                centeredSlides={true}
+                centeredSlides={true} // Đã có, giữ nguyên để căn giữa
                 slidesPerView={3}
                 spaceBetween={30}
                 coverflowEffect={{
@@ -360,11 +302,21 @@ function Home() {
                 navigation
                 pagination={{ clickable: true }}
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
-                loop={true} // Thêm loop để lặp vòng tròn
+                loop={true}
                 breakpoints={{
-                  320: { slidesPerView: 1 },
-                  768: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
+                  320: { 
+                    slidesPerView: 1,
+                    spaceBetween: 0, // Giảm khoảng cách để căn giữa tốt hơn
+                    centeredSlides: true // Đảm bảo căn giữa trên mobile
+                  },
+                  768: { 
+                    slidesPerView: 2,
+                    spaceBetween: 20
+                  },
+                  1024: { 
+                    slidesPerView: 3,
+                    spaceBetween: 30
+                  },
                 }}
               >
                 {featuredTours.map((tour) => (
