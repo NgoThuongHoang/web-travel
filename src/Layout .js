@@ -25,19 +25,22 @@ import Reports from './pages/admin/Reports';
 import BackToTop from './components/BackToTop';
 import TourInfoPage from './pages/TourInfoPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import './styles/Layout.css';
 
 function Layout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isLoginPage = location.pathname === '/dang-nhap';
+  const isTourDetailPage = location.pathname.startsWith('/chi-tiet-tour'); // Đã có từ trước
+  const isPaymentPage = location.pathname === '/thanh-toan'; // Thêm điều kiện cho trang thanh toán
   const queryParams = new URLSearchParams(location.search);
   const tourId = queryParams.get('tourId');
 
   return (
-    <>
+    <div className="app-container">
       {!isLoginPage && (isAdminRoute ? <AdminHeader /> : <Header />)}
       <BackToTop />
-      <main>
+      <main className="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tours" element={<Tours />} />
@@ -46,21 +49,20 @@ function Layout() {
           <Route path="/ve-chung-toi" element={<About />} />
           <Route path="/tin-tuc" element={<News />} />
           <Route
-              path="/tin-tuc/kinh-nghiem-du-lich-mien-bac-mua-nao-dep-nhat-va-tho-mong-nhat-trong-nam"
-              element={<News1 />}
+            path="/tin-tuc/kinh-nghiem-du-lich-mien-bac-mua-nao-dep-nhat-va-tho-mong-nhat-trong-nam"
+            element={<News1 />}
           />
           <Route
-              path="/tin-tuc/review-cac-diem-du-lich-nghi-duong-mien-bac-dip-304-dep-nhu-mo"
-              element={<News2 />}
+            path="/tin-tuc/review-cac-diem-du-lich-nghi-duong-mien-bac-dip-304-dep-nhu-mo"
+            element={<News2 />}
           />
           <Route
-              path="/tin-tuc/kinh-nghiem-du-lich-sau-dich-ban-can-biet-de-co-mot-chuyen-di-nhu-y"
-              element={<News3 />}
+            path="/tin-tuc/kinh-nghiem-du-lich-sau-dich-ban-can-biet-de-co-mot-chuyen-di-nhu-y"
+            element={<News3 />}
           />
           <Route path="/lien-he" element={<Contact />} />
           <Route path="/tour-info-page" element={<TourInfoPage />} />
           <Route path="/dang-nhap" element={<Login />} />
-          
           <Route element={<ProtectedRoute adminOnly={true} />}>
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/quan-ly-tour" element={<TourManagement />} />
@@ -73,8 +75,9 @@ function Layout() {
           </Route>
         </Routes>
       </main>
-      {!isLoginPage && <Footer />}
-    </>
+      {/* Chỉ hiển thị Footer khi không phải login, admin, TourDetail, hoặc Payment */}
+      {!isLoginPage && !isAdminRoute && !isTourDetailPage && !isPaymentPage && <Footer />}
+    </div>
   );
 }
 

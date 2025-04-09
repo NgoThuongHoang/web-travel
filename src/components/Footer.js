@@ -18,8 +18,8 @@ const Footer = () => {
                 </a>
               </div>
               <div className="be">
-                <strong>Điện thoại</strong>: <a href="tel:02873056789">028 73056789</a> |{" "}
-                <strong>Hotline</strong>: <a href="tel:19001177">1900 1177</a>
+                <strong>Điện thoại</strong>: <a href="tel:0392226424">0392 226 424</a> |{" "}
+                <strong>Hotline</strong>: <a href="tel:1900 199">1900 1199</a>
               </div>
               <div className="be">
                 <strong>Website</strong>:{" "}
@@ -135,7 +135,7 @@ const Footer = () => {
                   <ul>
                     <li>
                     <a 
-                      href="https://www.facebook.com/dulichviet/" 
+                      href="https://www.facebook.com/profile.php?id=61574793104293" 
                       aria-label="Facebook" 
                       className="fab fa-facebook-f" 
                       target="_blank" 
@@ -144,7 +144,7 @@ const Footer = () => {
                     </li>
                     <li>
                     <a 
-                      href="https://x.com/ctyDuLichViet" 
+                      href="https://x.com/" 
                       aria-label="Twitter" 
                       className="fab fa-twitter" 
                       target="_blank" 
@@ -153,7 +153,7 @@ const Footer = () => {
                     </li>
                     <li>
                     <a 
-                      href="https://www.youtube.com/user/dulichviettravel" 
+                      href="https://www.youtube.com" 
                       aria-label="YouTube" 
                       className="fab fa-youtube" 
                       target="_blank" 
@@ -162,7 +162,7 @@ const Footer = () => {
                     </li>
                     <li>
                     <a 
-                      href="https://dulichviet.com.vn/view360/" 
+                      href="https://dulichsieure.top/" 
                       aria-label="Google Maps" 
                       className="fas fa-map-marker-alt" 
                       target="_blank" 

@@ -188,26 +188,30 @@ body {
   transform: scale(1.1);
 }
 
-/* Star Rating */
 .star-rating {
-  color: #ff6200; /* Màu cam cho tất cả ngôi sao */
+  color: #ff6200; /* Màu cam cho ngôi sao */
   font-size: 18px;
-  font-weight: bold; /* Sửa lỗi cú pháp */
-  margin-top: 10px;
+  font-weight: bold;
+  margin-top: 5px; /* Giảm margin-top để gần nội dung hơn */
   text-align: center;
   display: inline-block;
-  animation: sparkle 1.5s infinite ease-in-out; /* Hiệu ứng lấp lánh */
+  position: relative; /* Thêm để hỗ trợ hiệu ứng */
+  animation: sparkle 1.5s infinite ease-in-out; /* Giữ hiệu ứng lấp lánh */
 }
 
-/* Keyframes cho hiệu ứng lấp lánh */
+/* Tăng độ nổi bật của hiệu ứng lấp lánh */
 @keyframes sparkle {
   0%, 100% {
+    text-shadow: 0 0 5px rgba(255, 98, 0, 0.8), 
+                 0 0 10px rgba(255, 98, 0, 0.6), 
+                 0 0 15px rgba(255, 98, 0, 0.4);
     opacity: 1;
-    text-shadow: 0 0 5px #ff6200, 0 0 10px #ff6200;
   }
   50% {
-    opacity: 0.7;
-    text-shadow: 0 0 10px #ff6200, 0 0 20px #ff6200;
+    text-shadow: 0 0 10px rgba(255, 98, 0, 1), 
+                 0 0 20px rgba(255, 98, 0, 0.8), 
+                 0 0 30px rgba(255, 98, 0, 0.6);
+    opacity: 0.9; /* Giảm opacity nhẹ để tạo nhấp nháy */
   }
 }
 

@@ -6,6 +6,7 @@ import qrBanking from '../qr-banking.JPG';
 import '../styles/PaymentPage.css';
 import 'antd/dist/reset.css';
 
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -752,6 +753,7 @@ const PaymentPage = ({ tourId }) => {
           <Button type="primary" className="success-button" onClick={handleModalClose}>OK</Button>
         </div>
       </Modal>
+
     </div>
   );
 };

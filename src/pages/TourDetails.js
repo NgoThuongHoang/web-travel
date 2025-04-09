@@ -31,6 +31,7 @@ import {
   MoonOutlined,
 } from "@ant-design/icons";
 import '../styles/TourDetailPage.css';
+import Footer from "../components/Footer"; // Import Footer component
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -535,6 +536,7 @@ const TourDetail = () => {
           )}
         </Content>
       </Layout>
+      <Footer/>
     </div>
     </>
   );
