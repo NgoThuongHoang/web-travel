@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faPhone, faMapMarkerAlt, faEnvelope, faTimes, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import '../styles/Contact.css'; // Nếu bạn tách CSS ra file riêng
 
 function Contact() {
     const [formData, setFormData] = useState({
@@ -16,7 +17,7 @@ function Contact() {
     const inputStyle = {
         color: '#000000',
         backgroundColor: '#ffffff',
-        borderColor: '#ececec', 
+        borderColor: '#ececec',
         borderWidth: '2px',
     };
 
@@ -49,10 +50,9 @@ function Contact() {
             [name]: name === 'dienthoai' ? value.replace(/[^0-9]/g, '') : value
         }));
         
-        // Clear error when user types
         if (fieldErrors[name]) {
             setFieldErrors(prev => {
-                const newErrors = {...prev};
+                const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;
             });
@@ -61,18 +61,14 @@ function Contact() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         const form = e.target;
         if (!form.checkValidity()) {
             form.classList.add('was-validated');
-            
-            // Find invalid fields and set custom error messages
             const invalidFields = {};
             form.querySelectorAll(':invalid').forEach(field => {
                 invalidFields[field.name] = customValidationMessages[field.name] || 'Vui lòng điền thông tin này';
             });
             setFieldErrors(invalidFields);
-            
             return;
         }
 
@@ -84,9 +80,6 @@ function Contact() {
 
         try {
             const apiUrl = 'http://localhost:5001/api/contact';
-            console.log('Sending data to:', apiUrl);
-            console.log('Data:', formData);
-
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -149,7 +142,6 @@ function Contact() {
                 </div>
             </div>
             <div id="container" className="center w-clear" style={{ marginBottom: '20px' }}>
-                {/* Success Popup */}
                 {submitStatus.type === 'success' && (
                     <div className="success-popup-overlay" style={{
                         position: 'fixed',
@@ -188,7 +180,6 @@ function Contact() {
                             >
                                 <FontAwesomeIcon icon={faTimes} />
                             </button>
-                            
                             <div style={{
                                 color: '#4CAF50',
                                 fontSize: '50px',
@@ -196,18 +187,15 @@ function Contact() {
                             }}>
                                 <FontAwesomeIcon icon={faCheckCircle} />
                             </div>
-                            
                             <h3 style={{
                                 color: '#4CAF50',
                                 marginBottom: '15px'
                             }}>Thành công!</h3>
-                            
                             <p style={{
                                 fontSize: '18px',
                                 marginBottom: '20px',
                                 color: '#333'
                             }}>{submitStatus.message}</p>
-                            
                             <button 
                                 onClick={closeSuccessPopup} 
                                 style={{

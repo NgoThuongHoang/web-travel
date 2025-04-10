@@ -295,3 +295,41 @@
     font-size: 11px;
   }
 }
+
+/* Đảm bảo phần bank-details không bị xuống hàng từng chữ */
+.bank-details {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.bank-details .ant-typography {
+  line-height: 1.4; /* Giãn dòng để dễ đọc */
+  white-space: normal; /* Cho phép xuống hàng tự nhiên */
+  word-break: break-word; /* Ngắt từ hợp lý */
+  max-width: 100%; /* Giới hạn chiều rộng */
+}
+
+/* Responsive cho tablet */
+@media (max-width: 768px) {
+  .bank-details {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+}
+
+/* Responsive cho mobile */
+@media (max-width: 576px) {
+  .bank-details {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start; /* Căn trái để text dễ đọc */
+  }
+
+  .bank-details .ant-typography {
+    font-size: 14px; /* Giảm kích thước chữ */
+  }
+}

@@ -40,12 +40,28 @@ const PaymentPage = ({ tourId }) => {
     },
     bankDetails: {
       display: 'flex',
-      alignItems: 'center',
-      gap: '30px',
+      alignItems: 'flex-start', // Đảm bảo căn đầu dòng
+      gap: '20px', // Giảm gap để gọn hơn
       marginTop: '10px',
+      flexWrap: 'wrap', // Cho phép wrap nếu cần, nhưng kiểm soát text
       '@media (max-width: 768px)': {
-        flexDirection: 'column',
-        gap: '15px'
+        flexDirection: 'column', // Xếp dọc trên tablet
+        gap: '10px',
+        alignItems: 'center', // Căn giữa trên tablet
+      },
+      '@media (max-width: 576px)': {
+        flexDirection: 'column', // Xếp dọc trên mobile
+        gap: '8px',
+        alignItems: 'flex-start', // Căn trái trên mobile để text dễ đọc
+      }
+    },
+    bankText: { // Thêm style riêng cho phần text
+      whiteSpace: 'normal', // Cho phép xuống hàng tự nhiên, nhưng không từng chữ
+      wordBreak: 'break-word', // Ngắt từ hợp lý
+      maxWidth: '100%', // Giới hạn chiều rộng để không tràn
+      '@media (max-width: 576px)': {
+        fontSize: '14px', // Giảm kích thước chữ trên mobile
+        lineHeight: '1.4', // Giãn dòng để dễ đọc
       }
     },
     qrCode: {
@@ -57,8 +73,8 @@ const PaymentPage = ({ tourId }) => {
         height: '200px'
       },
       '@media (max-width: 576px)': {
-        width: '150px',
-        height: '150px'
+        width: '120px', // Giảm kích thước QR code trên mobile
+        height: '120px'
       }
     },
     formAndSummaryWrapper: {
@@ -666,7 +682,8 @@ const PaymentPage = ({ tourId }) => {
                           <Text>
                             <div style={{ marginTop: "8px" }}>
                               <strong>Công ty TNHH Du lịch Sky Travel</strong><br />
-                              Địa chỉ: Kp5, Đ.Nguyễn Khuyến, P. Trảng Dài, Tp.Biên Hoà, T.Đồng Nai<br />
+                              Địa chỉ: Tầng 11, The Pegasus Plaza, 53-55 Đ. Võ Thị Sáu, Quyết Thắng, Biên Hòa, Đồng Nai, Việt Nam.<br />
+                              Điện thoại: 0392 226 424<br />
                               Từ thứ hai - Sáng thứ 7 (Sáng 8:00 - 11:30 - Chiều 13:30 - 17:30)
                             </div>
                           </Text>
@@ -676,13 +693,15 @@ const PaymentPage = ({ tourId }) => {
                         <Radio value="Chuyển khoản">Chuyển khoản</Radio>
                         {selectedPayment === "Chuyển khoản" && (
                           <div style={styles.bankDetails}>
-                            <Text>
-                              <strong>Ngân hàng:</strong> BIDV<br />
-                              <strong>Số tài khoản:</strong> 1110547295<br />
-                              <strong>Chủ tài khoản:</strong> Nguyễn Văn Hướng<br />
-                              <strong>Chi nhánh:</strong> TP. HCM<br />
-                              <strong>Nội dung:</strong> Mã tour - Số điện thoại
-                            </Text>
+                            <div style={styles.bankText}>
+                              <Text>
+                                <strong>Ngân hàng:</strong> BIDV<br />
+                                <strong>Số tài khoản:</strong> 1110547295<br />
+                                <strong>Chủ tài khoản:</strong> Nguyễn Văn Hướng<br />
+                                <strong>Chi nhánh:</strong> TP. HCM<br />
+                                <strong>Nội dung:</strong> Mã tour - Số điện thoại
+                              </Text>
+                            </div>
                             <img src={qrBanking} alt="QR Code" style={styles.qrCode} />
                           </div>
                         )}

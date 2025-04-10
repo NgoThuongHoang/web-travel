@@ -1,3 +1,4 @@
+// Header.js
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "antd";
@@ -9,21 +10,39 @@ const Header = () => {
   const [domesticDropdownOpen, setDomesticDropdownOpen] = useState(false);
   const [internationalDropdownOpen, setInternationalDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 767); // Thêm state kiểm tra mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 767);
   const [searchResults, setSearchResults] = useState([]);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const searchRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Đóng dropdown khi chuyển trang
+  useEffect(() => {
+    setDomesticDropdownOpen(false);
+    setInternationalDropdownOpen(false);
+    setMenuOpen(false);
+    setActiveDropdown(null);
+  }, [location.pathname]);
+
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setDomesticDropdownOpen(false);
         setInternationalDropdownOpen(false);
+        setActiveDropdown(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Theo dõi kích thước màn hình
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 767);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const toggleMenu = () => {
@@ -33,19 +52,39 @@ const Header = () => {
       setInternationalDropdownOpen(false);
       setSearchQuery("");
       setSearchResults([]);
+      setActiveDropdown(null);
     }
+  };
+
+  const handleDropdownItemClick = () => {
+    setDomesticDropdownOpen(false);
+    setInternationalDropdownOpen(false);
+    setActiveDropdown(null);
+    setMenuOpen(false);
   };
 
   const toggleDomesticDropdown = (e) => {
     e.preventDefault();
     setDomesticDropdownOpen(!domesticDropdownOpen);
     setInternationalDropdownOpen(false);
+    setActiveDropdown('domestic');
   };
 
   const toggleInternationalDropdown = (e) => {
     e.preventDefault();
     setInternationalDropdownOpen(!internationalDropdownOpen);
     setDomesticDropdownOpen(false);
+    setActiveDropdown('international');
+  };
+
+  const getDropdownClass = (type) => {
+    const baseClass = type === 'international' ? 'dropdown-menu dropdown-menu2' : 'dropdown-menu';
+    const isOpen = type === 'domestic' ? domesticDropdownOpen : internationalDropdownOpen;
+    const isActive = activeDropdown === type;
+    
+    if (isOpen) return `${baseClass} show`;
+    if (!isOpen && isActive) return `${baseClass} closing`;
+    return baseClass;
   };
 
   const handleSearchClick = () => {
@@ -78,38 +117,6 @@ const Header = () => {
     const allTours = [
       { id: 23, name: "TOUR HÀ NỘI", link: "/chi-tiet-tour/23" },
       { id: 24, name: "TOUR HẠ LONG", link: "/chi-tiet-tour/24" },
-      { id: 25, name: "TOUR HÀ GIANG", link: "/chi-tiet-tour/25" },
-      { id: 26, name: "TOUR SA PA", link: "/chi-tiet-tour/26" },
-      { id: 27, name: "TOUR HUẾ", link: "/chi-tiet-tour/27" },
-      { id: 28, name: "TOUR QUẢNG TRỊ", link: "/chi-tiet-tour/28" },
-      { id: 29, name: "TOUR QUẢNG BÌNH", link: "/chi-tiet-tour/29" },
-      { id: 59, name: "TOUR NINH THUẬN", link: "/chi-tiet-tour/59" },
-      { id: 60, name: "TOUR ĐÀ NẴNG", link: "/chi-tiet-tour/60" },
-      { id: 30, name: "TOUR CẦN THƠ", link: "/chi-tiet-tour/30" },
-      { id: 31, name: "TOUR AN GIANG", link: "/chi-tiet-tour/31" },
-      { id: 32, name: "TOUR CÀ MAU", link: "/chi-tiet-tour/32" },
-      { id: 33, name: "TOUR VŨNG TÀU", link: "/chi-tiet-tour/33" },
-      { id: 34, name: "TOUR ĐỒNG THÁP", link: "/chi-tiet-tour/34" },
-      { id: 35, name: "TOUR BẾN TRE", link: "/chi-tiet-tour/35" },
-      { id: 36, name: "TOUR GIA LAI", link: "/chi-tiet-tour/36" },
-      { id: 61, name: "BUÔN MA THUỘT", link: "/chi-tiet-tour/61" },
-      { id: 62, name: "TOUR ĐÀ LẠT", link: "/chi-tiet-tour/62" },
-      { id: 63, name: "TOUR KON TUM", link: "/chi-tiet-tour/63" },
-      { id: 40, name: "TOUR BANGKOK", link: "/chi-tiet-tour/40" },
-      { id: 41, name: "TOUR ẤN ĐỘ", link: "/chi-tiet-tour/41" },
-      { id: 42, name: "TOUR PHNOM PENH", link: "/chi-tiet-tour/42" },
-      { id: 43, name: "TOUR HONG KONG", link: "/chi-tiet-tour/43" },
-      { id: 44, name: "TOUR BALI", link: "/chi-tiet-tour/44" },
-      { id: 45, name: "TOUR KYOTO", link: "/chi-tiet-tour/45" },
-      { id: 46, name: "TOUR SEOUL", link: "/chi-tiet-tour/46" },
-      { id: 47, name: "TOUR SINGAPORE", link: "/chi-tiet-tour/47" },
-      { id: 48, name: "TOUR PRAGUE", link: "/chi-tiet-tour/48" },
-      { id: 49, name: "TOUR ATHENS", link: "/chi-tiet-tour/49" },
-      { id: 50, name: "TOUR PARIS", link: "/chi-tiet-tour/50" },
-      { id: 51, name: "TOUR BARCELONA", link: "/chi-tiet-tour/51" },
-      { id: 52, name: "TOUR ROME", link: "/chi-tiet-tour/52" },
-      { id: 53, name: "TOUR LONDON", link: "/chi-tiet-tour/53" },
-      { id: 54, name: "TOUR AMSTERDAM", link: "/chi-tiet-tour/54" },
       { id: 55, name: "TOUR VIENNA", link: "/chi-tiet-tour/55" },
     ];
 
@@ -125,13 +132,13 @@ const Header = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Có thể thêm logic tìm kiếm chi tiết hơn nếu cần
   };
 
   return (
     <nav
       className="navbar navbar-expand-lg navbar-light bg-light"
       style={{ top: 0, width: "100%", zIndex: 1000, position: "sticky" }}
+      ref={searchRef}
     >
       <div className="container" style={{ padding: "0px", height: "80px" }}>
         <a className="navbar-brand logo" href="/">
@@ -199,53 +206,67 @@ const Header = () => {
                 >
                   TOUR TRONG NƯỚC
                 </a>
-                
+                {isMobile && (
+                  <button
+                    className={`toggle-btn ${domesticDropdownOpen ? "open" : ""}`}
+                    onClick={toggleDomesticDropdown}
+                  >
+                    <span className="icon-plus"></span>
+                    <span className="icon-minus"></span>
+                  </button>
+                )}
               </div>
               <div
-                className={`dropdown-menu ${domesticDropdownOpen ? "show" : ""}`}
+                className={getDropdownClass('domestic')}
                 aria-labelledby="navbarDropdownDomestic"
+                onAnimationEnd={() => {
+                  if (activeDropdown === 'domestic' && !domesticDropdownOpen) {
+                    setActiveDropdown(null);
+                  }
+                }}
               >
                 <div className="tour-container">
                   <div className="tour-row">
-                  {!isMobile && ( // Chỉ hiển thị cột ảnh nếu không phải mobile
+                    {!isMobile && (
                       <div className="tour-column">
                         <img
                           src="./images/tour-trong-nuoc.jpg"
                           alt="Tour trong nước"
                           className="tour-image"
-                        />  
+                          loading="lazy"
+                        />
                       </div>
                     )}
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN BẮC</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/23" onClick={toggleMenu}>TOUR HÀ NỘI</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/24" onClick={toggleMenu}>TOUR HẠ LONG</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/25" onClick={toggleMenu}>TOUR HÀ GIANG</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/26" onClick={toggleMenu}>TOUR SA PA</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/23" onClick={handleDropdownItemClick}>TOUR HÀ NỘI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/24" onClick={handleDropdownItemClick}>TOUR HẠ LONG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/25" onClick={handleDropdownItemClick}>TOUR HÀ GIANG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/26" onClick={handleDropdownItemClick}>TOUR SA PA</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN TRUNG</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/27" onClick={toggleMenu}>TOUR HUẾ</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/28" onClick={toggleMenu}>TOUR QUẢNG TRỊ</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/29" onClick={toggleMenu}>TOUR QUẢNG BÌNH</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/59" onClick={toggleMenu}>TOUR NINH THUẬN</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/60" onClick={toggleMenu}>TOUR ĐÀ NẴNG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/27" onClick={handleDropdownItemClick}>TOUR HUẾ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/28" onClick={handleDropdownItemClick}>TOUR QUẢNG TRỊ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/29" onClick={handleDropdownItemClick}>TOUR QUẢNG BÌNH</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/59" onClick={handleDropdownItemClick}>TOUR NINH THUẬN</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/60" onClick={handleDropdownItemClick}>TOUR ĐÀ NẴNG</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">MIỀN NAM</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/30" onClick={toggleMenu}>TOUR CẦN THƠ</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/31" onClick={toggleMenu}>TOUR AN GIANG</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/32" onClick={toggleMenu}>TOUR CÀ MAU</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/33" onClick={toggleMenu}>TOUR VŨNG TÀU</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/34" onClick={toggleMenu}>TOUR ĐỒNG THÁP</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/35" onClick={toggleMenu}>TOUR BẾN TRE</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/30" onClick={handleDropdownItemClick}>TOUR CẦN THƠ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/31" onClick={handleDropdownItemClick}>TOUR AN GIANG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/32" onClick={handleDropdownItemClick}>TOUR CÀ MAU</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/33" onClick={handleDropdownItemClick}>TOUR VŨNG TÀU</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/34" onClick={handleDropdownItemClick}>TOUR ĐỒNG THÁP</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/35" onClick={handleDropdownItemClick}>TOUR BẾN TRE</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">TÂY NGUYÊN</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/36" onClick={toggleMenu}>TOUR GIA LAI</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/61" onClick={toggleMenu}>BUÔN MA THUỘT</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/62" onClick={toggleMenu}>TOUR ĐÀ LẠT</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/63" onClick={toggleMenu}>TOUR KON TUM</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/36" onClick={handleDropdownItemClick}>TOUR GIA LAI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/61" onClick={handleDropdownItemClick}>BUÔN MA THUỘT</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/62" onClick={handleDropdownItemClick}>TOUR ĐÀ LẠT</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/63" onClick={handleDropdownItemClick}>TOUR KON TUM</Link>
                     </div>
                   </div>
                 </div>
@@ -260,50 +281,65 @@ const Header = () => {
                   aria-expanded={internationalDropdownOpen}
                 >
                   TOUR NGOÀI NƯỚC
-                </a>              
+                </a>
+                {isMobile && (
+                  <button
+                    className={`toggle-btn ${internationalDropdownOpen ? "open" : ""}`}
+                    onClick={toggleInternationalDropdown}
+                  >
+                    <span className="icon-plus"></span>
+                    <span className="icon-minus"></span>
+                  </button>
+                )}
               </div>
               <div
-                className={`dropdown-menu dropdown-menu2 ${internationalDropdownOpen ? "show" : ""}`}
+                className={getDropdownClass('international')}
                 aria-labelledby="navbarDropdownInternational"
+                onAnimationEnd={() => {
+                  if (activeDropdown === 'international' && !internationalDropdownOpen) {
+                    setActiveDropdown(null);
+                  }
+                }}
               >
                 <div className="tour-container">
                   <div className="tour-row">
-                  {!isMobile && ( // Chỉ hiển thị cột ảnh nếu không phải mobile
+                    {!isMobile && (
                       <div className="tour-column">
                         <img
                           src="./images/tour-ngoai-nuoc.jpg"
-                          alt="Tour ngoai nước"
+                          alt="Tour ngoài nước"
                           className="tour-image"
+                          loading="lazy"
                         />
                       </div>
                     )}
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU Á</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/40" onClick={toggleMenu}>TOUR BANGKOK</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/41" onClick={toggleMenu}>TOUR ẤN ĐỘ</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/42" onClick={toggleMenu}>TOUR PHNOM PENH</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/43" onClick={toggleMenu}>TOUR HONG KONG</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/40" onClick={handleDropdownItemClick}>TOUR BANGKOK</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/41" onClick={handleDropdownItemClick}>TOUR ẤN ĐỘ</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/42" onClick={handleDropdownItemClick}>TOUR PHNOM PENH</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/43" onClick={handleDropdownItemClick}>TOUR HONG KONG</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU Á</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/44" onClick={toggleMenu}>TOUR BALI</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/45" onClick={toggleMenu}>TOUR KYOTO</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/46" onClick={toggleMenu}>TOUR SEOUL</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/47" onClick={toggleMenu}>TOUR SINGAPORE</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/44" onClick={handleDropdownItemClick}>TOUR BALI</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/45" onClick={handleDropdownItemClick}>TOUR KYOTO</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/46" onClick={handleDropdownItemClick}>TOUR SEOUL</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/47" onClick={handleDropdownItemClick}>TOUR SINGAPORE</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU ÂU</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/48" onClick={toggleMenu}>TOUR PRAGUE</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/49" onClick={toggleMenu}>TOUR ATHENS</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/50" onClick={toggleMenu}>TOUR PARIS</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/51" onClick={toggleMenu}>TOUR BARCELONA</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/48" onClick={handleDropdownItemClick}>TOUR PRAGUE</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/49" onClick={handleDropdownItemClick}>TOUR ATHENS</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/50" onClick={handleDropdownItemClick}>TOUR PARIS</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/51" onClick={handleDropdownItemClick}>TOUR BARCELONA</Link>
                     </div>
                     <div className="tour-column">
                       <h5 className="tour-title">CHÂU ÂU</h5>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/52" onClick={toggleMenu}>TOUR ROME</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/53" onClick={toggleMenu}>TOUR LONDON</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/54" onClick={toggleMenu}>TOUR AMSTERDAM</Link>
-                      <Link className="dropdown-item" to="/chi-tiet-tour/55" onClick={toggleMenu}>TOUR VIENNA</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/52" onClick={handleDropdownItemClick}>TOUR ROME</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/53" onClick={handleDropdownItemClick}>TOUR LONDON</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/54" onClick={handleDropdownItemClick}>TOUR AMSTERDAM</Link>
+                      <Link className="dropdown-item" to="/chi-tiet-tour/55" onClick={handleDropdownItemClick}>TOUR VIENNA</Link>
                     </div>
                   </div>
                 </div>
